@@ -1,0 +1,38 @@
+{
+  "name": "@obinexus/nexus-search",
+  "version": "1.0.0",
+  "description": "High-performance search indexing and query system",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -P tsconfig.json",
+    "test": "jest --config jest.config.js",
+    "test:watch": "jest --config jest.config.js --watch",
+    "test:coverage": "jest --config jest.config.js --coverage",
+    "test:ci": "jest --config jest.config.js --ci --coverage --maxWorkers=2",
+    "test:debug": "node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand --config jest.config.js",
+    "lint": "eslint 'src/**/*.{js,ts}'",
+    "format": "prettier --write 'src/**/*.{js,ts}'",
+    "prepublishOnly": "npm test && npm run lint && npm run build"
+  },
+  "dependencies": {
+    "idb": "^7.0.0",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@types/jest": "^29.5.14",
+    "@types/lodash": "^4.14.191",
+    "@types/node": "^18.15.11",
+    "@typescript-eslint/eslint-plugin": "^5.57.1",
+    "@typescript-eslint/parser": "^5.57.1",
+    "eslint": "^8.37.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "prettier": "^2.8.7",
+    "ts-jest": "^29.2.5",
+
+    "typescript": "^5.0.3"
+  }
+}
