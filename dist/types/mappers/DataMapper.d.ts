@@ -4,5 +4,7 @@ export declare class DataMapper {
     mapData(key: string, documentId: string): void;
     getDocuments(key: string): Set<string>;
     getAllKeys(): string[];
+    exportState(): Record<string, string[]>;
+    importState(state: Record<string, string[]>): void;
     clear(): void;
 }

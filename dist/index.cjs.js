@@ -108,6 +108,19 @@ class DataMapper {
     getAllKeys() {
         return Array.from(this.dataMap.keys());
     }
+    exportState() {
+        const serializedMap = {};
+        this.dataMap.forEach((value, key) => {
+            serializedMap[key] = Array.from(value);
+        });
+        return serializedMap;
+    }
+    importState(state) {
+        this.dataMap.clear();
+        Object.entries(state).forEach(([key, value]) => {
+            this.dataMap.set(key, new Set(value));
+        });
+    }
     clear() {
         this.dataMap.clear();
     }
