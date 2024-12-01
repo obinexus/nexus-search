@@ -19,7 +19,8 @@
     "fixtures/",
     "docs/",
     "./prettierc",
-    "TODO.md"
+    "TODO.md",
+    "jest.config.mjs"
   ],
   "scripts": {
     "build": "rollup -c",
