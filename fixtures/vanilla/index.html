@@ -289,5 +289,36 @@
             new NexusSearchBar(container);
         });
     </script>
+     <script defer>
+        // Add safety check for library loading
+        function waitForNexusSearch(callback, maxAttempts = 10) {
+            let attempts = 0;
+            
+            const check = () => {
+                attempts++;
+                if (typeof NexusSearch !== 'undefined') {
+                    callback();
+                } else if (attempts < maxAttempts) {
+                    console.log('Waiting for NexusSearch to load...');
+                    setTimeout(check, 100);
+                } else {
+                    console.error('Failed to load NexusSearch library');
+                }
+            };
+
+            check();
+        }
+
+        // Rest of the code wrapped in the safety check
+        waitForNexusSearch(() => {
+            class NexusSearchBar {
+                // ... Rest of the class implementation stays the same ...
+            }
+
+            // Initialize the search bar
+            const container = document.querySelector('.search-container');
+            new NexusSearchBar(container);
+        });
+    </script>
 </body>
 </html>
