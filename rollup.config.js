@@ -18,11 +18,9 @@ const banner = `/**
  */`;
 
 const external = [
-  ...Object.keys(pkg.dependencies || {}),
   ...Object.keys(pkg.peerDependencies || {})
 ];
 
-// Path alias configuration
 const aliasEntries = {
   entries: [
     { find: '@', replacement: path.resolve(__dirname, 'src') },
@@ -34,14 +32,16 @@ const aliasEntries = {
   ]
 };
 
-const plugins = [
+const basePlugins = [
   alias(aliasEntries),
   resolve({
     browser: true,
     preferBuiltins: false,
     extensions: ['.ts', '.js']
   }),
-  commonjs(),
+  commonjs({
+    include: 'node_modules/**'
+  }),
   typescript({
     tsconfig: './tsconfig.json',
     declaration: true,
@@ -63,10 +63,10 @@ export default [
       }
     ],
     external,
-    plugins
+    plugins: basePlugins
   },
 
-  // UMD build
+  // UMD build (with bundled dependencies)
   {
     input: 'src/index.ts',
     output: [
@@ -77,14 +77,18 @@ export default [
         banner,
         sourcemap: true,
         globals: {
-          'idb': 'idb',
-          'lodash': '_'
+          'idb': 'idb'
         }
       }
     ],
-    external,
     plugins: [
-      ...plugins,
+      ...basePlugins,
+      resolve({
+        browser: true,
+        preferBuiltins: false,
+        extensions: ['.ts', '.js'],
+        mainFields: ['browser', 'module', 'main']
+      }),
       terser({
         output: {
           comments: function(node, comment) {
@@ -107,7 +111,7 @@ export default [
       }
     ],
     external,
-    plugins
+    plugins: basePlugins
   },
 
   // Type definitions

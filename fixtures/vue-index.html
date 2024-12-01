@@ -6,9 +6,50 @@
     <title>Nexus Search Vue Demo</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.js"></script>
     <script src="../dist/index.js"></script>
-    <!-- Add error message styles -->
     <style>
-        /* ... existing styles ... */
+        .nexus-search-bar {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #ccc;
+            border-top: 3px solid #333;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        .search-results {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 1rem;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-result {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .search-result:last-child {
+            border-bottom: none;
+        }
+
         .error-message {
             color: #dc2626;
             padding: 1rem;
@@ -17,24 +58,62 @@
             border: 1px solid #fecaca;
             border-radius: 0.375rem;
         }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .tag {
+            background-color: #007bff;
+            color: #fff;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
     <div id="app">
-        <div class="nexus-search-bar">
-            <h1>Nexus Search Demo</h1>
-            <!-- Add error message display -->
-            <div v-if="error" class="error-message">
-                {{ error }}
-            </div>
-            <nexus-search-bar></nexus-search-bar>
-        </div>
+        <h1 style="text-align: center; margin-bottom: 2rem;">Nexus Search Demo</h1>
+        <nexus-search-bar></nexus-search-bar>
     </div>
 
     <script>
         const { ref, onMounted } = Vue;
 
         const NexusSearchBar = {
+            template: `
+                <div class="nexus-search-bar">
+                    <div v-if="error" class="error-message">{{ error }}</div>
+                    <input
+                        type="text"
+                        v-model="query"
+                        @input="handleInputChange"
+                        placeholder="Search..."
+                        class="search-input"
+                    />
+                    <div v-if="isLoading" class="loading-spinner"></div>
+                    <div v-if="results.length > 0" class="search-results">
+                        <div v-for="(result, index) in results" :key="index" class="search-result">
+                            <h3>{{ result.item.title }}</h3>
+                            <p>{{ result.item.content }}</p>
+                            <div class="tags">
+                                <span v-for="(tag, tagIndex) in result.item.tags" :key="tagIndex" class="tag">
+                                    {{ tag }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            
             setup() {
                 const query = ref('');
                 const results = ref([]);
@@ -68,11 +147,17 @@
                                 content: 'Explore advanced search capabilities',
                                 tags: ['advanced', 'features'],
                             },
+                            {
+                                title: 'Performance Tips',
+                                content: 'Learn how to optimize search performance',
+                                tags: ['performance', 'optimization'],
+                            }
                         ]);
 
-                        error.value = ''; // Clear any previous errors
+                        error.value = '';
                     } catch (e) {
-                        error.value = `Initialization error: ${e.message}`;
+                        const message = e instanceof Error ? e.message : 'Unknown error';
+                        error.value = `Failed to initialize search: ${message}`;
                         console.error('Initialization error:', e);
                     }
                 });
@@ -84,7 +169,7 @@
                     }
 
                     isLoading.value = true;
-                    error.value = ''; // Clear previous errors
+                    error.value = '';
                     
                     try {
                         const searchResults = await searchEngine.value.search(searchQuery, {
@@ -93,7 +178,8 @@
                         });
                         results.value = searchResults;
                     } catch (e) {
-                        error.value = `Search error: ${e.message}`;
+                        const message = e instanceof Error ? e.message : 'Unknown error';
+                        error.value = `Search error: ${message}`;
                         console.error('Search error:', e);
                         results.value = [];
                     } finally {
@@ -101,17 +187,30 @@
                     }
                 };
 
+                const handleInputChange = () => {
+                    if (searchTimeout) {
+                        clearTimeout(searchTimeout);
+                    }
+
+                    searchTimeout = setTimeout(() => {
+                        if (query.value.trim()) {
+                            handleSearch(query.value);
+                        } else {
+                            results.value = [];
+                        }
+                    }, 300);
+                };
+
                 return {
                     query,
                     results,
                     isLoading,
                     error,
-                    handleSearch
+                    handleInputChange
                 };
             }
         };
 
-        // Create and mount the Vue app
         const app = Vue.createApp({
             components: {
                 NexusSearchBar

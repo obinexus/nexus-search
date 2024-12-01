@@ -6,6 +6,9 @@
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
@@ -19,8 +22,7 @@
     "prepublishOnly": "npm test && npm run lint && npm run build"
   },
   "dependencies": {
-    "idb": "^7.0.0",
-    "lodash": "^4.17.21"
+    "idb": "^7.0.0"
   },
   "devDependencies": {
     "@rollup/plugin-alias": "^5.1.1",
@@ -31,7 +33,6 @@
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@types/jest": "^29.5.14",
-    "@types/lodash": "^4.14.191",
     "@types/node": "^18.19.67",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
