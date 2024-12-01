@@ -1,8 +1,6 @@
 // Export all from types
 export * from './types';
 
-
-
 // Core exports
 export { SearchEngine } from './core/SearchEngine';
 export { IndexManager } from './core/IndexManager';
@@ -18,7 +16,7 @@ export { IndexMapper } from './mappers/IndexMapper';
 
 // Storage exports
 export { CacheManager } from './storage/CacheManager';
-export { IndexedDBService as IndexedDB } from './storage/IndexedDB';
+export {  IndexedDB } from './storage/IndexedDB';
 
 export { PerformanceMonitor,createSearchableFields, optimizeIndex, getNestedValue,normalizeFieldValue,
     validateSearchOptions,validateIndexConfig,validateDocument
