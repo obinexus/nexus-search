@@ -1,4 +1,4 @@
-# @obinexus/nexus-search Documentation
+# @obinexuscomputing/nexus-search Documentation
 
 ## Table of Contents
 - [Installation](#installation)
@@ -19,7 +19,7 @@ yarn add @obinexuscomputing/nexus-search
 ## Quick Start
 
 ```typescript
-import { SearchEngine } from '@obinexus/nexus-search';
+import { SearchEngine } from '@obinexuscomputing/nexus-search';
 
 // Initialize search engine
 const searchEngine = new SearchEngine({
@@ -139,7 +139,7 @@ interface IndexConfig {
 
 ### Basic Search Implementation
 ```typescript
-import { SearchEngine, SearchOptions } from '@obinexus/nexus-search';
+import { SearchEngine, SearchOptions } from '@obinexuscomputing/nexus-search';
 
 // Initialize engine
 const searchEngine = new SearchEngine({

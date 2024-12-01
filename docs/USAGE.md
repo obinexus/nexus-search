@@ -1,11 +1,11 @@
-# @obinexus/nexus-search usage
+# @obinexuscomputing/nexus-search usage
 
 ## Common Use Cases
 
 ### 1. Document Search System
 
 ```typescript
-import { SearchEngine, SearchOptions } from '@obinexus/nexus-search';
+import { SearchEngine, SearchOptions } from '@obinexuscomputing/nexus-search';
 
 interface Document {
   title: string;
