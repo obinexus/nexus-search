@@ -168,11 +168,118 @@ declare class QueryProcessor {
     private optimizeQuery;
 }
 
+declare class TrieNode {
+    children: Map<string, TrieNode>;
+    isEndOfWord: boolean;
+    data: Set<string>;
+    constructor();
+}
+
+interface SerializedTrieNode {
+    isEndOfWord: boolean;
+    data: string[];
+    children: {
+        [key: string]: SerializedTrieNode;
+    };
+}
+declare class TrieSearch {
+    private root;
+    constructor();
+    insert(word: string, documentId: string): void;
+    search(prefix: string, maxResults?: number): Set<string>;
+    exportState(): SerializedTrieNode;
+    importState(state: SerializedTrieNode): void;
+    private collectIds;
+    fuzzySearch(word: string, maxDistance?: number): Set<string>;
+    private fuzzySearchHelper;
+    private levenshteinDistance;
+    private serializeNode;
+    private deserializeNode;
+}
+
+declare class DataMapper {
+    private dataMap;
+    constructor();
+    mapData(key: string, documentId: string): void;
+    getDocuments(key: string): Set<string>;
+    getAllKeys(): string[];
+    exportState(): Record<string, string[]>;
+    importState(state: Record<string, string[]>): void;
+    clear(): void;
+}
+
+declare class IndexMapper {
+    private dataMapper;
+    private trieSearch;
+    constructor();
+    indexDocument(document: any, id: string, fields: string[]): void;
+    search(query: string, options?: {
+        fuzzy?: boolean;
+        maxResults?: number;
+    }): SearchResult$1<string>[];
+    exportState(): any;
+    importState(state: any): void;
+    private tokenizeText;
+    private calculateScore;
+    clear(): void;
+}
+
+declare class CacheManager {
+    private cache;
+    private readonly maxSize;
+    private readonly ttl;
+    constructor(maxSize?: number, ttlMinutes?: number);
+    set(key: string, data: SearchResult$1<any>[]): void;
+    get(key: string): SearchResult$1<any>[] | null;
+    private isExpired;
+    private evictOldest;
+    clear(): void;
+}
+
+interface MetadataEntry {
+    id: string;
+    config: IndexConfig$1;
+    lastUpdated: number;
+}
+declare class IndexedDBService {
+    private db;
+    private readonly DB_NAME;
+    private readonly DB_VERSION;
+    private initPromise;
+    constructor();
+    initialize(): Promise<void>;
+    private ensureConnection;
+    storeIndex(key: string, data: any): Promise<void>;
+    getIndex(key: string): Promise<any | null>;
+    updateMetadata(config: IndexConfig$1): Promise<void>;
+    getMetadata(): Promise<MetadataEntry | null>;
+    clearIndices(): Promise<void>;
+    deleteIndex(key: string): Promise<void>;
+    close(): Promise<void>;
+}
+
 declare function createSearchableFields<T>(document: T, fields: string[]): Record<string, string>;
+declare function normalizeFieldValue(value: any): string;
+declare function getNestedValue(obj: any, path: string): any;
 declare function optimizeIndex(data: any[]): any[];
+
+declare class PerformanceMonitor {
+    private metrics;
+    constructor();
+    measure<T>(name: string, fn: () => Promise<T>): Promise<T>;
+    private recordMetric;
+    getMetrics(): Record<string, {
+        avg: number;
+        min: number;
+        max: number;
+        count: number;
+    }>;
+    private average;
+    clear(): void;
+}
 
 declare function validateSearchOptions(options: SearchOptions): void;
 declare function validateIndexConfig(config: IndexConfig): void;
 declare function validateDocument(document: any, fields: string[]): boolean;
 
-export { DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, type IndexConfig$1 as IndexConfig, IndexError, IndexManager, type IndexNode, type IndexOptions$1 as IndexOptions, NexusSearch, QueryProcessor, type SearchContext, SearchEngine, SearchError, type SearchEvent, type SearchEventListener, type SearchEventType, type SearchOptions$1 as SearchOptions, type SearchResult$1 as SearchResult, type SearchStats, StorageError, type TokenInfo, ValidationError, createSearchContext, createSearchStats, createSearchableFields, createTokenInfo, isIndexConfig, isSearchOptions, isSearchResult, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
+export { CacheManager, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, type IndexConfig$1 as IndexConfig, IndexError, IndexManager, IndexMapper, type IndexNode, type IndexOptions$1 as IndexOptions, IndexedDBService as IndexedDB, NexusSearch, PerformanceMonitor, QueryProcessor, type SearchContext, SearchEngine, SearchError, type SearchEvent, type SearchEventListener, type SearchEventType, type SearchOptions$1 as SearchOptions, type SearchResult$1 as SearchResult, type SearchStats, StorageError, type TokenInfo, TrieNode, TrieSearch, ValidationError, createSearchContext, createSearchStats, createSearchableFields, createTokenInfo, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };

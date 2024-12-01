@@ -832,6 +832,134 @@ class SearchStorage {
         }
     }
 }
+class IndexedDBService {
+    constructor() {
+        this.db = null;
+        this.DB_NAME = 'nexus_search_db';
+        this.DB_VERSION = 1;
+        this.initPromise = null;
+        // Initialize immediately to catch early failures
+        this.initPromise = this.initialize();
+    }
+    async initialize() {
+        if (this.db)
+            return;
+        try {
+            this.db = await openDB(this.DB_NAME, this.DB_VERSION, {
+                upgrade(db, oldVersion, newVersion, transaction) {
+                    // Handle version upgrades
+                    if (!db.objectStoreNames.contains('searchIndices')) {
+                        const indexStore = db.createObjectStore('searchIndices', { keyPath: 'id' });
+                        indexStore.createIndex('timestamp', 'timestamp');
+                    }
+                    if (!db.objectStoreNames.contains('metadata')) {
+                        const metaStore = db.createObjectStore('metadata', { keyPath: 'id' });
+                        metaStore.createIndex('lastUpdated', 'lastUpdated');
+                    }
+                },
+                blocked() {
+                    console.warn('Database upgrade was blocked');
+                },
+                blocking() {
+                    console.warn('Current database version is blocking a newer version');
+                },
+                terminated() {
+                    console.error('Database connection was terminated');
+                }
+            });
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            throw new Error(`Storage initialization failed: ${message}`);
+        }
+    }
+    async ensureConnection() {
+        if (this.initPromise) {
+            await this.initPromise;
+        }
+        if (!this.db) {
+            throw new Error('Database connection not available');
+        }
+    }
+    async storeIndex(key, data) {
+        await this.ensureConnection();
+        try {
+            const entry = {
+                id: key,
+                data,
+                timestamp: Date.now(),
+            };
+            await this.db.put('searchIndices', entry);
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            throw new Error(`Failed to store index: ${message}`);
+        }
+    }
+    async getIndex(key) {
+        await this.ensureConnection();
+        try {
+            const entry = await this.db.get('searchIndices', key);
+            return entry?.data || null;
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            throw new Error(`Failed to retrieve index: ${message}`);
+        }
+    }
+    async updateMetadata(config) {
+        await this.ensureConnection();
+        try {
+            const metadata = {
+                id: 'config',
+                config,
+                lastUpdated: Date.now()
+            };
+            await this.db.put('metadata', metadata);
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            throw new Error(`Failed to update metadata: ${message}`);
+        }
+    }
+    async getMetadata() {
+        await this.ensureConnection();
+        try {
+            const result = await this.db.get('metadata', 'config');
+            return result || null; // Return `null` if `result` is `undefined`
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            throw new Error(`Failed to retrieve metadata: ${message}`);
+        }
+    }
+    async clearIndices() {
+        await this.ensureConnection();
+        try {
+            await this.db.clear('searchIndices');
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            throw new Error(`Failed to clear indices: ${message}`);
+        }
+    }
+    async deleteIndex(key) {
+        await this.ensureConnection();
+        try {
+            await this.db.delete('searchIndices', key);
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            throw new Error(`Failed to delete index: ${message}`);
+        }
+    }
+    async close() {
+        if (this.db) {
+            this.db.close();
+            this.db = null;
+        }
+    }
+}
 
 class CacheManager {
     constructor(maxSize = 1000, ttlMinutes = 5) {
@@ -962,5 +1090,45 @@ class SearchEngine {
     }
 }
 
-export { DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, IndexError, IndexManager, QueryProcessor, SearchEngine, SearchError, StorageError, ValidationError, createSearchContext, createSearchStats, createSearchableFields, createTokenInfo, isIndexConfig, isSearchOptions, isSearchResult, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
+class PerformanceMonitor {
+    constructor() {
+        this.metrics = new Map();
+    }
+    async measure(name, fn) {
+        const start = performance.now();
+        try {
+            return await fn();
+        }
+        finally {
+            const duration = performance.now() - start;
+            this.recordMetric(name, duration);
+        }
+    }
+    recordMetric(name, duration) {
+        if (!this.metrics.has(name)) {
+            this.metrics.set(name, []);
+        }
+        this.metrics.get(name).push(duration);
+    }
+    getMetrics() {
+        const results = {};
+        this.metrics.forEach((durations, name) => {
+            results[name] = {
+                avg: this.average(durations),
+                min: Math.min(...durations),
+                max: Math.max(...durations),
+                count: durations.length,
+            };
+        });
+        return results;
+    }
+    average(numbers) {
+        return numbers.reduce((a, b) => a + b, 0) / numbers.length;
+    }
+    clear() {
+        this.metrics.clear();
+    }
+}
+
+export { CacheManager, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, IndexError, IndexManager, IndexMapper, IndexedDBService as IndexedDB, PerformanceMonitor, QueryProcessor, SearchEngine, SearchError, StorageError, TrieNode, TrieSearch, ValidationError, createSearchContext, createSearchStats, createSearchableFields, createTokenInfo, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
 //# sourceMappingURL=index.esm.js.map
