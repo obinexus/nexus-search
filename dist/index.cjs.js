@@ -834,7 +834,7 @@ class SearchStorage {
         }
     }
 }
-class IndexedDBService {
+class IndexedDB {
     constructor() {
         this.db = null;
         this.DB_NAME = 'nexus_search_db';
@@ -1139,7 +1139,7 @@ exports.DataMapper = DataMapper;
 exports.IndexError = IndexError;
 exports.IndexManager = IndexManager;
 exports.IndexMapper = IndexMapper;
-exports.IndexedDB = IndexedDBService;
+exports.IndexedDB = IndexedDB;
 exports.PerformanceMonitor = PerformanceMonitor;
 exports.QueryProcessor = QueryProcessor;
 exports.SearchEngine = SearchEngine;

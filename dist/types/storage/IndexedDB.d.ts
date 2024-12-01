@@ -19,7 +19,7 @@ export declare class SearchStorage {
     clearIndices(): Promise<void>;
     close(): Promise<void>;
 }
-export declare class IndexedDBService {
+export declare class IndexedDB {
     private db;
     private readonly DB_NAME;
     private readonly DB_VERSION;

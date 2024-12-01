@@ -832,7 +832,7 @@ class SearchStorage {
         }
     }
 }
-class IndexedDBService {
+class IndexedDB {
     constructor() {
         this.db = null;
         this.DB_NAME = 'nexus_search_db';
@@ -1130,5 +1130,5 @@ class PerformanceMonitor {
     }
 }
 
-export { CacheManager, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, IndexError, IndexManager, IndexMapper, IndexedDBService as IndexedDB, PerformanceMonitor, QueryProcessor, SearchEngine, SearchError, StorageError, TrieNode, TrieSearch, ValidationError, createSearchContext, createSearchStats, createSearchableFields, createTokenInfo, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
+export { CacheManager, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, IndexError, IndexManager, IndexMapper, IndexedDB, PerformanceMonitor, QueryProcessor, SearchEngine, SearchError, StorageError, TrieNode, TrieSearch, ValidationError, createSearchContext, createSearchStats, createSearchableFields, createTokenInfo, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
 //# sourceMappingURL=index.esm.js.map

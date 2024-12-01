@@ -7,5 +7,5 @@ export { TrieSearch } from './algorithms/trie/TrieSearch';
 export { DataMapper } from './mappers/DataMapper';
 export { IndexMapper } from './mappers/IndexMapper';
 export { CacheManager } from './storage/CacheManager';
-export { IndexedDBService as IndexedDB } from './storage/IndexedDB';
+export { IndexedDB } from './storage/IndexedDB';
 export { PerformanceMonitor, createSearchableFields, optimizeIndex, getNestedValue, normalizeFieldValue, validateSearchOptions, validateIndexConfig, validateDocument } from './utils/';

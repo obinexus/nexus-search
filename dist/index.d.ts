@@ -241,7 +241,7 @@ interface MetadataEntry {
     config: IndexConfig$1;
     lastUpdated: number;
 }
-declare class IndexedDBService {
+declare class IndexedDB {
     private db;
     private readonly DB_NAME;
     private readonly DB_VERSION;
@@ -282,4 +282,4 @@ declare function validateSearchOptions(options: SearchOptions): void;
 declare function validateIndexConfig(config: IndexConfig): void;
 declare function validateDocument(document: any, fields: string[]): boolean;
 
-export { CacheManager, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, type IndexConfig$1 as IndexConfig, IndexError, IndexManager, IndexMapper, type IndexNode, type IndexOptions$1 as IndexOptions, IndexedDBService as IndexedDB, NexusSearch, PerformanceMonitor, QueryProcessor, type SearchContext, SearchEngine, SearchError, type SearchEvent, type SearchEventListener, type SearchEventType, type SearchOptions$1 as SearchOptions, type SearchResult$1 as SearchResult, type SearchStats, StorageError, type TokenInfo, TrieNode, TrieSearch, ValidationError, createSearchContext, createSearchStats, createSearchableFields, createTokenInfo, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
+export { CacheManager, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, type IndexConfig$1 as IndexConfig, IndexError, IndexManager, IndexMapper, type IndexNode, type IndexOptions$1 as IndexOptions, IndexedDB, NexusSearch, PerformanceMonitor, QueryProcessor, type SearchContext, SearchEngine, SearchError, type SearchEvent, type SearchEventListener, type SearchEventType, type SearchOptions$1 as SearchOptions, type SearchResult$1 as SearchResult, type SearchStats, StorageError, type TokenInfo, TrieNode, TrieSearch, ValidationError, createSearchContext, createSearchStats, createSearchableFields, createTokenInfo, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
