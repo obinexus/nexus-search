@@ -1,5 +1,12 @@
 import { TrieNode } from "./TrieNode";
 
+interface SerializedTrieNode {
+  isEndOfWord: boolean;
+  data: string[];
+  children: { [key: string]: SerializedTrieNode };
+}
+
+
 export class TrieSearch {
   private root: TrieNode;
 
@@ -34,6 +41,14 @@ export class TrieSearch {
 
     this.collectIds(current, results, maxResults);
     return results;
+  }
+
+  exportState(): SerializedTrieNode {
+    return this.serializeNode(this.root);
+  }
+
+  importState(state: SerializedTrieNode): void {
+    this.root = this.deserializeNode(state);
   }
 
   private collectIds(node: TrieNode, results: Set<string>, maxResults: number): void {
@@ -103,4 +118,30 @@ export class TrieSearch {
 
     return dp[s1.length][s2.length];
   }
+   private serializeNode(node: TrieNode): SerializedTrieNode {
+    const children: { [key: string]: SerializedTrieNode } = {};
+    
+    node.children.forEach((childNode, char) => {
+      children[char] = this.serializeNode(childNode);
+    });
+
+    return {
+      isEndOfWord: node.isEndOfWord,
+      data: Array.from(node.data),
+      children
+    };
+  }
+
+  private deserializeNode(serialized: SerializedTrieNode): TrieNode {
+    const node = new TrieNode();
+    node.isEndOfWord = serialized.isEndOfWord;
+    node.data = new Set(serialized.data);
+
+    Object.entries(serialized.children).forEach(([char, childData]) => {
+      node.children.set(char, this.deserializeNode(childData));
+    });
+
+    return node;
+  }
+
 }

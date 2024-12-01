@@ -15,7 +15,7 @@ export class IndexMapper {
     fields.forEach(field => {
       const value = document[field];
       if (typeof value === 'string') {
-        const words = value.split(/\s+/);
+        const words = this.tokenizeText(value);
         words.forEach(word => {
           this.trieSearch.insert(word, id);
           this.dataMapper.mapData(word.toLowerCase(), id);
@@ -26,23 +26,68 @@ export class IndexMapper {
 
   search(query: string, options: { fuzzy?: boolean; maxResults?: number } = {}): SearchResult<string>[] {
     const { fuzzy = false, maxResults = 10 } = options;
+    const searchTerms = this.tokenizeText(query);
     
-    const documentIds = fuzzy
-      ? this.trieSearch.fuzzySearch(query)
-      : this.trieSearch.search(query, maxResults);
+    const documentScores = new Map<string, { score: number; matches: Set<string> }>();
 
-    const results: SearchResult<string>[] = Array.from(documentIds).map(id => ({
-      item: id as string,
-      score: this.calculateScore(id, query),
-      matches: [query]
-    }));
+    searchTerms.forEach(term => {
+      const documentIds = fuzzy
+        ? this.trieSearch.fuzzySearch(term)
+        : this.trieSearch.search(term, maxResults);
+
+      documentIds.forEach(id => {
+        const current = documentScores.get(id) || { score: 0, matches: new Set<string>() };
+        current.score += this.calculateScore(id, term);
+        current.matches.add(term);
+        documentScores.set(id, current);
+      });
+    });
+
+    const results = Array.from(documentScores.entries())
+      .map(([id, { score, matches }]) => ({
+        item: id,
+        score: score / searchTerms.length,
+        matches: Array.from(matches)
+      }))
+      .sort((a, b) => b.score - a.score);
 
     return results.slice(0, maxResults);
   }
 
-  private calculateScore(documentId: string, query: string): number {
-    // Basic scoring implementation - can be enhanced
-    const exactMatch = this.dataMapper.getDocuments(query.toLowerCase()).has(documentId);
-    return exactMatch ? 1.0 : 0.5;
+  exportState(): any {
+    return {
+      trie: this.trieSearch.exportState(),
+      dataMap: this.dataMapper.exportState()
+    };
+  }
+
+  importState(state: any): void {
+    if (!state || !state.trie || !state.dataMap) {
+      throw new Error('Invalid index state');
+    }
+
+    this.trieSearch = new TrieSearch();
+    this.trieSearch.importState(state.trie);
+
+    this.dataMapper = new DataMapper();
+    this.dataMapper.importState(state.dataMap);
+  }
+
+  private tokenizeText(text: string): string[] {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter(word => word.length > 0);
+  }
+
+  private calculateScore(documentId: string, term: string): number {
+    const baseScore = this.dataMapper.getDocuments(term.toLowerCase()).has(documentId) ? 1.0 : 0.5;
+    return baseScore
+  
+  }
+  clear(): void {
+    this.trieSearch = new TrieSearch();
+    this.dataMapper = new DataMapper();
   }
 }

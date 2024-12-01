@@ -148,6 +148,12 @@ class TrieSearch {
         this.collectIds(current, results, maxResults);
         return results;
     }
+    exportState() {
+        return this.serializeNode(this.root);
+    }
+    importState(state) {
+        this.root = this.deserializeNode(state);
+    }
     collectIds(node, results, maxResults) {
         if (node.isEndOfWord) {
             for (const id of node.data) {
@@ -195,6 +201,26 @@ class TrieSearch {
         }
         return dp[s1.length][s2.length];
     }
+    serializeNode(node) {
+        const children = {};
+        node.children.forEach((childNode, char) => {
+            children[char] = this.serializeNode(childNode);
+        });
+        return {
+            isEndOfWord: node.isEndOfWord,
+            data: Array.from(node.data),
+            children
+        };
+    }
+    deserializeNode(serialized) {
+        const node = new TrieNode();
+        node.isEndOfWord = serialized.isEndOfWord;
+        node.data = new Set(serialized.data);
+        Object.entries(serialized.children).forEach(([char, childData]) => {
+            node.children.set(char, this.deserializeNode(childData));
+        });
+        return node;
+    }
 }
 
 class IndexMapper {
@@ -206,7 +232,7 @@ class IndexMapper {
         fields.forEach(field => {
             const value = document[field];
             if (typeof value === 'string') {
-                const words = value.split(/\s+/);
+                const words = this.tokenizeText(value);
                 words.forEach(word => {
                     this.trieSearch.insert(word, id);
                     this.dataMapper.mapData(word.toLowerCase(), id);
@@ -216,20 +242,57 @@ class IndexMapper {
     }
     search(query, options = {}) {
         const { fuzzy = false, maxResults = 10 } = options;
-        const documentIds = fuzzy
-            ? this.trieSearch.fuzzySearch(query)
-            : this.trieSearch.search(query, maxResults);
-        const results = Array.from(documentIds).map(id => ({
+        const searchTerms = this.tokenizeText(query);
+        const documentScores = new Map();
+        searchTerms.forEach(term => {
+            const documentIds = fuzzy
+                ? this.trieSearch.fuzzySearch(term)
+                : this.trieSearch.search(term, maxResults);
+            documentIds.forEach(id => {
+                const current = documentScores.get(id) || { score: 0, matches: new Set() };
+                current.score += this.calculateScore(id, term);
+                current.matches.add(term);
+                documentScores.set(id, current);
+            });
+        });
+        const results = Array.from(documentScores.entries())
+            .map(([id, { score, matches }]) => ({
             item: id,
-            score: this.calculateScore(id, query),
-            matches: [query]
-        }));
+            score: score / searchTerms.length,
+            matches: Array.from(matches)
+        }))
+            .sort((a, b) => b.score - a.score);
         return results.slice(0, maxResults);
     }
-    calculateScore(documentId, query) {
-        // Basic scoring implementation - can be enhanced
-        const exactMatch = this.dataMapper.getDocuments(query.toLowerCase()).has(documentId);
-        return exactMatch ? 1.0 : 0.5;
+    exportState() {
+        return {
+            trie: this.trieSearch.exportState(),
+            dataMap: this.dataMapper.exportState()
+        };
+    }
+    importState(state) {
+        if (!state || !state.trie || !state.dataMap) {
+            throw new Error('Invalid index state');
+        }
+        this.trieSearch = new TrieSearch();
+        this.trieSearch.importState(state.trie);
+        this.dataMapper = new DataMapper();
+        this.dataMapper.importState(state.dataMap);
+    }
+    tokenizeText(text) {
+        return text
+            .toLowerCase()
+            .replace(/[^\w\s]/g, ' ')
+            .split(/\s+/)
+            .filter(word => word.length > 0);
+    }
+    calculateScore(documentId, term) {
+        const baseScore = this.dataMapper.getDocuments(term.toLowerCase()).has(documentId) ? 1.0 : 0.5;
+        return baseScore;
+    }
+    clear() {
+        this.trieSearch = new TrieSearch();
+        this.dataMapper = new DataMapper();
     }
 }
 
@@ -291,14 +354,32 @@ class IndexManager {
         }));
     }
     exportIndex() {
+        // Convert Map to a serializable format and include indexMapper state
         return {
-            documents: Array.from(this.documents.entries()),
-            config: this.config
+            documents: Array.from(this.documents.entries()).map(([key, value]) => ({
+                key,
+                value: JSON.parse(JSON.stringify(value)) // Handle potential proxy objects
+            })),
+            indexState: this.indexMapper.exportState(),
+            config: JSON.parse(JSON.stringify(this.config)) // Ensure config is serializable
         };
     }
     importIndex(data) {
-        this.documents = new Map(data.documents);
-        this.config = data.config;
+        if (!data || !data.documents || !data.indexState || !data.config) {
+            throw new Error('Invalid index data format');
+        }
+        try {
+            // Restore documents
+            this.documents = new Map(data.documents.map((item) => [item.key, item.value]));
+            // Restore config
+            this.config = data.config;
+            // Restore index mapper state
+            this.indexMapper = new IndexMapper();
+            this.indexMapper.importState(data.indexState);
+        }
+        catch (error) {
+            throw new Error(`Failed to import index: ${error}`);
+        }
     }
     clear() {
         this.documents.clear();

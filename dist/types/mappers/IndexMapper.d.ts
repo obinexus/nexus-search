@@ -8,5 +8,9 @@ export declare class IndexMapper {
         fuzzy?: boolean;
         maxResults?: number;
     }): SearchResult<string>[];
+    exportState(): any;
+    importState(state: any): void;
+    private tokenizeText;
     private calculateScore;
+    clear(): void;
 }

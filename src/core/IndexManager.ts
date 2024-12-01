@@ -37,15 +37,37 @@ export class IndexManager {
     }
   
     exportIndex(): any {
+      // Convert Map to a serializable format and include indexMapper state
       return {
-        documents: Array.from(this.documents.entries()),
-        config: this.config
+        documents: Array.from(this.documents.entries()).map(([key, value]) => ({
+          key,
+          value: JSON.parse(JSON.stringify(value)) // Handle potential proxy objects
+        })),
+        indexState: this.indexMapper.exportState(),
+        config: JSON.parse(JSON.stringify(this.config)) // Ensure config is serializable
       };
     }
   
     importIndex(data: any): void {
-      this.documents = new Map(data.documents);
-      this.config = data.config;
+      if (!data || !data.documents || !data.indexState || !data.config) {
+        throw new Error('Invalid index data format');
+      }
+
+      try {
+        // Restore documents
+        this.documents = new Map(
+          data.documents.map((item: any) => [item.key, item.value])
+        );
+
+        // Restore config
+        this.config = data.config;
+
+        // Restore index mapper state
+        this.indexMapper = new IndexMapper();
+        this.indexMapper.importState(data.indexState);
+      } catch (error) {
+        throw new Error(`Failed to import index: ${error}`);
+      }
     }
   
     clear(): void {
@@ -56,5 +78,4 @@ export class IndexManager {
     private generateDocumentId(index: number): string {
       return `${this.config.name}-${index}-${Date.now()}`;
     }
-  }
-  
+}
