@@ -1,23 +1,25 @@
-// jest.config.js
-module.exports = {
-  preset: 'ts-jest',
+export default {
+  preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'jsdom',
   roots: ['<rootDir>/src'],
-  transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
-      tsconfig: 'tsconfig.json',
-      diagnostics: {
-        warnOnly: true // Convert typescript errors to warnings
-      }
-    }]
-  },
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@core/(.*)$': '<rootDir>/src/core/$1',
     '^@algorithms/(.*)$': '<rootDir>/src/algorithms/$1',
     '^@storage/(.*)$': '<rootDir>/src/storage/$1',
     '^@utils/(.*)$': '<rootDir>/src/utils/$1',
     '^@types$': '<rootDir>/src/types'
+  },
+  transform: {
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        useESM: true,
+        tsconfig: 'tsconfig.json'
+      }
+    ]
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   testMatch: [
@@ -38,7 +40,10 @@ module.exports = {
   },
   globals: {
     'ts-jest': {
-      isolatedModules: true
+      useESM: true,
+      tsconfig: {
+        moduleResolution: "node"
+      }
     }
   },
   testTimeout: 10000,

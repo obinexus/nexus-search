@@ -1,12 +1,13 @@
 import '@testing-library/jest-dom';
+import { TextEncoder, TextDecoder } from 'util';
+import type { Event } from '@types/node';
 
 // Handle Node.js TextEncoder/TextDecoder
 if (typeof globalThis.TextEncoder === 'undefined') {
-  const { TextEncoder, TextDecoder } = require('util');
   globalThis.TextEncoder = TextEncoder;
   globalThis.TextDecoder = TextDecoder;
-  global.TextEncoder = TextEncoder;
-  global.TextDecoder = TextDecoder;
+  (global as any).TextEncoder = TextEncoder;
+  (global as any).TextDecoder = TextDecoder;
 }
 
 // Performance monitoring
@@ -61,15 +62,12 @@ const indexedDBMock = {
       onupgradeneeded: null
     };
 
-    // Simulate async operations
     setTimeout(() => {
       if (request.onupgradeneeded) {
-        const event = new Event('upgradeneeded');
-        request.onupgradeneeded(event);
+        request.onupgradeneeded(new Event('upgradeneeded') as any);
       }
       if (request.onsuccess) {
-        const event = new Event('success');
-        request.onsuccess(event);
+        request.onsuccess(new Event('success') as any);
       }
     }, 0);
 
@@ -86,8 +84,7 @@ const indexedDBMock = {
 
     setTimeout(() => {
       if (request.onsuccess) {
-        const event = new Event('success');
-        request.onsuccess(event);
+        request.onsuccess(new Event('success') as any);
       }
     }, 0);
 
@@ -137,7 +134,7 @@ expect.extend({
 });
 
 // Global test utilities
-global.sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+(global as any).sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Types
 declare global {
