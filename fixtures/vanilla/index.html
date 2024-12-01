@@ -133,7 +133,7 @@
     </div>
 
     <script>
-        class NexusSearchBar {
+class NexusSearchBar {
             constructor(container) {
                 this.container = container;
                 this.searchEngine = null;
@@ -185,7 +185,7 @@
                     this.showError('Failed to initialize search engine');
                     console.error('Initialization error:', error);
                 }
-            }
+            }         
 
             setupEventListeners() {
                 this.input.addEventListener('input', this.handleInput.bind(this));
@@ -307,15 +307,38 @@
             };
 
             check();
+        }// Single initialization point with safety check
+          // Single initialization function
+          function initializeApp() {
+            let attempts = 0;
+            const maxAttempts = 10;
+            const errorContainer = document.querySelector('.error-message');
+
+            function tryInitialize() {
+                if (typeof NexusSearch !== 'undefined') {
+                    const container = document.querySelector('.search-container');
+                    new NexusSearchBar(container);
+                } else if (attempts < maxAttempts) {
+                    attempts++;
+                    console.log(`Waiting for NexusSearch to load... (attempt ${attempts}/${maxAttempts})`);
+                    setTimeout(tryInitialize, 100);
+                } else {
+                    errorContainer.textContent = 'Failed to load search library. Please refresh the page.';
+                    errorContainer.style.display = 'block';
+                    console.error('Failed to load NexusSearch library after multiple attempts');
+                }
+            }
+
+            // Handle both DOM and library loading
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', tryInitialize);
+            } else {
+                tryInitialize();
+            }
         }
 
-        // Rest of the code wrapped in the safety check
-        waitForNexusSearch(() => {
-           
-            // Initialize the search bar
-            const container = document.querySelector('.search-container');
-            new NexusSearchBar(container);
-        });
+        // Start initialization
+        initializeApp();
     </script>
 </body>
 </html>
