@@ -44,11 +44,12 @@ const basePlugins = [
   }),
   typescript({
     tsconfig: './tsconfig.json',
-    verbosity: 3,
+    verbosity: 0, // Reduce logs to minimal output
     declaration: true,
     declarationDir: './dist/types',
     exclude: ['**/__tests__/**', '**/*.test.ts', 'src/**/*.spec.ts']
   })
+  
 ];
 
 export default [
