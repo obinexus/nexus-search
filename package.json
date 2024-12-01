@@ -91,6 +91,7 @@
   "author": "Nnamdi Michael Okpala",
   "license": "ISC",
   "dependencies": {
+    "alias": "^0.0.5",
     "idb": "^8.0.0"
   }
 }

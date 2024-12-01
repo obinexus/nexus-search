@@ -1,4 +1,4 @@
-import typescript from 'rollup/plugin-typescript2';
+import typescript from 'rollup-plugin-typescript2';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
@@ -42,10 +42,9 @@ const basePlugins = [
   commonjs({
     include: 'node_modules/**'
   }),
- typescript({
-  tsconfig: './tsconfig.json',
-  verbosity: 3,
-
+  typescript({
+    tsconfig: './tsconfig.json',
+    verbosity: 3,
     declaration: true,
     declarationDir: './dist/types',
     exclude: ['**/__tests__/**', '**/*.test.ts', 'src/**/*.spec.ts']
@@ -79,21 +78,15 @@ export default [
         banner,
         sourcemap: true,
         globals: {
-          'idb': 'idb'
+          idb: 'idb'
         }
       }
     ],
     plugins: [
       ...basePlugins,
-      resolve({
-        browser: true,
-        preferBuiltins: false,
-        extensions: ['.ts', '.js'],
-        mainFields: ['browser', 'module', 'main']
-      }),
       terser({
         output: {
-          comments: function(node, comment) {
+          comments: function (node, comment) {
             return comment.type === 'comment2' && /@license/i.test(comment.value);
           }
         }
@@ -120,33 +113,6 @@ export default [
   {
     input: 'dist/types/index.d.ts',
     output: [{ file: 'dist/index.d.ts', format: 'esm' }],
-    plugins: [
-      alias({
-        entries: [
-          { find: '@', replacement: './src' },
-          { find: '@core', replacement: './src/core' },
-          { find: '@algorithms', replacement: './src/algorithms' },
-          { find: '@storage', replacement: './src/storage' },
-          { find: '@utils', replacement: './src/utils' },
-          { find: '@types', replacement: './src/types' },
-        ],
-      }),
-      typescript({
-        tsconfig: './tsconfig.json',
-      }),
-      dts({
-        compilerOptions: {
-          baseUrl: 'src',
-          paths: {
-            "@/*": ["*"],
-            "@core/*": ["core/*"],
-            "@algorithms/*": ["algorithms/*"],
-            "@storage/*": ["storage/*"],
-            "@utils/*": ["utils/*"],
-            "@types": ["types"]
-          }
-        }
-      })
-    ]
+    plugins: [dts()]
   }
 ];
