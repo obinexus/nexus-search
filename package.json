@@ -1,6 +1,6 @@
 {
   "name": "@obinexuscomputing/nexus-search",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "High-performance search indexing and query system",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "build": "rollup -c",
-     "demo": "node fixtures/server.js",
+    "demo": "node fixtures/server.js",
     "dev": "rollup -c -w",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "jest --config jest.config.js --watch",
@@ -45,5 +45,11 @@
     "rollup-plugin-dts": "^6.1.1",
     "ts-jest": "^29.2.5",
     "typescript": "^5.0.3"
-  }
+  },
+  "directories": {
+    "doc": "docs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
