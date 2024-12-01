@@ -1,5 +1,5 @@
 /**
- * @obinexuscomputing/nexus-search v0.2.35
+ * @obinexuscomputing/nexus-search v0.2.36
  * High-performance search indexing and query system
  * @license MIT
  */

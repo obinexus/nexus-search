@@ -3,9 +3,9 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
 import dts from 'rollup-plugin-dts';
-import { readFileSync } from 'fs';
 import alias from '@rollup/plugin-alias';
 import path from 'path';
+import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -18,7 +18,8 @@ const banner = `/**
  */`;
 
 const external = [
-  ...Object.keys(pkg.peerDependencies || {})
+  ...Object.keys(pkg.peerDependencies || {}),
+  ...Object.keys(pkg.dependencies || {})
 ];
 
 const aliasEntries = {
@@ -39,21 +40,17 @@ const basePlugins = [
     preferBuiltins: false,
     extensions: ['.ts', '.js']
   }),
-  commonjs({
-    include: 'node_modules/**'
-  }),
+  commonjs(),
   typescript({
     tsconfig: './tsconfig.json',
-    verbosity: 0, // Reduce logs to minimal output
+    verbosity: 0,
     declaration: true,
     declarationDir: './dist/types',
     exclude: ['**/__tests__/**', '**/*.test.ts', 'src/**/*.spec.ts']
   })
-  
 ];
 
 export default [
-  // ESM build
   {
     input: 'src/index.ts',
     output: [
@@ -67,8 +64,6 @@ export default [
     external,
     plugins: basePlugins
   },
-
-  // UMD build (with bundled dependencies)
   {
     input: 'src/index.ts',
     output: [
@@ -78,24 +73,19 @@ export default [
         name: 'NexusSearch',
         banner,
         sourcemap: true,
-        globals: {
-          idb: 'idb'
-        }
+        globals: { idb: 'idb' }
       }
     ],
     plugins: [
       ...basePlugins,
       terser({
         output: {
-          comments: function (node, comment) {
-            return comment.type === 'comment2' && /@license/i.test(comment.value);
-          }
+          comments: (node, comment) =>
+            comment.type === 'comment2' && /@license/i.test(comment.value)
         }
       })
     ]
   },
-
-  // CommonJS build
   {
     input: 'src/index.ts',
     output: [
@@ -109,8 +99,6 @@ export default [
     external,
     plugins: basePlugins
   },
-
-  // Type definitions
   {
     input: 'dist/types/index.d.ts',
     output: [{ file: 'dist/index.d.ts', format: 'esm' }],

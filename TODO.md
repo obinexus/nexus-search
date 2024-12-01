@@ -12,6 +12,7 @@
 ## Bugs
 - [ ] Fix issue with fuzzy search on large datasets
 - [ ] Resolve conflicts with specific browsers in IndexedDB handling
+- [ ] Fix Rollup Config to correcly reference dependencies internally  dev 
 
 ## Improvements
 - [ ] Improve error handling and messaging

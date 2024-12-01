@@ -11,16 +11,17 @@
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "baseUrl": "src",
     "types": ["node"],
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["*"],
-      "@core/*": ["core/*"],
-      "@algorithms/*": ["algorithms/*"],
-      "@storage/*": ["storage/*"],
-      "@utils/*": ["utils/*"],
-      "@types": ["types"]
+      "@/*": ["src/*"],
+      "@core/*": ["src/core/*"],
+      "@algorithms/*": ["src/algorithms/*"],
+      "@storage/*": ["src/storage/*"],
+      "@utils/*": ["src/utils/*"],
+      "@types/*": ["src/types/*"]
     }
+
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]

@@ -1,4 +1,4 @@
-import { SearchOptions, IndexConfig } from '@types';
+import { SearchOptions, IndexConfig } from '../types/index';
 import { getNestedValue } from './SearchUtils';
 
 export function validateSearchOptions(options: SearchOptions): void {
