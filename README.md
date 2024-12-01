@@ -16,7 +16,7 @@ A high-performance search indexing and query system with support for fuzzy match
 ## Installation
 
 ```bash
-npm install @obinexuscomputing/nexus-search # npm i .  npm run build #locally 
+npm install @obinexuscomputing/nexus-search # npm i .  npm run build (locally)
 # or
 yarn add @obinexuscomputing/nexus-search
 ```
