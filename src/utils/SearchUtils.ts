@@ -1,4 +1,3 @@
-import { SearchOptions } from '../types';
 
 
 export function createSearchableFields<T>(
