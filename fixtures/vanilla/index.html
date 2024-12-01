@@ -282,34 +282,7 @@ class NexusSearchBar {
                 this.resultsContainer.style.display = 'none';
             }
         }
-
-        // Initialize the search bar
-        document.addEventListener('DOMContentLoaded', () => {
-            const container = document.querySelector('.search-container');
-            new NexusSearchBar(container);
-        });
-    </script>
-     <script defer>
-        // Add safety check for library loading
-        function waitForNexusSearch(callback, maxAttempts = 10) {
-            let attempts = 0;
-            
-            const check = () => {
-                attempts++;
-                if (typeof NexusSearch !== 'undefined') {
-                    callback();
-                } else if (attempts < maxAttempts) {
-                    console.log('Waiting for NexusSearch to load...');
-                    setTimeout(check, 100);
-                } else {
-                    console.error('Failed to load NexusSearch library');
-                }
-            };
-
-            check();
-        }// Single initialization point with safety check
-          // Single initialization function
-          function initializeApp() {
+        function initializeApp() {
             let attempts = 0;
             const maxAttempts = 10;
             const errorContainer = document.querySelector('.error-message');
@@ -339,6 +312,8 @@ class NexusSearchBar {
 
         // Start initialization
         initializeApp();
+   
     </script>
+    
 </body>
 </html>
