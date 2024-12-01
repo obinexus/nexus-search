@@ -1,6 +1,6 @@
 {
   "name": "@obinexuscomputing/nexus-search",
-  "version": "0.2.31",
+  "version": "0.2.32",
   "description": "High-performance search indexing and query system",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
