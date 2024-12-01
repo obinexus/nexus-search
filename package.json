@@ -1,5 +1,5 @@
 {
-  "name": "@obinexus/nexus-search",
+  "name": "@obinexuscomputing/nexus-search",
   "version": "1.0.0",
   "description": "High-performance search indexing and query system",
   "main": "dist/index.js",
