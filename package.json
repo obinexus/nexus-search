@@ -15,10 +15,11 @@
     "tsconfig.json",
     "jest.setup.ts",
     "eslintrc.config.js",
-    ".eslintrc",
+    ".eslintrc.mjs",
     "fixtures/",
     "docs/",
-    "./prettierc"
+    "./prettierc",
+    "TODO.md"
 
   ],
   "scripts": {
