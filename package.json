@@ -20,7 +20,6 @@
     "docs/",
     "./prettierc",
     "TODO.md"
-
   ],
   "scripts": {
     "build": "rollup -c",
