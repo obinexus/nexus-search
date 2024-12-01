@@ -88,5 +88,8 @@
     "nexus-search"
   ],
   "author": "Nnamdi Michael Okpala",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "idb": "^8.0.0"
+  }
 }
