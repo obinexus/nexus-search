@@ -7,8 +7,19 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "files": [
-    "dist",
-    "src"
+    "dist/",
+    "src/",
+    "README.md",
+    "rollup.config.js",
+    "TODO.md",
+    "tsconfig.json",
+    "jest.setup.ts",
+    "eslintrc.config.js",
+    ".eslintrc",
+    "fixtures/",
+    "docs/",
+    "./prettierc"
+
   ],
   "scripts": {
     "build": "rollup -c",
