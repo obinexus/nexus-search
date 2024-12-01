@@ -21,7 +21,6 @@
     "TODO.md",
     "tsconfig.json",
     "jest.setup.ts",
-    "eslintrc.config.js",
     ".eslintrc.mjs",
     "fixtures/",
     "docs/",
@@ -90,6 +89,7 @@
   "author": "Nnamdi Michael Okpala",
   "license": "ISC",
   "dependencies": {
-    "idb": "^8.0.0"
+    "idb": "^8.0.0",
+    "rollup-plugin-typescript2": "^0.36.0"
   }
 }
