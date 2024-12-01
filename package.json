@@ -55,7 +55,20 @@
   "directories": {
     "doc": "docs"
   },
-  "keywords": [],
+  "keywords": [
+    "search",
+    "indexing",
+    "query",
+    "fuzzy matching",
+    "real-time updates",
+    "typescript",
+    "indexeddb",
+    "high-performance",
+    "nested fields",
+    "caching",
+    "nexus-search"
+
+  ],
   "author": "",
   "license": "ISC"
 }
