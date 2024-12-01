@@ -11,9 +11,9 @@
 ## Installation
 
 ```bash
-npm install @obinexus/nexus-search
+npm install @obinexuscomputing/nexus-search
 # or
-yarn add @obinexus/nexus-search
+yarn add @obinexuscomputing/nexus-search
 ```
 
 ## Quick Start

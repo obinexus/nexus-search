@@ -1,0 +1,1017 @@
+export * from './types';
+export { SearchEngine } from './core/SearchEngine';
+export { IndexManager } from './core/IndexManager';
+export { QueryProcessor } from './core/QueryProcessor';
+
+// Re-export utility functions
+export {
+  createSearchableFields,
+  optimizeIndex
+} from './utils/SearchUtils';
+
+export {
+  validateSearchOptions,
+  validateIndexConfig,
+  validateDocument
+} from './utils/ValidationUtils';<template>
+  <div class="nexus-search-bar">
+    <input
+      type="text"
+      v-model="query"
+      @input="handleInputChange"
+      placeholder="Search..."
+      class="search-input"
+    />
+    <div v-if="isLoading" class="loading-spinner"></div>
+    <div v-if="results.length > 0" class="search-results">
+      <div v-for="(result, index) in results" :key="index" class="search-result">
+        <h3>{{ result.item.title }}</h3>
+        <p>{{ result.item.content }}</p>
+        <div class="tags">
+          <span v-for="(tag, tagIndex) in result.item.tags" :key="tagIndex" class="tag">
+            {{ tag }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { ref, onMounted } from 'vue';
+import { SearchEngine } from '@obinexuscomputing/nexus-search';
+
+export default {
+  name: 'NexusSearchBar',
+  setup() {
+    const query = ref('');
+    const results = ref([]);
+    const isLoading = ref(false);
+    const searchEngine = ref(null);
+    let searchTimeout = null;
+
+    onMounted(async () => {
+      searchEngine.value = new SearchEngine({
+        name: 'nexus-search-bar',
+        version: 1,
+        fields: ['title', 'content', 'tags'],
+      });
+      await searchEngine.value.initialize();
+
+      // Add sample data for testing
+      await searchEngine.value.addDocuments([
+        {
+          title: 'Getting Started',
+          content: 'Quick start guide for NexusSearch',
+          tags: ['guide', 'documentation'],
+        },
+        {
+          title: 'Advanced Features',
+          content: 'Explore advanced search capabilities',
+          tags: ['advanced', 'features'],
+        },
+      ]);
+    });
+
+    const handleSearch = async (searchQuery) => {
+      if (!searchEngine.value) return;
+
+      isLoading.value = true;
+      try {
+        const searchResults = await searchEngine.value.search(searchQuery, {
+          fuzzy: true,
+          maxResults: 5,
+        });
+        results.value = searchResults;
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    const handleInputChange = () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+
+      searchTimeout = setTimeout(() => {
+        if (query.value.trim()) {
+          handleSearch(query.value);
+        } else {
+          results.value = [];
+        }
+      }, 300);
+    };
+
+    return {
+      query,
+      results,
+      isLoading,
+      handleInputChange,
+    };
+  },
+};
+</script>
+
+<style scoped>
+.nexus-search-bar {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #ccc;
+  border-top: 3px solid #333;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+.search-results {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 1rem;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.search-result {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.search-result:last-child {
+  border-bottom: none;
+}
+
+.search-result h3 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.search-result p {
+  margin: 0.5rem 0;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag {
+  background-color: #007bff;
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+</style>
+import React, { useState, useEffect, useRef } from 'react';
+import { SearchEngine, SearchResult } from '../../../types';
+
+const NexusSearchBar = () => {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<SearchResult<any>[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const searchEngineRef = useRef<SearchEngine | null>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    const initializeSearch = async () => {
+      searchEngineRef.current = new SearchEngine({
+        name: 'nexus-search-bar',
+        version: 1,
+        fields: ['title', 'content', 'tags']
+      });
+      await searchEngineRef.current.initialize();
+      
+      // Add sample data for testing
+      await searchEngineRef.current.addDocuments([
+        {
+          title: 'Getting Started',
+          content: 'Quick start guide for NexusSearch',
+          tags: ['guide', 'documentation']
+        },
+        {
+          title: 'Advanced Features',
+          content: 'Explore advanced search capabilities',
+          tags: ['advanced', 'features']
+        }
+      ]);
+    };
+
+    initializeSearch();
+  }, []);
+
+  const handleSearch = async (searchQuery: string) => {
+    if (!searchEngineRef.current) return;
+    
+    setIsLoading(true);
+    try {
+      const searchResults = await searchEngineRef.current.search(searchQuery, {
+        fuzzy: true,
+        maxResults: 5
+      });
+      setResults(searchResults);
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newQuery = event.target.value;
+    setQuery(newQuery);
+
+    // Debounce search
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      if (newQuery.trim()) {
+        handleSearch(newQuery);
+      } else {
+        setResults([]);
+      }
+    }, 300);
+  };
+
+  return (
+    <div className="w-full max-w-2xl mx-auto p-4">
+      <div className="relative">
+        <input
+          type="text"
+          value={query}
+          onChange={handleInputChange}
+          placeholder="Search..."
+          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          data-testid="nexus-search-input"
+        />
+        {isLoading && (
+          <div className="absolute right-3 top-2.5">
+            <div className="animate-spin h-5 w-5 border-2 border-blue-500 rounded-full border-t-transparent"></div>
+          </div>
+        )}
+      </div>
+
+      {results.length > 0 && (
+        <div className="mt-4 border rounded-lg shadow-lg" data-testid="search-results">
+          {results.map((result, index) => (
+            <div
+              key={index}
+              className="p-4 border-b last:border-b-0 hover:bg-gray-50"
+              data-testid={`search-result-${index}`}
+            >
+              <h3 className="font-semibold text-lg">{result.item.title}</h3>
+              <p className="text-gray-600 mt-1">{result.item.content}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {result.item.tags.map((tag: string, tagIndex: number) => (
+                  <span
+                    key={tagIndex}
+                    className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default NexusSearchBar;# @obinexus/nexus-search Documentation
+
+## Table of Contents
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [API Reference](#api-reference)
+- [Examples](#examples)
+- [Configuration](#configuration)
+- [Best Practices](#best-practices)
+
+## Installation
+
+```bash
+npm install @obinexus/nexus-search
+# or
+yarn add @obinexus/nexus-search
+```
+
+## Quick Start
+
+```typescript
+import { SearchEngine } from '@obinexus/nexus-search';
+
+// Initialize search engine
+const searchEngine = new SearchEngine({
+  name: 'my-search-index',
+  version: 1,
+  fields: ['title', 'content', 'tags']
+});
+
+// Add documents
+await searchEngine.addDocuments([
+  {
+    title: 'Getting Started',
+    content: 'Quick start guide for NexusSearch',
+    tags: ['documentation', 'guide']
+  }
+]);
+
+// Perform search
+const results = await searchEngine.search('quick start');
+```
+
+## API Reference
+
+### SearchEngine
+
+The main class for managing search operations.
+
+#### Constructor
+```typescript
+constructor(config: IndexConfig)
+```
+
+Parameters:
+- `config`: IndexConfig object with the following properties:
+  - `name`: string - Unique identifier for the index
+  - `version`: number - Index version for migration support
+  - `fields`: string[] - Document fields to index
+  - `options?`: IndexOptions - Optional configuration settings
+
+#### Methods
+
+##### `initialize()`
+```typescript
+async initialize(): Promise<void>
+```
+Initializes the search engine and underlying storage.
+
+##### `addDocuments()`
+```typescript
+async addDocuments<T>(documents: T[]): Promise<void>
+```
+Adds documents to the search index.
+
+##### `search()`
+```typescript
+async search<T>(
+  query: string, 
+  options?: SearchOptions
+): Promise<SearchResult<T>[]>
+```
+Performs a search operation.
+
+Parameters:
+- `query`: Search query string
+- `options`: Optional search configuration
+  - `fuzzy`: boolean - Enable fuzzy matching
+  - `maxResults`: number - Maximum results to return
+  - `threshold`: number - Minimum relevance score
+  - `fields`: string[] - Fields to search in
+
+Returns:
+- Array of SearchResult objects containing matches
+
+##### `clearIndex()`
+```typescript
+async clearIndex(): Promise<void>
+```
+Clears all indexed data.
+
+### Types
+
+#### SearchOptions
+```typescript
+interface SearchOptions {
+  fuzzy?: boolean;
+  maxResults?: number;
+  threshold?: number;
+  fields?: string[];
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  pageSize?: number;
+}
+```
+
+#### SearchResult
+```typescript
+interface SearchResult<T> {
+  item: T;
+  score: number;
+  matches: string[];
+  highlights?: Record<string, string[]>;
+}
+```
+
+#### IndexConfig
+```typescript
+interface IndexConfig {
+  name: string;
+  version: number;
+  fields: string[];
+  options?: IndexOptions;
+}
+```
+
+## Examples
+
+### Basic Search Implementation
+```typescript
+import { SearchEngine, SearchOptions } from '@obinexus/nexus-search';
+
+// Initialize engine
+const searchEngine = new SearchEngine({
+  name: 'products',
+  version: 1,
+  fields: ['name', 'description', 'categories']
+});
+
+// Add documents
+await searchEngine.addDocuments([
+  {
+    name: 'Smartphone X',
+    description: 'Latest smartphone with advanced features',
+    categories: ['electronics', 'phones']
+  },
+  {
+    name: 'Laptop Pro',
+    description: 'Professional laptop for developers',
+    categories: ['electronics', 'computers']
+  }
+]);
+
+// Search with options
+const searchOptions: SearchOptions = {
+  fuzzy: true,
+  maxResults: 10,
+  threshold: 0.5
+};
+
+const results = await searchEngine.search('smartphone', searchOptions);
+```
+
+### Advanced Usage with Custom Configuration
+```typescript
+const config: IndexConfig = {
+  name: 'advanced-search',
+  version: 1,
+  fields: ['title', 'content', 'metadata.tags'],
+  options: {
+    caseSensitive: false,
+    stemming: true,
+    stopWords: ['the', 'and', 'or'],
+    minWordLength: 2,
+    maxWordLength: 50,
+    fuzzyThreshold: 0.8
+  }
+};
+
+const searchEngine = new SearchEngine(config);
+
+// Add nested documents
+await searchEngine.addDocuments([
+  {
+    title: 'Advanced Search Techniques',
+    content: 'Learn about advanced search algorithms',
+    metadata: {
+      tags: ['search', 'algorithms', 'advanced'],
+      author: 'John Doe'
+    }
+  }
+]);
+
+// Search with field-specific options
+const results = await searchEngine.search('advanced algorithms', {
+  fields: ['title', 'metadata.tags'],
+  fuzzy: true,
+  maxResults: 5
+});
+```
+
+## Configuration
+
+### Index Configuration
+Configure the search index based on your needs:
+
+```typescript
+const config: IndexConfig = {
+  name: 'custom-index',
+  version: 1,
+  fields: ['field1', 'field2'],
+  options: {
+    // Index-level options
+    caseSensitive: false,
+    stemming: true,
+    stopWords: ['custom', 'stop', 'words'],
+    
+    // Performance options
+    minWordLength: 2,
+    maxWordLength: 50,
+    fuzzyThreshold: 0.8
+  }
+};
+```
+
+### Search Options
+Customize search behavior:
+
+```typescript
+const searchOptions: SearchOptions = {
+  // Search options
+  fuzzy: true,
+  maxResults: 20,
+  threshold: 0.6,
+  
+  // Field options
+  fields: ['specific', 'fields'],
+  
+  // Sorting options
+  sortBy: 'score',
+  sortOrder: 'desc',
+  
+  // Pagination
+  page: 1,
+  pageSize: 10
+};
+```
+
+## Best Practices
+
+1. **Index Configuration**
+   - Choose appropriate fields for indexing
+   - Use meaningful index names
+   - Configure options based on data characteristics
+
+2. **Performance Optimization**
+   - Index only necessary fields
+   - Use appropriate fuzzy thresholds
+   - Implement pagination for large result sets
+
+3. **Search Implementation**
+   - Use fuzzy search for better matches
+   - Implement proper error handling
+   - Cache frequent searches
+
+4. **Storage Management**
+   - Regularly clear unused indices
+   - Monitor storage usage
+   - Implement data cleanup strategies# @obinexus/nexus-search usage
+
+## Common Use Cases
+
+### 1. Document Search System
+
+```typescript
+import { SearchEngine, SearchOptions } from '@obinexus/nexus-search';
+
+interface Document {
+  title: string;
+  content: string;
+  author: string;
+  tags: string[];
+  createdAt: Date;
+}
+
+async function setupDocumentSearch() {
+  // Initialize search engine
+  const searchEngine = new SearchEngine({
+    name: 'documents',
+    version: 1,
+    fields: ['title', 'content', 'author', 'tags']
+  });
+
+  // Add sample documents
+  const documents: Document[] = [
+    {
+      title: 'Getting Started with TypeScript',
+      content: 'TypeScript is a typed superset of JavaScript...',
+      author: 'John Doe',
+      tags: ['typescript', 'javascript', 'programming'],
+      createdAt: new Date()
+    },
+    {
+      title: 'Advanced TypeScript Patterns',
+      content: 'Explore advanced TypeScript design patterns...',
+      author: 'Jane Smith',
+      tags: ['typescript', 'patterns', 'advanced'],
+      createdAt: new Date()
+    }
+  ];
+
+  await searchEngine.addDocuments(documents);
+
+  // Perform searches
+  const basicResults = await searchEngine.search('typescript');
+  
+  const advancedResults = await searchEngine.search('typescript patterns', {
+    fuzzy: true,
+    maxResults: 5,
+    threshold: 0.7,
+    fields: ['title', 'tags']
+  });
+
+  return { basicResults, advancedResults };
+}
+```
+
+### 2. E-commerce Product Search
+
+```typescript
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  price: number;
+  tags: string[];
+}
+
+class ProductSearch {
+  private searchEngine: SearchEngine;
+
+  constructor() {
+    this.searchEngine = new SearchEngine({
+      name: 'products',
+      version: 1,
+      fields: ['name', 'description', 'category', 'tags'],
+      options: {
+        stemming: true,
+        stopWords: ['the', 'and', 'with'],
+        fuzzyThreshold: 0.8
+      }
+    });
+  }
+
+  async initialize(products: Product[]) {
+    await this.searchEngine.initialize();
+    await this.searchEngine.addDocuments(products);
+  }
+
+  async searchProducts(query: string, options?: SearchOptions) {
+    return this.searchEngine.search<Product>(query, {
+      fuzzy: true,
+      maxResults: 20,
+      ...options
+    });
+  }
+
+  async searchByCategory(category: string) {
+    return this.searchEngine.search<Product>(category, {
+      fields: ['category'],
+      threshold: 1.0 // Exact match
+    });
+  }
+}
+
+// Usage
+const productSearch = new ProductSearch();
+await productSearch.initialize([
+  {
+    id: '1',
+    name: 'Wireless Headphones',
+    description: 'High-quality wireless headphones with noise cancellation',
+    category: 'Electronics',
+    price: 199.99,
+    tags: ['audio', 'wireless', 'headphones']
+  }
+]);
+
+const results = await productSearch.searchProducts('wireless headphone');
+```
+
+### 3. Real-time Search with Caching
+
+```typescript
+class RealTimeSearch {
+  private searchEngine: SearchEngine;
+  private updateQueue: any[] = [];
+  private isProcessing = false;
+
+  constructor() {
+    this.searchEngine = new SearchEngine({
+      name: 'realtime-search',
+      version: 1,
+      fields: ['title', 'content'],
+      options: {
+        caseSensitive: false
+      }
+    });
+  }
+
+  async initialize() {
+    await this.searchEngine.initialize();
+    this.startProcessingQueue();
+  }
+
+  async addDocument(document: any) {
+    this.updateQueue.push(document);
+  }
+
+  private async startProcessingQueue() {
+    if (this.isProcessing) return;
+    this.isProcessing = true;
+
+    while (this.updateQueue.length > 0) {
+      const batch = this.updateQueue.splice(0, 100);
+      await this.searchEngine.addDocuments(batch);
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    this.isProcessing = false;
+  }
+
+  async search(query: string) {
+    return this.searchEngine.search(query, {
+      maxResults: 10,
+      fuzzy: true
+    });
+  }
+}
+```
+
+### 4. Advanced Search Features
+
+```typescript
+class AdvancedSearch {
+  private searchEngine: SearchEngine;
+
+  constructor() {
+    this.searchEngine = new SearchEngine({
+      name: 'advanced-search',
+      version: 1,
+      fields: ['title', 'content', 'metadata.tags', 'metadata.author'],
+      options: {
+        stemming: true,
+        stopWords: ['the', 'and', 'or'],
+        fuzzyThreshold: 0.8
+      }
+    });
+  }
+
+  async searchWithHighlighting(query: string) {
+    const results = await this.searchEngine.search(query, {
+      highlight: true,
+      highlightTag: 'mark',
+      maxResults: 10
+    });
+
+    return results.map(result => ({
+      ...result,
+      highlightedContent: this.formatHighlights(result.highlights)
+    }));
+  }
+
+  private formatHighlights(highlights: Record<string, string[]>) {
+    return Object.entries(highlights).reduce((acc, [field, matches]) => {
+      acc[field] = matches.join('... ');
+      return acc;
+    }, {} as Record<string, string>);
+  }
+
+  async fuzzySearch(query: string) {
+    return this.searchEngine.search(query, {
+      fuzzy: true,
+      maxResults: 10,
+      threshold: 0.6
+    });
+  }
+
+  async facetedSearch(query: string, facets: string[]) {
+    return this.searchEngine.search(query, {
+      facets,
+      maxResults: 20
+    });
+  }
+}
+
+
+// jest.config.js
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'jsdom',
+  roots: ['<rootDir>/src'],
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', {
+      tsconfig: 'tsconfig.json',
+      diagnostics: {
+        warnOnly: true // Convert typescript errors to warnings
+      }
+    }]
+  },
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@core/(.*)$': '<rootDir>/src/core/$1',
+    '^@algorithms/(.*)$': '<rootDir>/src/algorithms/$1',
+    '^@storage/(.*)$': '<rootDir>/src/storage/$1',
+    '^@utils/(.*)$': '<rootDir>/src/utils/$1',
+    '^@types$': '<rootDir>/src/types'
+  },
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  testMatch: [
+    '<rootDir>/src/**/__tests__/**/*.{ts,tsx}',
+    '<rootDir>/src/**/*.{spec,test}.{ts,tsx}'
+  ],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  collectCoverage: true,
+  coverageDirectory: 'coverage',
+  coverageReporters: ['json', 'lcov', 'text', 'clover'],
+  coverageThreshold: {
+    global: {
+      statements: 80,
+      branches: 80,
+      functions: 80,
+      lines: 80
+    }
+  },
+  globals: {
+    'ts-jest': {
+      isolatedModules: true
+    }
+  },
+  testTimeout: 10000,
+  verbose: true
+};import '@testing-library/jest-dom';
+
+// Handle Node.js TextEncoder/TextDecoder
+if (typeof globalThis.TextEncoder === 'undefined') {
+  const { TextEncoder, TextDecoder } = require('util');
+  globalThis.TextEncoder = TextEncoder;
+  globalThis.TextDecoder = TextDecoder;
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
+}
+
+// Performance monitoring
+const TEST_TIMEOUT_THRESHOLD = 5000;
+let testStartTime: number;
+
+beforeAll(() => {
+  testStartTime = Date.now();
+});
+
+afterEach(() => {
+  const duration = Date.now() - testStartTime;
+  if (duration > TEST_TIMEOUT_THRESHOLD) {
+    console.warn(
+      `Test took ${duration}ms to complete, exceeding the ${TEST_TIMEOUT_THRESHOLD}ms threshold`
+    );
+  }
+  testStartTime = Date.now();
+});
+
+// Mock IndexedDB
+const indexedDBMock = {
+  databases: new Map(),
+
+  open: jest.fn().mockImplementation((name: string) => {
+    const request = {
+      result: {
+        objectStoreNames: {
+          contains: jest.fn().mockReturnValue(false)
+        },
+        createObjectStore: jest.fn().mockReturnValue({
+          createIndex: jest.fn()
+        }),
+        transaction: jest.fn().mockReturnValue({
+          objectStore: jest.fn().mockReturnValue({
+            put: jest.fn().mockImplementation((value: any) => ({
+              onsuccess: null,
+              onerror: null
+            })),
+            get: jest.fn().mockImplementation((key: string) => ({
+              onsuccess: null,
+              onerror: null,
+              result: indexedDBMock.databases.get(key)
+            })),
+            delete: jest.fn(),
+            clear: jest.fn()
+          })
+        })
+      },
+      onerror: null,
+      onsuccess: null,
+      onupgradeneeded: null
+    };
+
+    // Simulate async operations
+    setTimeout(() => {
+      if (request.onupgradeneeded) {
+        const event = new Event('upgradeneeded');
+        request.onupgradeneeded(event);
+      }
+      if (request.onsuccess) {
+        const event = new Event('success');
+        request.onsuccess(event);
+      }
+    }, 0);
+
+    return request;
+  }),
+
+  deleteDatabase: jest.fn().mockImplementation((name: string) => {
+    const request = {
+      result: null,
+      error: null,
+      onerror: null,
+      onsuccess: null
+    };
+
+    setTimeout(() => {
+      if (request.onsuccess) {
+        const event = new Event('success');
+        request.onsuccess(event);
+      }
+    }, 0);
+
+    return request;
+  })
+};
+
+Object.defineProperty(window, 'indexedDB', {
+  value: indexedDBMock,
+  writable: true
+});
+
+// Mock Performance API
+const performanceMock = {
+  now: jest.fn(() => Date.now())
+};
+
+Object.defineProperty(window, 'performance', {
+  value: performanceMock,
+  writable: true
+});
+
+// Clear all mocks between tests
+beforeEach(() => {
+  jest.clearAllMocks();
+  indexedDBMock.databases.clear();
+});
+
+// Custom matchers
+expect.extend({
+  toBeWithinRange(received: number, floor: number, ceiling: number) {
+    const pass = received >= floor && received <= ceiling;
+    if (pass) {
+      return {
+        message: () =>
+          `expected ${received} not to be within range ${floor} - ${ceiling}`,
+        pass: true,
+      };
+    } else {
+      return {
+        message: () =>
+          `expected ${received} to be within range ${floor} - ${ceiling}`,
+        pass: false,
+      };
+    }
+  },
+});
+
+// Global test utilities
+global.sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Types
+declare global {
+  // Add custom matcher types
+  namespace jest {
+    interface Matchers<R> {
+      toBeWithinRange(floor: number, ceiling: number): R;
+    }
+  }
+
+  // Add global utility types
+  function sleep(ms: number): Promise<void>;
+}
