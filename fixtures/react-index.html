@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Search React Demo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <!-- Import our built library -->
+    <script src="../dist/index.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const NexusSearchBar = () => {
+            const [query, setQuery] = useState('');
+            const [results, setResults] = useState([]);
+            const [isLoading, setIsLoading] = useState(false);
+            const searchEngineRef = useRef(null);
+            const searchTimeoutRef = useRef();
+
+            useEffect(() => {
+                const initializeSearch = async () => {
+                    searchEngineRef.current = new NexusSearch.SearchEngine({
+                        name: 'nexus-search-bar',
+                        version: 1,
+                        fields: ['title', 'content', 'tags']
+                    });
+                    await searchEngineRef.current.initialize();
+                    
+                    // Add sample data for testing
+                    await searchEngineRef.current.addDocuments([
+                        {
+                            title: 'Getting Started',
+                            content: 'Quick start guide for NexusSearch',
+                            tags: ['guide', 'documentation']
+                        },
+                        {
+                            title: 'Advanced Features',
+                            content: 'Explore advanced search capabilities',
+                            tags: ['advanced', 'features']
+                        },
+                        {
+                            title: 'Performance Tips',
+                            content: 'Learn how to optimize search performance',
+                            tags: ['performance', 'optimization']
+                        }
+                    ]);
+                };
+
+                initializeSearch();
+
+                // Cleanup
+                return () => {
+                    if (searchTimeoutRef.current) {
+                        clearTimeout(searchTimeoutRef.current);
+                    }
+                };
+            }, []);
+
+            const handleSearch = async (searchQuery) => {
+                if (!searchEngineRef.current) return;
+                
+                setIsLoading(true);
+                try {
+                    const searchResults = await searchEngineRef.current.search(searchQuery, {
+                        fuzzy: true,
+                        maxResults: 5
+                    });
+                    setResults(searchResults);
+                } catch (error) {
+                    console.error('Search error:', error);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            const handleInputChange = (event) => {
+                const newQuery = event.target.value;
+                setQuery(newQuery);
+
+                if (searchTimeoutRef.current) {
+                    clearTimeout(searchTimeoutRef.current);
+                }
+
+                searchTimeoutRef.current = setTimeout(() => {
+                    if (newQuery.trim()) {
+                        handleSearch(newQuery);
+                    } else {
+                        setResults([]);
+                    }
+                }, 300);
+            };
+
+            return (
+                <div className="container mx-auto px-4 py-8">
+                    <h1 className="text-3xl font-bold mb-8 text-center">Nexus Search Demo</h1>
+                    <div className="w-full max-w-2xl mx-auto">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={query}
+                                onChange={handleInputChange}
+                                placeholder="Search..."
+                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                data-testid="nexus-search-input"
+                            />
+                            {isLoading && (
+                                <div className="absolute right-3 top-2.5">
+                                    <div className="animate-spin h-5 w-5 border-2 border-blue-500 rounded-full border-t-transparent"></div>
+                                </div>
+                            )}
+                        </div>
+
+                        {results.length > 0 && (
+                            <div className="mt-4 border rounded-lg shadow-lg bg-white" data-testid="search-results">
+                                {results.map((result, index) => (
+                                    <div
+                                        key={index}
+                                        className="p-4 border-b last:border-b-0 hover:bg-gray-50"
+                                        data-testid={`search-result-${index}`}
+                                    >
+                                        <h3 className="font-semibold text-lg">{result.item.title}</h3>
+                                        <p className="text-gray-600 mt-1">{result.item.content}</p>
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                            {result.item.tags.map((tag, tagIndex) => (
+                                                <span
+                                                    key={tagIndex}
+                                                    className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                                                >
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            return <NexusSearchBar />;
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
