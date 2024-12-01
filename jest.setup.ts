@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import { TextEncoder, TextDecoder } from 'util'; // Use ES6 import for util
 
 interface IDBEventTarget {
   result: any;
@@ -29,7 +30,6 @@ interface IDBObjectStore {
 
 // Handle Node.js TextEncoder/TextDecoder
 const textEncodingPolyfill = () => {
-  const { TextEncoder, TextDecoder } = require('node:util');
   global.TextEncoder = TextEncoder;
   global.TextDecoder = TextDecoder;
 };
