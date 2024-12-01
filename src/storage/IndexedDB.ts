@@ -24,7 +24,7 @@ interface MetadataEntry {
   lastUpdated: number;
 }
 
-export class IndexedDBService {
+export class IndexedDB {
   private db: IDBPDatabase<SearchDBSchema> | null = null;
   private readonly DB_NAME = 'nexus_search_db';
   private readonly DB_VERSION = 1;

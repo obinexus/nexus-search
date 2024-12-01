@@ -15,8 +15,7 @@ export { DataMapper } from './mappers/DataMapper';
 export { IndexMapper } from './mappers/IndexMapper';
 
 // Storage exports
-export { CacheManager } from './storage/CacheManager';
-export {  IndexedDB } from './storage/IndexedDB';
+export { CacheManager,IndexedDB } from './storage/index';
 
 export { PerformanceMonitor,createSearchableFields, optimizeIndex, getNestedValue,normalizeFieldValue,
     validateSearchOptions,validateIndexConfig,validateDocument
