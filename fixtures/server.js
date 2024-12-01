@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = path.join(__dirname, '..');
 
 const server = http.createServer((req, res) => {
   // Clean up URL to prevent directory traversal
@@ -11,7 +12,7 @@ const server = http.createServer((req, res) => {
   
   // Handle root redirect
   if (safePath === '/') {
-    res.writeHead(302, { Location: '/fixtures/vanilla/' });
+    res.writeHead(302, { Location: '/vanilla/' });
     res.end();
     return;
   }
@@ -19,13 +20,10 @@ const server = http.createServer((req, res) => {
   // Determine file path
   let filePath;
   if (safePath.startsWith('/dist/')) {
-    filePath = path.join(__dirname, safePath);
-  } else if (safePath.startsWith('/fixtures/')) {
-    filePath = path.join(__dirname, safePath);
+    filePath = path.join(PROJECT_ROOT, safePath);
   } else {
-    res.writeHead(404);
-    res.end('Not Found');
-    return;
+    // All other paths are relative to fixtures directory
+    filePath = path.join(__dirname, safePath);
   }
 
   // Handle directory requests by looking for index.html
@@ -38,6 +36,8 @@ const server = http.createServer((req, res) => {
   const contentType = {
     '.html': 'text/html',
     '.js': 'text/javascript',
+    '.jsx': 'text/javascript',
+    '.vue': 'text/javascript',
     '.css': 'text/css',
     '.json': 'application/json',
     '.png': 'image/png',
@@ -50,11 +50,13 @@ const server = http.createServer((req, res) => {
   fs.readFile(filePath, (err, content) => {
     if (err) {
       if (err.code === 'ENOENT') {
+        console.error('File not found:', filePath);
         res.writeHead(404);
-        res.end('File not found');
+        res.end(`File not found: ${safePath}`);
       } else {
+        console.error('Server error:', err);
         res.writeHead(500);
-        res.end('Server Error: ' + err.code);
+        res.end(`Server Error: ${err.code}`);
       }
       return;
     }
@@ -67,7 +69,11 @@ const server = http.createServer((req, res) => {
 
 const port = 3000;
 server.listen(port, () => {
-  console.log(`Demo server running at http://localhost:${port}/fixtures/vanilla/`);
+  console.log(`Demo server running at http://localhost:${port}/`);
+  console.log('Available demos:');
+  console.log('  - Vanilla: http://localhost:${port}/vanilla/');
+  console.log('  - React:   http://localhost:${port}/react/');
+  console.log('  - Vue:     http://localhost:${port}/vue/');
 });
 
 // Handle server errors

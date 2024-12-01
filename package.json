@@ -11,6 +11,7 @@
   ],
   "scripts": {
     "build": "rollup -c",
+     "demo": "node fixtures/server.js",
     "dev": "rollup -c -w",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "jest --config jest.config.js --watch",
