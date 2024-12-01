@@ -1,14 +1,25 @@
 import '@testing-library/jest-dom';
-import { TextEncoder, TextDecoder } from 'util';
-import type { Event } from '@types/node';
+
+// Create mock Event constructor for tests
+class MockEvent {
+  type: string;
+  constructor(type: string) {
+    this.type = type;
+  }
+}
 
 // Handle Node.js TextEncoder/TextDecoder
-if (typeof globalThis.TextEncoder === 'undefined') {
-  globalThis.TextEncoder = TextEncoder;
-  globalThis.TextDecoder = TextDecoder;
-  (global as any).TextEncoder = TextEncoder;
-  (global as any).TextDecoder = TextDecoder;
-}
+const textEncodingPolyfill = () => {
+  if (typeof globalThis.TextEncoder === 'undefined' || typeof globalThis.TextDecoder === 'undefined') {
+    const { TextEncoder, TextDecoder } = require('node:util');
+    (global as any).TextEncoder = TextEncoder;
+    (global as any).TextDecoder = TextDecoder;
+    (globalThis as any).TextEncoder = TextEncoder;
+    (globalThis as any).TextDecoder = TextDecoder;
+  }
+};
+
+textEncodingPolyfill();
 
 // Performance monitoring
 const TEST_TIMEOUT_THRESHOLD = 5000;
@@ -64,10 +75,10 @@ const indexedDBMock = {
 
     setTimeout(() => {
       if (request.onupgradeneeded) {
-        request.onupgradeneeded(new Event('upgradeneeded') as any);
+        request.onupgradeneeded(new MockEvent('upgradeneeded'));
       }
       if (request.onsuccess) {
-        request.onsuccess(new Event('success') as any);
+        request.onsuccess(new MockEvent('success'));
       }
     }, 0);
 
@@ -84,7 +95,7 @@ const indexedDBMock = {
 
     setTimeout(() => {
       if (request.onsuccess) {
-        request.onsuccess(new Event('success') as any);
+        request.onsuccess(new MockEvent('success'));
       }
     }, 0);
 
@@ -138,15 +149,11 @@ expect.extend({
 
 // Types
 declare global {
-  // Add custom matcher types
   namespace jest {
     interface Matchers<R> {
       toBeWithinRange(floor: number, ceiling: number): R;
     }
   }
 
-  // Add global utility types
   function sleep(ms: number): Promise<void>;
 }
-
-export {};
