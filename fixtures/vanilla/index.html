@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Search Vanilla JS Demo</title>
+    <script src="../dist/index.js"></script>
+    <style>
+        .search-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .loading-spinner {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ccc;
+            border-top: 2px solid #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        .error-message {
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+            border-radius: 4px;
+            color: #dc2626;
+            display: none;
+        }
+
+        .search-results {
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+
+        .search-result {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .search-result:last-child {
+            border-bottom: none;
+        }
+
+        .search-result h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.25rem;
+            color: #111827;
+        }
+
+        .search-result p {
+            margin: 0 0 0.75rem 0;
+            color: #4b5563;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .tag {
+            padding: 0.25rem 0.75rem;
+            background-color: #dbeafe;
+            color: #1e40af;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+        }
+
+        .score {
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: translateY(-50%) rotate(0deg); }
+            100% { transform: translateY(-50%) rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="search-container">
+        <h1 style="text-align: center; margin-bottom: 2rem;">Nexus Search Demo</h1>
+        
+        <div class="search-input-wrapper">
+            <input type="text" class="search-input" placeholder="Search...">
+            <div class="loading-spinner"></div>
+        </div>
+
+        <div class="error-message"></div>
+        <div class="no-results">No results found</div>
+        <div class="search-results"></div>
+    </div>
+
+    <script>
+        class NexusSearchBar {
+            constructor(container) {
+                this.container = container;
+                this.searchEngine = null;
+                this.searchTimeout = null;
+
+                // Cache DOM elements
+                this.input = container.querySelector('.search-input');
+                this.spinner = container.querySelector('.loading-spinner');
+                this.errorMessage = container.querySelector('.error-message');
+                this.resultsContainer = container.querySelector('.search-results');
+                this.noResults = container.querySelector('.no-results');
+
+                this.initialize();
+            }
+
+            async initialize() {
+                try {
+                    this.showLoading();
+                    this.searchEngine = new NexusSearch.SearchEngine({
+                        name: 'nexus-search-bar',
+                        version: 1,
+                        fields: ['title', 'content', 'tags']
+                    });
+
+                    await this.searchEngine.initialize();
+
+                    await this.searchEngine.addDocuments([
+                        {
+                            title: 'Getting Started',
+                            content: 'Quick start guide for NexusSearch',
+                            tags: ['guide', 'documentation']
+                        },
+                        {
+                            title: 'Advanced Features',
+                            content: 'Explore advanced search capabilities',
+                            tags: ['advanced', 'features']
+                        },
+                        {
+                            title: 'Search Optimization',
+                            content: 'Learn about fuzzy search and performance tuning',
+                            tags: ['performance', 'optimization']
+                        }
+                    ]);
+
+                    this.setupEventListeners();
+                    this.hideLoading();
+                    this.hideError();
+                } catch (error) {
+                    this.showError('Failed to initialize search engine');
+                    console.error('Initialization error:', error);
+                }
+            }
+
+            setupEventListeners() {
+                this.input.addEventListener('input', this.handleInput.bind(this));
+            }
+
+            handleInput(event) {
+                const query = event.target.value.trim();
+
+                if (this.searchTimeout) {
+                    clearTimeout(this.searchTimeout);
+                }
+
+                this.searchTimeout = setTimeout(() => {
+                    if (query) {
+                        this.performSearch(query);
+                    } else {
+                        this.clearResults();
+                    }
+                }, 300);
+            }
+
+            async performSearch(query) {
+                if (!this.searchEngine) return;
+
+                try {
+                    this.showLoading();
+                    this.hideError();
+
+                    const results = await this.searchEngine.search(query, {
+                        fuzzy: true,
+                        maxResults: 5
+                    });
+
+                    this.renderResults(results);
+                } catch (error) {
+                    this.showError('Search failed. Please try again.');
+                    console.error('Search error:', error);
+                } finally {
+                    this.hideLoading();
+                }
+            }
+
+            renderResults(results) {
+                this.resultsContainer.innerHTML = '';
+
+                if (results.length === 0) {
+                    this.noResults.style.display = 'block';
+                    this.resultsContainer.style.display = 'none';
+                    return;
+                }
+
+                this.noResults.style.display = 'none';
+                this.resultsContainer.style.display = 'block';
+
+                results.forEach(result => {
+                    const resultElement = document.createElement('div');
+                    resultElement.className = 'search-result';
+                    resultElement.innerHTML = `
+                        <h3>${result.item.title}</h3>
+                        <p>${result.item.content}</p>
+                        <div class="tags">
+                            ${result.item.tags.map(tag => `
+                                <span class="tag">${tag}</span>
+                            `).join('')}
+                        </div>
+                        <div class="score">
+                            Score: ${(result.score * 100).toFixed(0)}%
+                        </div>
+                    `;
+                    this.resultsContainer.appendChild(resultElement);
+                });
+            }
+
+            showLoading() {
+                this.spinner.style.display = 'block';
+            }
+
+            hideLoading() {
+                this.spinner.style.display = 'none';
+            }
+
+            showError(message) {
+                this.errorMessage.textContent = message;
+                this.errorMessage.style.display = 'block';
+            }
+
+            hideError() {
+                this.errorMessage.style.display = 'none';
+            }
+
+            clearResults() {
+                this.resultsContainer.innerHTML = '';
+                this.noResults.style.display = 'none';
+                this.resultsContainer.style.display = 'none';
+            }
+        }
+
+        // Initialize the search bar
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.querySelector('.search-container');
+            new NexusSearchBar(container);
+        });
+    </script>
+</body>
+</html>
