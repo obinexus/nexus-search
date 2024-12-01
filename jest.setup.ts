@@ -1,22 +1,37 @@
 import '@testing-library/jest-dom';
 
-// Create mock Event constructor for tests
-class MockEvent {
+interface IDBEventTarget {
+  result: any;
+}
+
+interface IDBEvent {
+  target: IDBEventTarget;
   type: string;
-  constructor(type: string) {
-    this.type = type;
-  }
+}
+
+// Mock Event Handler Types
+type IDBEventHandler = (event: IDBEvent) => void;
+
+interface IDBRequest {
+  result: any;
+  onerror: IDBEventHandler | null;
+  onsuccess: IDBEventHandler | null;
+  onupgradeneeded: IDBEventHandler | null;
+}
+
+interface IDBObjectStore {
+  createIndex: jest.Mock;
+  put: jest.Mock;
+  get: jest.Mock;
+  delete: jest.Mock;
+  clear: jest.Mock;
 }
 
 // Handle Node.js TextEncoder/TextDecoder
 const textEncodingPolyfill = () => {
-  if (typeof globalThis.TextEncoder === 'undefined' || typeof globalThis.TextDecoder === 'undefined') {
-    const { TextEncoder, TextDecoder } = require('node:util');
-    (global as any).TextEncoder = TextEncoder;
-    (global as any).TextDecoder = TextDecoder;
-    (globalThis as any).TextEncoder = TextEncoder;
-    (globalThis as any).TextDecoder = TextDecoder;
-  }
+  const { TextEncoder, TextDecoder } = require('node:util');
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
 };
 
 textEncodingPolyfill();
@@ -40,45 +55,53 @@ afterEach(() => {
 });
 
 // Mock IndexedDB
+const createMockIDBRequest = (): IDBRequest => ({
+  result: {
+    objectStoreNames: {
+      contains: jest.fn().mockReturnValue(false)
+    },
+    createObjectStore: jest.fn().mockReturnValue({
+      createIndex: jest.fn()
+    }),
+    transaction: jest.fn().mockReturnValue({
+      objectStore: jest.fn().mockReturnValue({
+        put: jest.fn().mockImplementation((value: any) => ({
+          onsuccess: null,
+          onerror: null
+        })),
+        get: jest.fn().mockImplementation((key: string) => ({
+          onsuccess: null,
+          onerror: null,
+          result: null
+        })),
+        delete: jest.fn(),
+        clear: jest.fn()
+      })
+    })
+  },
+  onerror: null,
+  onsuccess: null,
+  onupgradeneeded: null
+});
+
 const indexedDBMock = {
   databases: new Map(),
 
   open: jest.fn().mockImplementation((name: string) => {
-    const request = {
-      result: {
-        objectStoreNames: {
-          contains: jest.fn().mockReturnValue(false)
-        },
-        createObjectStore: jest.fn().mockReturnValue({
-          createIndex: jest.fn()
-        }),
-        transaction: jest.fn().mockReturnValue({
-          objectStore: jest.fn().mockReturnValue({
-            put: jest.fn().mockImplementation((value: any) => ({
-              onsuccess: null,
-              onerror: null
-            })),
-            get: jest.fn().mockImplementation((key: string) => ({
-              onsuccess: null,
-              onerror: null,
-              result: indexedDBMock.databases.get(key)
-            })),
-            delete: jest.fn(),
-            clear: jest.fn()
-          })
-        })
-      },
-      onerror: null,
-      onsuccess: null,
-      onupgradeneeded: null
-    };
+    const request = createMockIDBRequest();
 
     setTimeout(() => {
       if (request.onupgradeneeded) {
-        request.onupgradeneeded(new MockEvent('upgradeneeded'));
+        request.onupgradeneeded({
+          target: { result: request.result },
+          type: 'upgradeneeded'
+        });
       }
       if (request.onsuccess) {
-        request.onsuccess(new MockEvent('success'));
+        request.onsuccess({
+          target: { result: request.result },
+          type: 'success'
+        });
       }
     }, 0);
 
@@ -86,16 +109,14 @@ const indexedDBMock = {
   }),
 
   deleteDatabase: jest.fn().mockImplementation((name: string) => {
-    const request = {
-      result: null,
-      error: null,
-      onerror: null,
-      onsuccess: null
-    };
+    const request = createMockIDBRequest();
 
     setTimeout(() => {
       if (request.onsuccess) {
-        request.onsuccess(new MockEvent('success'));
+        request.onsuccess({
+          target: { result: null },
+          type: 'success'
+        });
       }
     }, 0);
 
@@ -144,8 +165,7 @@ expect.extend({
   },
 });
 
-// Global test utilities
-(global as any).sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+global.sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Types
 declare global {
