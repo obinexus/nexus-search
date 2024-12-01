@@ -5,13 +5,14 @@
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
+  "type": "module" ,
   "exports": {
     ".": {
+      "require": "./dist/index.cjs.js",
       "import": "./dist/index.esm.js",
-      "require": "./dist/index.cjs.js"
+      "types": "./dist/index.d.ts"
     }
   },
-  
   "files": [
     "dist/",
     "src/",
@@ -42,10 +43,7 @@
     "lint": "eslint 'src/**/*.{js,ts}'",
     "format": "prettier --write 'src/**/*.{js,ts}'",
     "postinstall": "npm run build",
-    "prepublishOnly": " npm run build #npm test && npm run lint"
-  },
-  "dependencies": {
-    "idb": "^7.0.0"
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "@eslint/js": "^9.16.0",
@@ -88,8 +86,7 @@
     "nested fields",
     "caching",
     "nexus-search"
-
   ],
-  "author": "",
+  "author": "Nnamdi Michael Okpala",
   "license": "ISC"
 }
