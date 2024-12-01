@@ -20,7 +20,8 @@
     "docs/",
     "./prettierc",
     "TODO.md",
-    "jest.config.mjs"
+    "jest.config.mjs",
+    "eslint.config.js"
   ],
   "scripts": {
     "build": "rollup -c",
