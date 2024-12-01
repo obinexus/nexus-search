@@ -121,6 +121,19 @@ export default [
     input: 'dist/types/index.d.ts',
     output: [{ file: 'dist/index.d.ts', format: 'esm' }],
     plugins: [
+      alias({
+        entries: [
+          { find: '@', replacement: './src' },
+          { find: '@core', replacement: './src/core' },
+          { find: '@algorithms', replacement: './src/algorithms' },
+          { find: '@storage', replacement: './src/storage' },
+          { find: '@utils', replacement: './src/utils' },
+          { find: '@types', replacement: './src/types' },
+        ],
+      }),
+      typescript({
+        tsconfig: './tsconfig.json',
+      }),
       dts({
         compilerOptions: {
           baseUrl: 'src',
