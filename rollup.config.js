@@ -42,8 +42,10 @@ const basePlugins = [
   commonjs({
     include: 'node_modules/**'
   }),
-  typescript({
-    tsconfig: './tsconfig.json',
+ typescript({
+  tsconfig: './tsconfig.json',
+  verbosity: 3,
+
     declaration: true,
     declarationDir: './dist/types',
     exclude: ['**/__tests__/**', '**/*.test.ts', 'src/**/*.spec.ts']
