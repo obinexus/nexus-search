@@ -807,7 +807,8 @@ class SearchStorage {
     async getMetadata() {
         await this.ensureConnection();
         try {
-            return await this.db.get('metadata', 'config');
+            const result = await this.db.get('metadata', 'config');
+            return result || null; // Return `null` if `result` is `undefined`
         }
         catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
