@@ -8,8 +8,7 @@
 /// <reference path="./defaults.ts" />
 /// <reference path="./document.ts" />
 /// <reference path="./models.ts" />
-/// <reference path="./models.ts" />
-/// <reference path="./models.ts" />
+/// <reference path="./search.ts" />
 
 export namespace NexusSearch {
     // Base interfaces
