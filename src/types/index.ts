@@ -8,8 +8,7 @@ export * from './internal';
 export * from './guards';
 export * from './utils';
 export * from './defaults';
-
-
+export * from './document';
 
 // Export a namespace for expornal use
 export namespace NexusSearch {
