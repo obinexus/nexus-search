@@ -1,4 +1,5 @@
-import { SearchResult } from '../types';
+import { IndexOptions, SearchOptions, SearchResult } from '../types';
+
 
 export class CacheManager {
   private cache: Map<string, { data: SearchResult<any>[]; timestamp: number }>;
