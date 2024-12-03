@@ -1,6 +1,6 @@
-import { SearchResult } from '../types';
 import { DataMapper } from './DataMapper';
 import { TrieSearch } from '../algorithms/trie/TrieSearch';
+import { SearchResult } from '@/types/search';
 
 export class IndexMapper {
   private dataMapper: DataMapper;
