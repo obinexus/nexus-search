@@ -8,11 +8,35 @@
 /// <reference path="./defaults.ts" />
 /// <reference path="./document.ts" />
 /// <reference path="./models.ts" />
-/// <reference path="./document.ts" />
-/// <reference path="./search.ts" />
+/// <reference path="./models.ts" />
+/// <reference path="./models.ts" />
 
 export namespace NexusSearch {
-    // Re-export base interfaces and types
+    // Base interfaces
+    export interface IndexOptions {
+      caseSensitive?: boolean;
+      stemming?: boolean;
+      stopWords?: string[];
+      minWordLength?: number;
+      maxWordLength?: number;
+      fuzzyThreshold?: number;
+    }
+  
+    export interface SearchStats {
+      totalResults: number;
+      searchTime: number;
+      indexSize: number;
+      queryComplexity: number;
+    }
+  
+    export interface SearchContext {
+      query: string;
+      options: SearchOptions;
+      startTime: number;
+      results: SearchResult<any>[];
+      stats: SearchStats;
+    }
+  
     export interface SearchOptions {
       fuzzy?: boolean;
       maxResults?: number;
@@ -38,7 +62,7 @@ export namespace NexusSearch {
       options?: IndexOptions;
     }
   
-    // Re-export constants
+    // Constants
     export const DEFAULT_INDEX_OPTIONS: Required<IndexOptions> = {
       caseSensitive: false,
       stemming: true,
@@ -143,3 +167,8 @@ export namespace NexusSearch {
   
   // Export the namespace as the default export
   export default NexusSearch;
+  
+  // Re-export for backward compatibility
+  export type {
+    NexusSearch as Types
+  };
