@@ -1,5 +1,5 @@
-import { IndexNode } from '../types';
-
+import { DocumentLink, IndexNode } from '../types';
+import { ScoringUtils } from './ScoringUtils'
 export class AlgoUtils {
   /**
    * Performs Breadth-First Search traversal on a trie structure
@@ -152,4 +152,41 @@ export class AlgoUtils {
     fuzzyDfs(root, '');
     return results.sort((a, b) => b.score - a.score);
   }
+
+  static enhancedSearch(
+    root: IndexNode,
+    searchText: string,
+    documents: Map<string, any>,
+    documentLinks: DocumentLink[]
+  ): Array<{ id: string; score: number; rank: number }> {
+    // Get base results from trie search
+    const baseResults = this.bfsTraversal(root, searchText);
+    
+    // Calculate document ranks
+    const documentRanks = ScoringUtils.calculateDocumentRanks(documents, documentLinks);
+    
+    // Enhanced scoring for each result
+    return baseResults.map(result => {
+      const document = documents.get(result.id);
+      const documentRank = documentRanks.get(result.id)!;
+      
+      // Calculate TF-IDF score
+      const tfIdf = ScoringUtils.calculateTfIdf(searchText, document, documents);
+      
+      // Combine scores
+      const finalScore = ScoringUtils.calculateCombinedScore(
+        result.score,
+        documentRank.rank,
+        tfIdf,
+        1.0 // Base IDF weight
+      );
+
+      return {
+        id: result.id,
+        score: finalScore,
+        rank: documentRank.rank
+      };
+    }).sort((a, b) => b.score - a.score);
+  }
+  
 }

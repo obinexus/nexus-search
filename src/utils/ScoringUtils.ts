@@ -1,17 +1,7 @@
-import { IndexNode } from '../types';
+import { DocumentLink, DocumentRank, IndexNode } from '../types';
+import {AlgoUtils} from './AlgoUtils';
 
-interface DocumentLink {
-  fromId: string;
-  toId: string;
-  weight: number;
-}
 
-interface DocumentRank {
-  id: string;
-  rank: number;
-  incomingLinks: number;
-  outgoingLinks: number;
-}
 
 export class ScoringUtils {
   private static readonly DAMPING_FACTOR = 0.85;
@@ -175,53 +165,7 @@ export class ScoringUtils {
     const freshnessMultiplier = Math.max(0, 1 - (ageInDays / maxAge));
     return baseScore * (0.7 + 0.3 * freshnessMultiplier);
   }
+
+  
 }
 
-// Extend the original AlgoUtils class with the new scoring system
-export class AlgoUtils {
-  // ... (previous BFS, DFS, and fuzzy search methods remain the same)
-
-  /**
-   * Enhanced search with combined scoring mechanisms
-   * @param root Trie root node
-   * @param searchText Search query
-   * @param documents Map of all documents
-   * @param documentLinks Array of document relationships
-   * @returns Scored and ranked search results
-   */
-  static enhancedSearch(
-    root: IndexNode,
-    searchText: string,
-    documents: Map<string, any>,
-    documentLinks: DocumentLink[]
-  ): Array<{ id: string; score: number; rank: number }> {
-    // Get base results from trie search
-    const baseResults = this.bfsTraversal(root, searchText);
-    
-    // Calculate document ranks
-    const documentRanks = ScoringUtils.calculateDocumentRanks(documents, documentLinks);
-    
-    // Enhanced scoring for each result
-    return baseResults.map(result => {
-      const document = documents.get(result.id);
-      const documentRank = documentRanks.get(result.id)!;
-      
-      // Calculate TF-IDF score
-      const tfIdf = ScoringUtils.calculateTfIdf(searchText, document, documents);
-      
-      // Combine scores
-      const finalScore = ScoringUtils.calculateCombinedScore(
-        result.score,
-        documentRank.rank,
-        tfIdf,
-        1.0 // Base IDF weight
-      );
-
-      return {
-        id: result.id,
-        score: finalScore,
-        rank: documentRank.rank
-      };
-    }).sort((a, b) => b.score - a.score);
-  }
-}
