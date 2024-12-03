@@ -22,3 +22,7 @@ import type { SearchOptions, IndexConfig, SearchResult } from './types';
       Array.isArray(obj.matches);
   }
   
+
+  
+
+  
