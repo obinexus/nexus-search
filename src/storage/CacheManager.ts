@@ -1,4 +1,3 @@
-import { IndexOptions, SearchOptions, SearchResult } from '../types';
 
 
 export class CacheManager {

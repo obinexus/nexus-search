@@ -1,4 +1,6 @@
-import { DocumentLink, IndexNode } from '../types';
+
+import { DocumentLink } from '@/types/document';
+import { IndexNode } from '@/types/internal';
 import { ScoringUtils } from './ScoringUtils'
 export class AlgoUtils {
   /**
