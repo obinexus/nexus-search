@@ -1,7 +1,7 @@
 import { SearchOptions, SearchResult, IndexConfig } from '../types';
 import { IndexManager } from './IndexManager';
 import { QueryProcessor } from './QueryProcessor';
-import { SearchStorage } from '../storage/IndexedDB';
+import { SearchStorage } from '../storage/IndexedDBService';
 import { CacheManager } from '../storage/CacheManager';
 import { validateSearchOptions } from '@/utils/ValidationUtils';
 
