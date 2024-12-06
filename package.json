@@ -28,7 +28,8 @@
     "TODO.md",
     "jest.config.mjs",
     "eslint.config.js",
-    ".gitignore"
+    ".gitignore",
+    "package.json"
   ],
   "scripts": {
     "build": "rollup -c",
@@ -77,9 +78,16 @@
   },
   "directories": {
     "doc": "docs",
-    "fixtures": "fixtures"
+    "fixtures": "fixtures",
+    "dist":"dist",
+    "src"
   },
   "keywords": [
+    "@obinexuscomputing/nexus-search",
+    "pagerank",
+    "document-rank",
+    "seo",
+    
     "search",
     "indexing",
     "query",
