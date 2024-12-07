@@ -1,19 +1,20 @@
-import { 
-    IndexConfig, 
-    IndexOptions, 
-    SearchContext, 
-    SearchOptions, 
-    SearchResult,
-    SearchStats 
+// src/index.ts
+import type { 
+    IndexConfig as IIndexConfig, 
+    IndexOptions as IIndexOptions,
+    SearchContext as ISearchContext,
+    SearchOptions as ISearchOptions,
+    SearchResult as ISearchResult,
+    SearchStats as ISearchStats
 } from './types';
 
 export namespace NexusSearch {
-    export interface IndexOptions extends IndexOptions {}
-    export interface SearchStats extends SearchStats {}
-    export interface SearchContext extends SearchContext {}
-    export interface SearchOptions extends SearchOptions {}
-    export interface SearchResult<T> extends SearchResult<T> {}
-    export interface IndexConfig extends IndexConfig {}
+    export type IndexOptions = IIndexOptions;
+    export type SearchStats = ISearchStats;
+    export type SearchContext = ISearchContext;
+    export type SearchOptions = ISearchOptions;
+    export type SearchResult<T> = ISearchResult<T>;
+    export type IndexConfig = IIndexConfig;
 
     // Constants
     export const DEFAULT_INDEX_OPTIONS: Required<IndexOptions> = {
@@ -36,7 +37,86 @@ export namespace NexusSearch {
         pageSize: 10
     };
 
-    // Rest of namespace implementation...
+    // Error types
+    export class SearchError extends Error {
+        constructor(message: string) {
+            super(message);
+            this.name = 'SearchError';
+        }
+    }
+
+    export class IndexError extends Error {
+        constructor(message: string) {
+            super(message);
+            this.name = 'IndexError';
+        }
+    }
+
+    // Event types
+    export type SearchEventType =
+        | 'search:start'
+        | 'search:complete'
+        | 'search:error'
+        | 'index:start'
+        | 'index:complete'
+        | 'index:error'
+        | 'storage:error';
+
+    export interface SearchEvent {
+        type: SearchEventType;
+        timestamp: number;
+        data?: any;
+        error?: Error;
+    }
+
+    // Document types
+    export interface DocumentLink {
+        fromId: string;
+        toId: string;
+        weight: number;
+    }
+
+    export interface DocumentRank {
+        id: string;
+        rank: number;
+        incomingLinks: number;
+        outgoingLinks: number;
+    }
+
+    // Internal types
+    export interface InternalConfig extends IndexConfig {
+        _id: string;
+        _created: number;
+        _updated: number;
+    }
+
+    export interface QueryContext extends SearchContext {
+        _processed: boolean;
+        _cached: boolean;
+    }
+
+    // Type guards
+    export function isSearchOptions(obj: any): obj is SearchOptions {
+        return obj && (
+            typeof obj.fuzzy === 'undefined' || typeof obj.fuzzy === 'boolean'
+        ) && (
+            typeof obj.maxResults === 'undefined' || typeof obj.maxResults === 'number'
+        );
+    }
+
+    export function isIndexConfig(obj: any): obj is IndexConfig {
+        return obj &&
+            typeof obj.name === 'string' &&
+            typeof obj.version === 'number' &&
+            Array.isArray(obj.fields);
+    }
+
+    export function isSearchResult<T>(obj: any): obj is SearchResult<T> {
+        return obj &&
+            'item' in obj &&
+            typeof obj.score === 'number' &&
+            Array.isArray(obj.matches);
+    }
 }
 
 // Core exports
@@ -69,12 +149,12 @@ export {
 
 // Type exports
 export type {
-    IndexConfig,
-    IndexOptions,
-    SearchContext,
-    SearchOptions,
-    SearchResult,
-    SearchStats
+    IIndexConfig as IndexConfig,
+    IIndexOptions as IndexOptions,
+    ISearchContext as SearchContext,
+    ISearchOptions as SearchOptions,
+    ISearchResult as SearchResult,
+    ISearchStats as SearchStats
 };
 
 export default NexusSearch;
