@@ -59,7 +59,6 @@ const baseConfig = {
     include: 'src/**'
   }
 };
-
 export default [
   // ESM build
   {
@@ -106,8 +105,7 @@ export default [
       format: 'cjs',
       banner,
       sourcemap: true,
-      exports: 'named',
-      preferConst: true
+      exports: 'named'
     },
     plugins: basePlugins
   },
