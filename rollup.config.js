@@ -47,39 +47,49 @@ const basePlugins = [
     verbosity: 0,
     declaration: true,
     declarationDir: './dist/types',
-    exclude: ['**/__tests__/**', '**/*.test.ts', 'src/**/*.spec.ts']
+    exclude: ['**/__tests__/**', '**/*.test.ts', 'src/**/*.spec.ts'],
+    sourceMap: true
   })
 ];
 
-const baseOutput = {
-  banner,
-  sourcemap: { inline: false, includeContent: true },
-  exports: 'named'
+const baseConfig = {
+  input: 'src/index.ts',
+  external,
+  watch: {
+    include: 'src/**'
+  }
 };
 
 export default [
+  // ESM build
   {
-    input: 'src/index.ts',
+    ...baseConfig,
     output: {
-      ...baseOutput,
       file: pkg.module,
-      format: 'esm'
+      format: 'esm',
+      banner,
+      sourcemap: true,
+      exports: 'named'
     },
-    external,
     plugins: basePlugins
   },
+  
+  // UMD build
   {
-    input: 'src/index.ts',
+    ...baseConfig,
     output: {
-      ...baseOutput,
       file: pkg.main,
       format: 'umd',
       name: 'NexusSearch',
+      banner,
+      sourcemap: true,
+      exports: 'named',
       globals: { idb: 'idb' }
     },
     plugins: [
       ...basePlugins,
       terser({
+        sourceMap: true,
         output: {
           comments: (node, comment) =>
             comment.type === 'comment2' && /@license/i.test(comment.value)
@@ -87,22 +97,29 @@ export default [
       })
     ]
   },
+  
+  // CJS build
   {
-    input: 'src/index.ts',
+    ...baseConfig,
     output: {
-      ...baseOutput,
       file: pkg.commonjs,
-      format: 'cjs'
+      format: 'cjs',
+      banner,
+      sourcemap: true,
+      exports: 'named',
+      preferConst: true
     },
-    external,
     plugins: basePlugins
   },
+  
+  // Types
   {
     input: 'dist/types/index.d.ts',
-    output: [{
-      file: 'dist/index.d.ts',
+    output: [{ 
+      file: 'dist/index.d.ts', 
       format: 'esm'
     }],
-    plugins: [dts()]
+    plugins: [dts()],
+    external: [...external, /\.css$/]
   }
 ];
