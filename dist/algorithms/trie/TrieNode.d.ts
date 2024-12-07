@@ -1,6 +1,7 @@
 export declare class TrieNode {
     children: Map<string, TrieNode>;
     isEndOfWord: boolean;
-    data: Set<string>;
+    documentRefs: Set<string>;
+    weight: number;
     constructor();
 }

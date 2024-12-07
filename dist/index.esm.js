@@ -113,13 +113,16 @@ class TrieNode {
     constructor() {
         this.children = new Map();
         this.isEndOfWord = false;
-        this.data = new Set();
+        this.documentRefs = new Set();
+        this.weight = 0.0;
     }
 }
 
 class TrieSearch {
     constructor() {
         this.root = new TrieNode();
+        this.documents = new Map();
+        this.documentLinks = new Map();
     }
     insert(word, documentId) {
         let current = this.root;
@@ -130,61 +133,60 @@ class TrieSearch {
             current = current.children.get(char);
         }
         current.isEndOfWord = true;
-        current.data.add(documentId);
+        current.documentRefs.add(documentId);
     }
     search(prefix, maxResults = 10) {
         const results = new Set();
         let current = this.root;
+        // Navigate to prefix endpoint
         for (const char of prefix.toLowerCase()) {
             if (!current.children.has(char)) {
                 return results;
             }
             current = current.children.get(char);
         }
-        this.collectIds(current, results, maxResults);
+        // Collect all document references below this point
+        this.collectDocumentRefs(current, results, maxResults);
         return results;
-    }
-    exportState() {
-        return this.serializeNode(this.root);
-    }
-    importState(state) {
-        this.root = this.deserializeNode(state);
-    }
-    collectIds(node, results, maxResults) {
-        if (node.isEndOfWord) {
-            for (const id of node.data) {
-                if (results.size >= maxResults)
-                    return;
-                results.add(id);
-            }
-        }
-        for (const child of node.children.values()) {
-            if (results.size >= maxResults)
-                return;
-            this.collectIds(child, results, maxResults);
-        }
     }
     fuzzySearch(word, maxDistance = 2) {
         const results = new Set();
         this.fuzzySearchHelper(word.toLowerCase(), this.root, '', maxDistance, results);
         return results;
     }
+    collectDocumentRefs(node, results, maxResults) {
+        if (node.isEndOfWord) {
+            for (const docId of node.documentRefs) {
+                if (results.size >= maxResults)
+                    return;
+                results.add(docId);
+            }
+        }
+        for (const child of node.children.values()) {
+            if (results.size >= maxResults)
+                return;
+            this.collectDocumentRefs(child, results, maxResults);
+        }
+    }
     fuzzySearchHelper(word, node, currentWord, maxDistance, results) {
         if (maxDistance < 0)
             return;
         if (node.isEndOfWord) {
-            const distance = this.levenshteinDistance(word, currentWord);
+            const distance = this.calculateLevenshteinDistance(word, currentWord);
             if (distance <= maxDistance) {
-                node.data.forEach(id => results.add(id));
+                node.documentRefs.forEach(id => results.add(id));
             }
         }
-        for (const [char, childNode] of node.children) {
-            this.fuzzySearchHelper(word, childNode, currentWord + char, maxDistance, results);
+        if (maxDistance > 0) {
+            for (const [char, childNode] of node.children) {
+                // Handle substitution
+                const newDistance = word[currentWord.length] !== char ? maxDistance - 1 : maxDistance;
+                this.fuzzySearchHelper(word, childNode, currentWord + char, newDistance, results);
+            }
         }
     }
-    levenshteinDistance(s1, s2) {
-        const dp = Array(s1.length + 1)
-            .fill(0)
+    calculateLevenshteinDistance(s1, s2) {
+        const dp = Array(s1.length + 1).fill(0)
             .map(() => Array(s2.length + 1).fill(0));
         for (let i = 0; i <= s1.length; i++)
             dp[i][0] = i;
@@ -196,26 +198,6 @@ class TrieSearch {
             }
         }
         return dp[s1.length][s2.length];
-    }
-    serializeNode(node) {
-        const children = {};
-        node.children.forEach((childNode, char) => {
-            children[char] = this.serializeNode(childNode);
-        });
-        return {
-            isEndOfWord: node.isEndOfWord,
-            data: Array.from(node.data),
-            children
-        };
-    }
-    deserializeNode(serialized) {
-        const node = new TrieNode();
-        node.isEndOfWord = serialized.isEndOfWord;
-        node.data = new Set(serialized.data);
-        Object.entries(serialized.children).forEach(([char, childData]) => {
-            node.children.set(char, this.deserializeNode(childData));
-        });
-        return node;
     }
 }
 
