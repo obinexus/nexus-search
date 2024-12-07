@@ -1,4 +1,3 @@
-import { SearchOptions, SearchResult, SearchStats } from './models';
 
   
 export interface IndexNode {

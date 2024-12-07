@@ -1,4 +1,3 @@
-import type { SearchOptions, IndexConfig, SearchResult } from './compactablity';
   
   export function isSearchOptions(obj: any): obj is SearchOptions {
     return obj && (
