@@ -1,3 +1,5 @@
+import { IndexOptions, SearchOptions, SearchDBSchema, IndexConfig, MetadataEntry } from "@/types";
+import { IDBPDatabase, openDB } from "idb";
 
 
 export const DEFAULT_INDEX_OPTIONS: Required<IndexOptions> = {
