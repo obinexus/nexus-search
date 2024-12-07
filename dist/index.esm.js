@@ -1,7 +1,7 @@
 /**
  * @obinexuscomputing/nexus-search v0.2.37
  * High-performance search indexing and query system
- * @license MIT
+ * @license MIT 
  */
 import { openDB } from 'idb';
 
@@ -831,6 +831,7 @@ class SearchEngine {
     }
 }
 
+// Define the namespace
 var NexusSearch;
 (function (NexusSearch) {
     // Constants
@@ -887,6 +888,7 @@ var NexusSearch;
     }
     NexusSearch.isSearchResult = isSearchResult;
 })(NexusSearch || (NexusSearch = {}));
+// Make namespace the default export
 var NexusSearch$1 = NexusSearch;
 
 export { CacheManager, DataMapper, IndexManager, IndexMapper, IndexedDB, NexusSearch, PerformanceMonitor, QueryProcessor, SearchEngine, TrieNode, TrieSearch, createSearchableFields, NexusSearch$1 as default, getNestedValue, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };

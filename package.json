@@ -1,7 +1,7 @@
 {
   "name": "@obinexuscomputing/nexus-search",
   "version": "0.2.37",
-  "description": "High-performance search indexing and query system",
+  "type": "module",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
@@ -11,6 +11,21 @@
       "require": "./dist/index.cjs.js",
       "types": "./dist/index.d.ts"
     }
+  },
+  
+  "scripts": {
+    "build": "rollup -c",
+    "demo": "node fixtures/server.js",
+    "dev": "rollup -c -w",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "jest --config jest.config.js --watch",
+    "test:coverage": "jest --config jest.config.js --coverage",
+    "test:ci": "jest --config jest.config.js --ci --coverage --maxWorkers=2",
+    "test:debug": "node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand --config jest.config.js",
+    "lint": "eslint 'src/**/*.{js,ts}'",
+    "format": "prettier --write 'src/**/*.{js,ts}'",
+    "postinstall": "npm run build",
+    "prepublishOnly": "npm run build"
   },
   "files": [
     "dist/",
@@ -30,21 +45,7 @@
     ".gitignore",
     "package.json"
   ],
-  "scripts": {
-    "build": "rollup -c",
-    "test:package": "./scripts/test-package.sh",
-    "demo": "node fixtures/server.js",
-    "dev": "rollup -c -w",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:watch": "jest --config jest.config.js --watch",
-    "test:coverage": "jest --config jest.config.js --coverage",
-    "test:ci": "jest --config jest.config.js --ci --coverage --maxWorkers=2",
-    "test:debug": "node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand --config jest.config.js",
-    "lint": "eslint 'src/**/*.{js,ts}'",
-    "format": "prettier --write 'src/**/*.{js,ts}'",
-    "postinstall": "npm run build",
-    "prepublishOnly": "npm run build"
-  },
+
   "dependencies": {
     "@eslint/js": "^9.16.0",
     "@rollup/plugin-alias": "^5.1.1",
