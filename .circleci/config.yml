@@ -36,13 +36,6 @@ jobs:
           name: Build
           command: npm run build
       
-      - run:
-          name: Demo Server Test
-          command: |
-            npm run demo &
-            sleep 5
-            curl -f http://localhost:3000 || exit 1
-      
       - store_test_results:
           path: ./reports/junit/
           
@@ -58,6 +51,26 @@ jobs:
       - codecov/upload:
           file: './coverage/lcov.info'
 
+  test-package:
+    docker:
+      - image: cimg/node:18.16
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/project
+      
+      - run:
+          name: Make test script executable
+          command: chmod +x ./scripts/test-package.sh
+      
+      - run:
+          name: Test package installation
+          command: ./scripts/test-package.sh
+      
+      - store_artifacts:
+          path: /tmp/test-results
+          destination: test-results
+
   publish:
     docker:
       - image: cimg/node:18.16
@@ -68,6 +81,12 @@ jobs:
       - run:
           name: Authenticate with registry
           command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/project/.npmrc
+      
+      - run:
+          name: Verify package contents
+          command: |
+            npm pack
+            tar -tzf *.tgz
       
       - run:
           name: Publish package
@@ -83,9 +102,12 @@ workflows:
   build-test-publish:
     jobs:
       - test
-      - publish:
+      - test-package:
           requires:
             - test
+      - publish:
+          requires:
+            - test-package
           filters:
             branches:
               only:
