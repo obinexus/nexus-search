@@ -1,4 +1,4 @@
-import { DocumentLink, DocumentRank, IndexNode } from '../types';
+import { DocumentLink, DocumentRank } from '@/types/compactablity';
 import {AlgoUtils} from './AlgoUtils';
 
 
