@@ -1,8 +1,13 @@
-
 import { TrieNode } from './TrieNode';
 import { DocumentLink } from '../../types/document';
 import { SearchResult } from '../../types/search';
 import { ScoringUtils } from '../../utils/ScoringUtils';
+
+interface SerializedTrieNode {
+    isEndOfWord: boolean;
+    documentRefs: string[];
+    children: { [key: string]: SerializedTrieNode };
+}
 
 export class TrieSearch {
     private root: TrieNode;
@@ -109,5 +114,89 @@ export class TrieSearch {
         }
 
         return dp[s1.length][s2.length];
+    }
+
+      /**
+     * Exports the trie state for persistence
+     * @returns Serialized trie state
+     */
+      exportState(): { 
+        trie: SerializedTrieNode;
+        documents: [string, any][];
+        documentLinks: [string, DocumentLink[]][];
+    } {
+        return {
+            trie: this.serializeNode(this.root),
+            documents: Array.from(this.documents.entries()),
+            documentLinks: Array.from(this.documentLinks.entries())
+        };
+    }
+
+    /**
+     * Imports a previously exported trie state
+     * @param state The state to import
+     */
+    importState(state: { 
+        trie: SerializedTrieNode;
+        documents?: [string, any][];
+        documentLinks?: [string, DocumentLink[]][];
+    }): void {
+        this.root = this.deserializeNode(state.trie);
+        
+        if (state.documents) {
+            this.documents = new Map(state.documents);
+        }
+        
+        if (state.documentLinks) {
+            this.documentLinks = new Map(state.documentLinks);
+        }
+    }
+
+    /**
+     * Serializes a TrieNode for persistence
+     */
+    private serializeNode(node: TrieNode): SerializedTrieNode {
+        const children: { [key: string]: SerializedTrieNode } = {};
+        
+        node.children.forEach((childNode, char) => {
+            children[char] = this.serializeNode(childNode);
+        });
+
+        return {
+            isEndOfWord: node.isEndOfWord,
+            documentRefs: Array.from(node.documentRefs),
+            children
+        };
+    }
+
+    /**
+     * Deserializes a node from its serialized form
+     */
+    private deserializeNode(serialized: SerializedTrieNode): TrieNode {
+        const node = new TrieNode();
+        node.isEndOfWord = serialized.isEndOfWord;
+        node.documentRefs = new Set(serialized.documentRefs);
+
+        Object.entries(serialized.children).forEach(([char, childData]) => {
+            node.children.set(char, this.deserializeNode(childData));
+        });
+
+        return node;
+    }
+
+    /**
+     * Clears all data from the trie
+     */
+    clear(): void {
+        this.root = new TrieNode();
+        this.documents.clear();
+        this.documentLinks.clear();
+    }
+
+    /**
+     * Gets the current size of the trie
+     */
+    getSize(): number {
+        return this.documents.size;
     }
 }
