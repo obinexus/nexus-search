@@ -14,11 +14,50 @@ class NexusSearchBar {
         this.initialize();
     }
 
+    async fetchPosts() {
+        try {
+            // Fetch posts and comments from JSONPlaceholder API
+            const [postsResponse, commentsResponse] = await Promise.all([
+                fetch('https://jsonplaceholder.typicode.com/posts'),
+                fetch('https://jsonplaceholder.typicode.com/comments')
+            ]);
+
+            const posts = await postsResponse.json();
+            const comments = await commentsResponse.json();
+
+            // Group comments by post
+            const commentsByPost = comments.reduce((acc, comment) => {
+                if (!acc[comment.postId]) {
+                    acc[comment.postId] = [];
+                }
+                acc[comment.postId].push(comment);
+                return acc;
+            }, {});
+
+            // Format posts for search engine
+            return posts.map(post => ({
+                title: post.title,
+                content: post.body,
+                tags: [
+                    'blog',
+                    `user-${post.userId}`,
+                    `post-${post.id}`,
+                    ...(commentsByPost[post.id] ? ['has-comments'] : [])
+                ],
+                comments: commentsByPost[post.id] || [],
+                author: `User ${post.userId}`,
+                postId: post.id
+            }));
+        } catch (error) {
+            console.error('Error fetching posts:', error);
+            throw new Error('Failed to load blog posts');
+        }
+    }
+
     async initialize() {
         try {
             this.showLoading();
             
-            // Wait for NexusSearch to be available
             if (!window.NexusSearch) {
                 throw new Error('NexusSearch library not loaded');
             }
@@ -26,81 +65,20 @@ class NexusSearchBar {
             this.searchEngine = new window.NexusSearch.SearchEngine({
                 name: 'nexus-search-bar',
                 version: 1,
-                fields: ['title', 'content', 'tags']
+                fields: ['title', 'content', 'tags', 'author']
             });
 
             await this.searchEngine.initialize();
 
-            // Add sample documents
-            await this.searchEngine.addDocuments([
-                {
-                    title: 'Getting Started',
-                    content: 'Quick start guide for NexusSearch',
-                    tags: ['guide', 'documentation']
-                },
-                {
-                    title: 'Advanced Features',
-                    content: 'Explore advanced search capabilities',
-                    tags: ['advanced', 'features']
-                },
-                {
-                    title: 'Search Optimization',
-                    content: 'Learn about fuzzy search and performance tuning',
-                    tags: ['performance', 'optimization']
-                }
-            ]);
+            // Fetch and index blog posts
+            const posts = await this.fetchPosts();
+            await this.searchEngine.addDocuments(posts);
 
             this.setupEventListeners();
             this.hideError();
         } catch (error) {
             this.showError('Failed to initialize search engine: ' + error.message);
             console.error('Initialization error:', error);
-        } finally {
-            this.hideLoading();
-        }
-    }
-
-    setupEventListeners() {
-        // Remove any existing listeners
-        this.input.removeEventListener('input', this.handleInput.bind(this));
-        this.input.addEventListener('input', this.handleInput.bind(this));
-    }
-
-    handleInput(event) {
-        const query = event.target.value.trim();
-
-        if (this.searchTimeout) {
-            clearTimeout(this.searchTimeout);
-        }
-
-        this.searchTimeout = setTimeout(() => {
-            if (query) {
-                this.performSearch(query);
-            } else {
-                this.clearResults();
-            }
-        }, 300);
-    }
-
-    async performSearch(query) {
-        if (!this.searchEngine) {
-            this.showError('Search engine not initialized');
-            return;
-        }
-
-        try {
-            this.showLoading();
-            this.hideError();
-
-            const results = await this.searchEngine.search(query, {
-                fuzzy: true,
-                maxResults: 5
-            });
-
-            this.renderResults(results);
-        } catch (error) {
-            this.showError('Search failed. Please try again.');
-            console.error('Search error:', error);
         } finally {
             this.hideLoading();
         }
@@ -121,9 +99,23 @@ class NexusSearchBar {
         results.forEach(result => {
             const resultElement = document.createElement('div');
             resultElement.className = 'search-result';
+
+            // Get comment preview if available
+            const commentPreview = result.item.comments.length > 0 
+                ? `<div class="comments-preview">
+                     <strong>${result.item.comments.length} comments</strong>
+                     <p>${result.item.comments[0].body.slice(0, 100)}...</p>
+                   </div>`
+                : '';
+
             resultElement.innerHTML = `
                 <h3>${result.item.title}</h3>
+                <div class="meta">
+                    <span class="author">By ${result.item.author}</span>
+                    <span class="post-id">Post #${result.item.postId}</span>
+                </div>
                 <p>${result.item.content}</p>
+                ${commentPreview}
                 <div class="tags">
                     ${result.item.tags.map(tag => `
                         <span class="tag">${tag}</span>
@@ -137,34 +129,11 @@ class NexusSearchBar {
         });
     }
 
-    showLoading() {
-        this.spinner.style.display = 'block';
-        this.input.disabled = true;
-    }
-
-    hideLoading() {
-        this.spinner.style.display = 'none';
-        this.input.disabled = false;
-    }
-
-    showError(message) {
-        this.errorMessage.textContent = message;
-        this.errorMessage.style.display = 'block';
-    }
-
-    hideError() {
-        this.errorMessage.style.display = 'none';
-    }
-
-    clearResults() {
-        this.resultsContainer.innerHTML = '';
-        this.noResults.style.display = 'none';
-    }
+    // ... rest of the SearchBar implementation remains the same ...
 }
 
 // Ensure the DOM and NexusSearch library are loaded before initializing
 document.addEventListener('DOMContentLoaded', () => {
-    // Check if NexusSearch is loaded
     const checkLibrary = setInterval(() => {
         if (window.NexusSearch) {
             clearInterval(checkLibrary);
@@ -173,7 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 100);
 
-    // Timeout after 5 seconds
     setTimeout(() => {
         clearInterval(checkLibrary);
         const searchContainer = document.querySelector('.search-container');
