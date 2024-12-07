@@ -1,3 +1,5 @@
+import { SearchDBSchema, MetadataEntry } from '@/types/storage';
+import { IndexOptions, SearchOptions, IndexConfig } from '@/types/types';
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
 
