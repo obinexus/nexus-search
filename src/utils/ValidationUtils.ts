@@ -1,5 +1,6 @@
-import { SearchOptions, IndexConfig } from '@/types/compactability';
-import { getNestedValue } from './SearchUtils';
+import { SearchOptions, IndexConfig } from "@/types";
+import { getNestedValue } from "./SearchUtils";
+
 
 export function validateSearchOptions(options: SearchOptions): void {
   if (options.maxResults && options.maxResults < 1) {
