@@ -1,3 +1,4 @@
+import { DBSchema } from "./database";
 import { IndexConfig } from "./types";
 
 export interface SearchDBSchema extends DBSchema {

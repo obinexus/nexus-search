@@ -1,3 +1,4 @@
+import { SearchResult } from "@/types/types";
 
 
 export class CacheManager {
