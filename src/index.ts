@@ -1,20 +1,10 @@
-import type { SearchResult, SearchOptions, SearchContext, IndexConfig, IndexOptions } from './types';
+import type { SearchResult, SearchOptions, SearchContext, IndexConfig, IndexOptions,SearchStats } from './types';
 
 // Define core namespace
 export namespace NexusSearch {
-    // Re-export base interfaces
-    export interface IndexOptions extends IndexOptions {}
-    export interface SearchStats {
-        totalResults: number;
-        searchTime: number;
-        indexSize: number;
-        queryComplexity: number;
-    }
-    export interface SearchContext extends SearchContext {}
-    export interface SearchOptions extends SearchOptions {}
-    export interface SearchResult<T> extends SearchResult<T> {}
-    export interface IndexConfig extends IndexConfig {}
+   
 
+   
     // Constants
     export const DEFAULT_INDEX_OPTIONS: Required<IndexOptions> = {
         caseSensitive: false,
