@@ -1,3 +1,9 @@
+import { CacheManager } from "@/storage";
+import { SearchStorage } from "@/storage/IndexedDBService";
+import { IndexConfig, SearchOptions, SearchResult } from "@/types";
+import { validateSearchOptions } from "@/utils";
+import { IndexManager } from "./IndexManager";
+import { QueryProcessor } from "./QueryProcessor";
 
 export class SearchEngine {
   private indexManager: IndexManager;
