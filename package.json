@@ -2,16 +2,18 @@
   "name": "@obinexuscomputing/nexus-search",
   "version": "0.2.37",
   "type": "module",
-  "main": "dist/index.cjs.js",
+  "main": "dist/index.umd.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.esm.js",
       "require": "./dist/index.cjs.js",
+      "browser": "./dist/index.umd.js",
       "types": "./dist/index.d.ts"
-    }
-  },
+    
+  }
+},
   "scripts": {
     "build": "rollup -c",
     "demo": "node fixtures/server.js",

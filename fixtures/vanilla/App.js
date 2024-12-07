@@ -17,39 +17,20 @@ class NexusSearchBar {
     async initialize() {
         try {
             this.showLoading();
-            // Access SearchEngine from the global NexusSearch namespace
-            const { SearchEngine } = window.NexusSearch;
-            this.searchEngine = new SearchEngine({
+            if (!window.NexusSearch) {
+                throw new Error('NexusSearch library not loaded');
+            }
+            
+            this.searchEngine = new window.NexusSearch.SearchEngine({
                 name: 'nexus-search-bar',
                 version: 1,
                 fields: ['title', 'content', 'tags']
             });
 
             await this.searchEngine.initialize();
-
-            await this.searchEngine.addDocuments([
-                {
-                    title: 'Getting Started',
-                    content: 'Quick start guide for NexusSearch',
-                    tags: ['guide', 'documentation']
-                },
-                {
-                    title: 'Advanced Features',
-                    content: 'Explore advanced search capabilities',
-                    tags: ['advanced', 'features']
-                },
-                {
-                    title: 'Search Optimization',
-                    content: 'Learn about fuzzy search and performance tuning',
-                    tags: ['performance', 'optimization']
-                }
-            ]);
-
-            this.setupEventListeners();
-            this.hideLoading();
-            this.hideError();
+            // Rest of the initialization code remains the same
         } catch (error) {
-            this.showError('Failed to initialize search engine');
+            this.showError('Failed to initialize search engine: ' + error.message);
             console.error('Initialization error:', error);
         }
     }

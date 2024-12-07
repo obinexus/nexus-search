@@ -51,11 +51,11 @@ const basePlugins = [
 ];
 
 export default [
-  // UMD build (main)
+  // UMD build
   {
     input: 'src/index.ts',
     output: {
-      file: pkg.main,
+      file: 'dist/index.umd.js',
       format: 'umd',
       name: 'NexusSearch',
       banner,
@@ -63,7 +63,6 @@ export default [
       exports: 'named',
       globals: { idb: 'idb' }
     },
-    external,
     plugins: [
       ...basePlugins,
       terser({
@@ -79,7 +78,7 @@ export default [
   {
     input: 'src/index.ts',
     output: {
-      file: pkg.module,
+      file: 'dist/index.esm.js',
       format: 'esm',
       banner,
       sourcemap: true,
@@ -93,7 +92,7 @@ export default [
   {
     input: 'src/index.ts',
     output: {
-      file: pkg.commonjs,
+      file: 'dist/index.cjs.js',
       format: 'cjs',
       banner,
       sourcemap: true,
