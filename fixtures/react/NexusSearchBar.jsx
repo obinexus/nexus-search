@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { SearchEngine, SearchResult } from '@/types';
+import { SearchEngine } from '@obinexuscomputing/nexus-search';
+import type { SearchResult } from '@obinexuscomputing/nexus-search';
 
 const NexusSearchBar = () => {
   const [query, setQuery] = useState('');
