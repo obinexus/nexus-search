@@ -1,3 +1,4 @@
+
 # NexusSearch
 
 A high-performance search indexing and query system with support for fuzzy matching, real-time updates, and flexible configuration.
@@ -156,17 +157,17 @@ interface SearchResult<T> {
 
 ## Best Practices
 
-1. Index Configuration
+1. **Index Configuration**
    - Choose appropriate fields for indexing
    - Configure options based on data characteristics
    - Use meaningful index names
 
-2. Performance
+2. **Performance**
    - Index only necessary fields
    - Implement pagination for large result sets
    - Use appropriate fuzzy thresholds
 
-3. Search Implementation
+3. **Search Implementation**
    - Use fuzzy search for better matches
    - Implement proper error handling
    - Cache frequent searches
@@ -196,3 +197,11 @@ npm run demo
 ## Contributing
 
 Coming soon...
+
+## Support and Community
+
+- [Buy Me a Coffee](https://buymeacoffee.com/obinexuscomputing)
+- [GitLab](https://gitlab.com/obinexuscomputng)
+- [GitHub](https://github.com/obinexuscomputing)
+- [OnlyFans (non-NSFW)](https://www.onlyfans.com/obinexuscomputing)
+
