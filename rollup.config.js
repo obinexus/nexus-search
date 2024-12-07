@@ -23,19 +23,17 @@ const external = [
   ...Object.keys(pkg.dependencies || {})
 ];
 
-const aliasEntries = {
-  entries: [
-    { find: '@', replacement: path.resolve(__dirname, 'src') },
-    { find: '@core', replacement: path.resolve(__dirname, 'src/core') },
-    { find: '@algorithms', replacement: path.resolve(__dirname, 'src/algorithms') },
-    { find: '@storage', replacement: path.resolve(__dirname, 'src/storage') },
-    { find: '@utils', replacement: path.resolve(__dirname, 'src/utils') },
-    { find: '@types', replacement: path.resolve(__dirname, 'src/types') }
-  ]
-};
-
 const basePlugins = [
-  alias(aliasEntries),
+  alias({
+    entries: [
+      { find: '@', replacement: path.resolve(__dirname, 'src') },
+      { find: '@core', replacement: path.resolve(__dirname, 'src/core') },
+      { find: '@algorithms', replacement: path.resolve(__dirname, 'src/algorithms') },
+      { find: '@storage', replacement: path.resolve(__dirname, 'src/storage') },
+      { find: '@utils', replacement: path.resolve(__dirname, 'src/utils') },
+      { find: '@types', replacement: path.resolve(__dirname, 'src/types') }
+    ]
+  }),
   resolve({
     browser: true,
     preferBuiltins: false,
@@ -52,30 +50,10 @@ const basePlugins = [
   })
 ];
 
-const baseConfig = {
-  input: 'src/index.ts',
-  external,
-  watch: {
-    include: 'src/**'
-  }
-};
 export default [
-  // ESM build
+  // UMD build (main)
   {
-    ...baseConfig,
-    output: {
-      file: pkg.module,
-      format: 'esm',
-      banner,
-      sourcemap: true,
-      exports: 'named'
-    },
-    plugins: basePlugins
-  },
-  
-  // UMD build
-  {
-    ...baseConfig,
+    input: 'src/index.ts',
     output: {
       file: pkg.main,
       format: 'umd',
@@ -85,10 +63,10 @@ export default [
       exports: 'named',
       globals: { idb: 'idb' }
     },
+    external,
     plugins: [
       ...basePlugins,
       terser({
-        sourceMap: true,
         output: {
           comments: (node, comment) =>
             comment.type === 'comment2' && /@license/i.test(comment.value)
@@ -96,10 +74,24 @@ export default [
       })
     ]
   },
-  
+
+  // ESM build
+  {
+    input: 'src/index.ts',
+    output: {
+      file: pkg.module,
+      format: 'esm',
+      banner,
+      sourcemap: true,
+      exports: 'named'
+    },
+    external,
+    plugins: basePlugins
+  },
+
   // CJS build
   {
-    ...baseConfig,
+    input: 'src/index.ts',
     output: {
       file: pkg.commonjs,
       format: 'cjs',
@@ -107,17 +99,17 @@ export default [
       sourcemap: true,
       exports: 'named'
     },
+    external,
     plugins: basePlugins
   },
-  
+
   // Types
   {
     input: 'dist/types/index.d.ts',
-    output: [{ 
-      file: 'dist/index.d.ts', 
-      format: 'esm'
-    }],
-    plugins: [dts()],
-    external: [...external, /\.css$/]
+    output: {
+      file: 'dist/index.d.ts',
+      format: 'es'
+    },
+    plugins: [dts()]
   }
 ];
