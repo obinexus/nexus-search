@@ -17,10 +17,12 @@ class NexusSearchBar {
     async initialize() {
         try {
             this.showLoading();
+            
+            // Wait for NexusSearch to be available
             if (!window.NexusSearch) {
                 throw new Error('NexusSearch library not loaded');
             }
-            
+
             this.searchEngine = new window.NexusSearch.SearchEngine({
                 name: 'nexus-search-bar',
                 version: 1,
@@ -28,14 +30,39 @@ class NexusSearchBar {
             });
 
             await this.searchEngine.initialize();
-            // Rest of the initialization code remains the same
+
+            // Add sample documents
+            await this.searchEngine.addDocuments([
+                {
+                    title: 'Getting Started',
+                    content: 'Quick start guide for NexusSearch',
+                    tags: ['guide', 'documentation']
+                },
+                {
+                    title: 'Advanced Features',
+                    content: 'Explore advanced search capabilities',
+                    tags: ['advanced', 'features']
+                },
+                {
+                    title: 'Search Optimization',
+                    content: 'Learn about fuzzy search and performance tuning',
+                    tags: ['performance', 'optimization']
+                }
+            ]);
+
+            this.setupEventListeners();
+            this.hideError();
         } catch (error) {
             this.showError('Failed to initialize search engine: ' + error.message);
             console.error('Initialization error:', error);
+        } finally {
+            this.hideLoading();
         }
     }
 
     setupEventListeners() {
+        // Remove any existing listeners
+        this.input.removeEventListener('input', this.handleInput.bind(this));
         this.input.addEventListener('input', this.handleInput.bind(this));
     }
 
@@ -56,7 +83,10 @@ class NexusSearchBar {
     }
 
     async performSearch(query) {
-        if (!this.searchEngine) return;
+        if (!this.searchEngine) {
+            this.showError('Search engine not initialized');
+            return;
+        }
 
         try {
             this.showLoading();
@@ -79,7 +109,7 @@ class NexusSearchBar {
     renderResults(results) {
         this.resultsContainer.innerHTML = '';
 
-        if (results.length === 0) {
+        if (!results || results.length === 0) {
             this.noResults.style.display = 'block';
             this.resultsContainer.style.display = 'none';
             return;
@@ -109,10 +139,12 @@ class NexusSearchBar {
 
     showLoading() {
         this.spinner.style.display = 'block';
+        this.input.disabled = true;
     }
 
     hideLoading() {
         this.spinner.style.display = 'none';
+        this.input.disabled = false;
     }
 
     showError(message) {
@@ -130,8 +162,25 @@ class NexusSearchBar {
     }
 }
 
-// Initialize search bar when DOM is loaded
+// Ensure the DOM and NexusSearch library are loaded before initializing
 document.addEventListener('DOMContentLoaded', () => {
-    const searchContainer = document.querySelector('.search-container');
-    new NexusSearchBar(searchContainer);
+    // Check if NexusSearch is loaded
+    const checkLibrary = setInterval(() => {
+        if (window.NexusSearch) {
+            clearInterval(checkLibrary);
+            const searchContainer = document.querySelector('.search-container');
+            new NexusSearchBar(searchContainer);
+        }
+    }, 100);
+
+    // Timeout after 5 seconds
+    setTimeout(() => {
+        clearInterval(checkLibrary);
+        const searchContainer = document.querySelector('.search-container');
+        const errorMessage = searchContainer.querySelector('.error-message');
+        if (!window.NexusSearch) {
+            errorMessage.textContent = 'Failed to load NexusSearch library';
+            errorMessage.style.display = 'block';
+        }
+    }, 5000);
 });
