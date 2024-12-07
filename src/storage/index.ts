@@ -1,3 +1,2 @@
-
-export { CacheManager} from './CacheManager';
-export {IndexedDB ,SearchStorage } from './IndexedDBService'
+export { CacheManager } from './CacheManager';
+export { IndexedDB } from './IndexedDBService';
