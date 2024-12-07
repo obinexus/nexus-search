@@ -2,6 +2,7 @@
 
 ## Features
 - [ ] Add support for advanced search operators
+- [] Add BFS/DFS Support for characters
 - [ ] Implement role-based access control
 - [ ] Create detailed user and developer documentation
 - [ ] Integrate with more storage backends (e.g., MongoDB)
