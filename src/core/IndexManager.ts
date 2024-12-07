@@ -1,5 +1,5 @@
 import { IndexMapper } from "@/mappers/IndexMapper";
-import { IndexConfig, SearchOptions, SearchResult } from "@/types/types";
+import { IndexConfig, SearchOptions, SearchResult } from "@/types/compactablity";
 import { createSearchableFields } from "@/utils/SearchUtils";
 
 export class IndexManager {

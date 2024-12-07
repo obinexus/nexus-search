@@ -1,4 +1,5 @@
 // Reference imports for type definitions
+/// <reference path="./compactablity.ts" />
 /// <reference path="./errors.ts" />
 /// <reference path="./events.ts" />
 /// <reference path="./internal.ts" />

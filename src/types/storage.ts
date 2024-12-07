@@ -1,5 +1,5 @@
 import { DBSchema } from "./database";
-import { IndexConfig } from "./types";
+import { IndexConfig } from "./compactablity";
 
 export interface SearchDBSchema extends DBSchema {
     searchIndices: {

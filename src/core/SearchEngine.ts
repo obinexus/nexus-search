@@ -3,7 +3,7 @@ import { QueryProcessor } from './QueryProcessor';
 import { SearchStorage } from '../storage/IndexedDBService';
 import { CacheManager } from '../storage/CacheManager';
 import { validateSearchOptions } from '@/utils/ValidationUtils';
-import { IndexConfig, SearchOptions, SearchResult } from '@/types/types';
+import { IndexConfig, SearchOptions, SearchResult } from '@/types/compactablity';
 
 export class SearchEngine {
   private indexManager: IndexManager;
