@@ -1,4 +1,5 @@
-import { SearchResult } from "@/types/compactablity";
+import { SearchResult } from "@/types";
+
 
 
 export class CacheManager {
