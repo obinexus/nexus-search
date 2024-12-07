@@ -1,5 +1,5 @@
 /**
- * @obinexuscomputing/nexus-search v0.2.37
+ * @obinexuscomputing/nexus-search v0.1.0
  * undefined
  * @license MIT 
  */
