@@ -2,7 +2,8 @@
 
 ## Features
 - [ ] Add support for advanced search operators
-- [] Add BFS/DFS Support for characters
+- [] Using BFS/DFS Trie travseral algorutils  Support for characters searching fuzzy searching document in directory html.
+markdown etc
 - [ ] Implement role-based access control
 - [ ] Create detailed user and developer documentation
 - [ ] Integrate with more storage backends (e.g., MongoDB)

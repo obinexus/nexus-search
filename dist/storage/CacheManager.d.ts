@@ -1,4 +1,4 @@
-import { SearchResult } from '../types';
+import { SearchResult } from "@/types/compactablity";
 export declare class CacheManager {
     private cache;
     private readonly maxSize;

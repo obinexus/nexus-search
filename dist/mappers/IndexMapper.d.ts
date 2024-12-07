@@ -1,4 +1,4 @@
-import { SearchResult } from '../types';
+import { SearchResult } from '@/types/search';
 export declare class IndexMapper {
     private dataMapper;
     private trieSearch;

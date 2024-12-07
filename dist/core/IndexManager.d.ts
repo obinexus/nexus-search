@@ -1,4 +1,4 @@
-import { IndexConfig, SearchOptions, SearchResult } from "@/types";
+import { IndexConfig, SearchOptions, SearchResult } from "@/types/compactablity";
 export declare class IndexManager {
     private indexMapper;
     private config;

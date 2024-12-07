@@ -1,4 +1,4 @@
-import { SearchOptions, SearchResult, IndexConfig } from '../types';
+import { IndexConfig, SearchOptions, SearchResult } from '@/types/compactablity';
 export declare class SearchEngine {
     private indexManager;
     private queryProcessor;

@@ -5,92 +5,75 @@
  */
 import { openDB } from 'idb';
 
-class SearchError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = 'SearchError';
-    }
-}
-class IndexError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = 'IndexError';
-    }
-}
-class ValidationError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = 'ValidationError';
-    }
-}
-class StorageError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = 'StorageError';
-    }
-}
-
-// Type guards
-function isSearchOptions(obj) {
-    return obj && (typeof obj.fuzzy === 'undefined' || typeof obj.fuzzy === 'boolean') && (typeof obj.maxResults === 'undefined' || typeof obj.maxResults === 'number');
-}
-function isIndexConfig(obj) {
-    return obj &&
-        typeof obj.name === 'string' &&
-        typeof obj.version === 'number' &&
-        Array.isArray(obj.fields);
-}
-function isSearchResult(obj) {
-    return obj &&
-        'item' in obj &&
-        typeof obj.score === 'number' &&
-        Array.isArray(obj.matches);
-}
-// Utility type functions
-function createSearchStats() {
-    return {
-        totalResults: 0,
-        searchTime: 0,
-        indexSize: 0,
-        queryComplexity: 0
+// Reference imports for type definitions
+/// <reference path="./compactablity.ts" />
+/// <reference path="./errors.ts" />
+/// <reference path="./events.ts" />
+/// <reference path="./internal.ts" />
+/// <reference path="./guards.ts" />
+/// <reference path="./utils.ts" />
+/// <reference path="./defaults.ts" />
+/// <reference path="./document.ts" />
+/// <reference path="./models.ts" />
+/// <reference path="./search.ts" />
+/// <reference path="./storage.ts"/>
+/// <reference path="database.ts"/>
+var NexusSearch;
+(function (NexusSearch) {
+    // Constants
+    NexusSearch.DEFAULT_INDEX_OPTIONS = {
+        caseSensitive: false,
+        stemming: true,
+        stopWords: ['the', 'a', 'an', 'and', 'or', 'but'],
+        minWordLength: 2,
+        maxWordLength: 50,
+        fuzzyThreshold: 0.8
     };
-}
-function createSearchContext(query, options = {}) {
-    return {
-        query,
-        options,
-        startTime: Date.now(),
-        results: [],
-        stats: createSearchStats()
+    NexusSearch.DEFAULT_SEARCH_OPTIONS = {
+        fuzzy: false,
+        maxResults: 10,
+        threshold: 0.5,
+        fields: [],
+        sortBy: 'score',
+        sortOrder: 'desc',
+        page: 1,
+        pageSize: 10
     };
-}
-function createTokenInfo(value, type, position) {
-    return {
-        value,
-        type,
-        position,
-        length: value.length
-    };
-}
-// Default configurations
-const DEFAULT_INDEX_OPTIONS = {
-    caseSensitive: false,
-    stemming: true,
-    stopWords: ['the', 'a', 'an', 'and', 'or', 'but'],
-    minWordLength: 2,
-    maxWordLength: 50,
-    fuzzyThreshold: 0.8
-};
-const DEFAULT_SEARCH_OPTIONS = {
-    fuzzy: false,
-    maxResults: 10,
-    threshold: 0.5,
-    fields: [],
-    sortBy: 'score',
-    sortOrder: 'desc',
-    page: 1,
-    pageSize: 10
-};
+    // Error types
+    class SearchError extends Error {
+        constructor(message) {
+            super(message);
+            this.name = 'SearchError';
+        }
+    }
+    NexusSearch.SearchError = SearchError;
+    class IndexError extends Error {
+        constructor(message) {
+            super(message);
+            this.name = 'IndexError';
+        }
+    }
+    NexusSearch.IndexError = IndexError;
+    // Type guards
+    function isSearchOptions(obj) {
+        return obj && (typeof obj.fuzzy === 'undefined' || typeof obj.fuzzy === 'boolean') && (typeof obj.maxResults === 'undefined' || typeof obj.maxResults === 'number');
+    }
+    NexusSearch.isSearchOptions = isSearchOptions;
+    function isIndexConfig(obj) {
+        return obj &&
+            typeof obj.name === 'string' &&
+            typeof obj.version === 'number' &&
+            Array.isArray(obj.fields);
+    }
+    NexusSearch.isIndexConfig = isIndexConfig;
+    function isSearchResult(obj) {
+        return obj &&
+            'item' in obj &&
+            typeof obj.score === 'number' &&
+            Array.isArray(obj.matches);
+    }
+    NexusSearch.isSearchResult = isSearchResult;
+})(NexusSearch || (NexusSearch = {}));
 
 class DataMapper {
     constructor() {
@@ -872,5 +855,5 @@ class PerformanceMonitor {
     }
 }
 
-export { CacheManager, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, IndexError, IndexManager, IndexMapper, IndexedDB, PerformanceMonitor, QueryProcessor, SearchEngine, SearchError, StorageError, TrieNode, TrieSearch, ValidationError, createSearchContext, createSearchStats, createSearchableFields, createTokenInfo, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
+export { CacheManager, DataMapper, IndexManager, IndexMapper, IndexedDB, NexusSearch, PerformanceMonitor, QueryProcessor, SearchEngine, TrieNode, TrieSearch, createSearchableFields, getNestedValue, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
 //# sourceMappingURL=index.esm.js.map
