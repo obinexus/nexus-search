@@ -10,6 +10,7 @@
 /// <reference path="./models.ts" />
 /// <reference path="./search.ts" />
 /// <reference path="./storage.ts"/>
+/// <reference path="database.ts"/>
 
 export namespace NexusSearch {
     // Base interfaces
