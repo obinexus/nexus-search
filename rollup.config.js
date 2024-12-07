@@ -1,3 +1,4 @@
+// rollup.config.js
 import typescript from 'rollup-plugin-typescript2';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
@@ -50,33 +51,31 @@ const basePlugins = [
   })
 ];
 
-const baseConfig = {
-  input: 'src/index.ts',
-  external
+const baseOutput = {
+  banner,
+  sourcemap: { inline: false, includeContent: true },
+  exports: 'named'
 };
 
 export default [
   {
-    ...baseConfig,
+    input: 'src/index.ts',
     output: {
+      ...baseOutput,
       file: pkg.module,
-      format: 'esm',
-      banner,
-      sourcemap: true,
-      exports: 'named'  // Explicitly set to named exports
+      format: 'esm'
     },
+    external,
     plugins: basePlugins
   },
   {
-    ...baseConfig,
+    input: 'src/index.ts',
     output: {
+      ...baseOutput,
       file: pkg.main,
       format: 'umd',
       name: 'NexusSearch',
-      banner,
-      sourcemap: true,
-      globals: { idb: 'idb' },
-      exports: 'named'  // Explicitly set to named exports
+      globals: { idb: 'idb' }
     },
     plugins: [
       ...basePlugins,
@@ -89,20 +88,19 @@ export default [
     ]
   },
   {
-    ...baseConfig,
+    input: 'src/index.ts',
     output: {
+      ...baseOutput,
       file: pkg.commonjs,
-      format: 'cjs',
-      banner,
-      sourcemap: true,
-      exports: 'named'  // Explicitly set to named exports
+      format: 'cjs'
     },
+    external,
     plugins: basePlugins
   },
   {
     input: 'dist/types/index.d.ts',
-    output: [{ 
-      file: 'dist/index.d.ts', 
+    output: [{
+      file: 'dist/index.d.ts',
       format: 'esm'
     }],
     plugins: [dts()]
