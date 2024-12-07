@@ -9,35 +9,56 @@ jobs:
   test:
     docker:
       - image: cimg/node:18.16
+    resource_class: large
     steps:
       - checkout
+      
       - node/install-packages:
           pkg-manager: npm
           cache-path: ~/project/node_modules
           override-ci-command: npm ci
       
       - run:
-          name: Run Linter
+          name: Lint
           command: npm run lint
       
       - run:
-          name: Type Check
-          command: npm run typecheck
+          name: Format Check
+          command: npm run format -- --check
       
       - run:
-          name: Run Tests
-          command: npm test
-
+          name: Run Tests CI
+          command: npm run test:ci
+          environment:
+            JEST_JUNIT_OUTPUT_DIR: ./reports/junit/
+      
       - run:
-          name: Build Project
+          name: Build
           command: npm run build
+      
+      - run:
+          name: Demo Server Test
+          command: |
+            npm run demo &
+            sleep 5
+            curl -f http://localhost:3000 || exit 1
+      
+      - store_test_results:
+          path: ./reports/junit/
+          
+      - store_artifacts:
+          path: ./coverage
+          destination: coverage
           
       - persist_to_workspace:
           root: ~/project
           paths:
             - .
 
-  coverage:
+      - codecov/upload:
+          file: './coverage/lcov.info'
+
+  publish:
     docker:
       - image: cimg/node:18.16
     steps:
@@ -45,17 +66,28 @@ jobs:
           at: ~/project
       
       - run:
-          name: Run Tests with Coverage
-          command: npm run test:coverage
+          name: Authenticate with registry
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/project/.npmrc
       
-      - codecov/upload:
-          file: './coverage/lcov.info'
+      - run:
+          name: Publish package
+          command: |
+            if [ "${CIRCLE_BRANCH}" = "main" ]; then
+              npm publish
+            elif [ "${CIRCLE_BRANCH}" = "develop" ]; then
+              npm publish --tag beta
+            fi
 
 workflows:
   version: 2
-  build-test:
+  build-test-publish:
     jobs:
       - test
-      - coverage:
+      - publish:
           requires:
             - test
+          filters:
+            branches:
+              only:
+                - main
+                - develop
