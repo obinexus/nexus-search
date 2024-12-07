@@ -120,7 +120,7 @@ export class TrieSearch {
      * Exports the trie state for persistence
      * @returns Serialized trie state
      */
-      exportState(): { 
+      public exportState(): { 
         trie: SerializedTrieNode;
         documents: [string, any][];
         documentLinks: [string, DocumentLink[]][];
@@ -136,7 +136,7 @@ export class TrieSearch {
      * Imports a previously exported trie state
      * @param state The state to import
      */
-    importState(state: { 
+    public importState(state: { 
         trie: SerializedTrieNode;
         documents?: [string, any][];
         documentLinks?: [string, DocumentLink[]][];
