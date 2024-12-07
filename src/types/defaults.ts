@@ -1,4 +1,4 @@
-import { IndexOptions } from "./models";
+import { IndexOptions } from "./compactablity";
 import { SearchOptions } from "./search";
 
 export const DEFAULT_INDEX_OPTIONS: Required<IndexOptions> = {

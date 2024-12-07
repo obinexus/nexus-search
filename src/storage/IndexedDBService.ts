@@ -1,6 +1,6 @@
-import { SearchDBSchema, MetadataEntry } from '@/types/storage';
-import { IndexOptions, SearchOptions, IndexConfig } from '@/types/compactablity';
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
+import { SearchDBSchema, MetadataEntry } from "@/types";
+import { IDBPDatabase, openDB } from "idb";
+import { IndexConfig, IndexOptions, SearchOptions } from "..";
 
 
 export const DEFAULT_INDEX_OPTIONS: Required<IndexOptions> = {
