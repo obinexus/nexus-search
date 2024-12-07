@@ -80,14 +80,12 @@
     "doc": "docs",
     "fixtures": "fixtures",
     "dist":"dist",
-    "src"
+    "src":"src"
   },
   "keywords": [
     "@obinexuscomputing/nexus-search",
     "pagerank",
-    "document-rank",
     "seo",
-    
     "search",
     "indexing",
     "query",
