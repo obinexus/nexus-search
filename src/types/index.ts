@@ -11,3 +11,14 @@
 /// <reference path="./search.ts" />
 /// <reference path="./storage.ts"/>
 /// <reference path="database.ts"/>
+
+export * from './compactablity';
+export * from './database';
+export * from './document';
+export * from './errors';
+export * from './events';
+export * from './internal';
+export * from './models';
+export * from './search';
+export * from './storage';
+export * from './utils';

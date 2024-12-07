@@ -42,3 +42,6 @@ export interface MetadataEntry {
     config: IndexConfig;
     lastUpdated: number;
 }
+export interface DBSchema {
+    // Base schema interface that others will extend
+}
