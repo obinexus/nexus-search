@@ -14,7 +14,7 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 const banner = `/**
  * ${pkg.name} v${pkg.version}
  * ${pkg.description}
- * @license MIT
+ * @license MIT 
  */`;
 
 const external = [
@@ -50,32 +50,34 @@ const basePlugins = [
   })
 ];
 
+const baseConfig = {
+  input: 'src/index.ts',
+  external
+};
+
 export default [
   {
-    input: 'src/index.ts',
-    output: [
-      {
-        file: pkg.module || 'dist/index.esm.js',
-        format: 'esm',
-        banner,
-        sourcemap: true
-      }
-    ],
-    external,
+    ...baseConfig,
+    output: {
+      file: pkg.module,
+      format: 'esm',
+      banner,
+      sourcemap: true,
+      exports: 'named'  // Explicitly set to named exports
+    },
     plugins: basePlugins
   },
   {
-    input: 'src/index.ts',
-    output: [
-      {
-        file: pkg.main || 'dist/index.js',
-        format: 'umd',
-        name: 'NexusSearch',
-        banner,
-        sourcemap: true,
-        globals: { idb: 'idb' }
-      }
-    ],
+    ...baseConfig,
+    output: {
+      file: pkg.main,
+      format: 'umd',
+      name: 'NexusSearch',
+      banner,
+      sourcemap: true,
+      globals: { idb: 'idb' },
+      exports: 'named'  // Explicitly set to named exports
+    },
     plugins: [
       ...basePlugins,
       terser({
@@ -87,21 +89,22 @@ export default [
     ]
   },
   {
-    input: 'src/index.ts',
-    output: [
-      {
-        file: pkg.commonjs || 'dist/index.cjs.js',
-        format: 'cjs',
-        banner,
-        sourcemap: true
-      }
-    ],
-    external,
+    ...baseConfig,
+    output: {
+      file: pkg.commonjs,
+      format: 'cjs',
+      banner,
+      sourcemap: true,
+      exports: 'named'  // Explicitly set to named exports
+    },
     plugins: basePlugins
   },
   {
     input: 'dist/types/index.d.ts',
-    output: [{ file: 'dist/index.d.ts', format: 'esm' }],
+    output: [{ 
+      file: 'dist/index.d.ts', 
+      format: 'esm'
+    }],
     plugins: [dts()]
   }
 ];

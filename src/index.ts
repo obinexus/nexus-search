@@ -8,6 +8,7 @@ import type {
     SearchStats as ISearchStats
 } from './types';
 
+// Define the namespace
 export namespace NexusSearch {
     export type IndexOptions = IIndexOptions;
     export type SearchStats = ISearchStats;
@@ -147,7 +148,7 @@ export {
     validateDocument
 } from './utils';
 
-// Type exports
+// Export types
 export type {
     IIndexConfig as IndexConfig,
     IIndexOptions as IndexOptions,
@@ -157,7 +158,5 @@ export type {
     ISearchStats as SearchStats
 };
 
+// Make namespace the default export
 export default NexusSearch;
-
-// Backward compatibility export
-export type { NexusSearch as Types };
