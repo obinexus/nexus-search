@@ -1,7 +1,6 @@
 import { TrieNode } from './TrieNode';
 import { DocumentLink } from '../../types/document';
-import { SearchResult } from '../../types/search';
-import { ScoringUtils } from '../../utils/ScoringUtils';
+
 
 interface SerializedTrieNode {
     isEndOfWord: boolean;

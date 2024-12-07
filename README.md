@@ -1,11 +1,10 @@
-
 # NexusSearch
 
-A high-performance search indexing and query system with support for fuzzy matching, real-time updates, and flexible configuration.
+A high-performance search indexing and query system that uses a trie data structure and BFS/DFS algorithms for fast full-text search with fuzzy matching, real-time updates, and flexible configuration.
 
 ## Features
 
-- Fast full-text search with fuzzy matching
+- Fast full-text search with fuzzy matching using a trie data structure
 - Real-time indexing and updates
 - Customizable search options and scoring
 - TypeScript support
@@ -14,10 +13,18 @@ A high-performance search indexing and query system with support for fuzzy match
 - Support for nested document fields
 - Built-in caching system
 
+## Search Philosophy
+
+NexusSearch uses a trie data structure to store the indexed documents. Each node in the trie represents characters, and the path from the root to a leaf node represents a word from the indexed documents. This structure allows for efficient prefix-based searches and fuzzy matching.
+
+The search process involves traversing the trie using either a breadth-first search (BFS) or depth-first search (DFS) algorithm. BFS is generally better for finding the most relevant results, as it explores all nodes at the current depth before moving on to the next depth level. DFS, on the other hand, is better for finding the first matching results quickly.
+
+The choice between BFS and DFS can be made based on the specific use case and requirements of the search engine. For example, if speed is the primary concern, DFS might be the better choice. If relevance is more important, BFS could be the preferred algorithm.
+
 ## Installation
 
 ```bash
-npm install @obinexuscomputing/nexus-search # npm i .  npm run build #(locally)
+npm install @obinexuscomputing/nexus-search
 # or
 yarn add @obinexuscomputing/nexus-search
 ```
@@ -47,7 +54,8 @@ await searchEngine.addDocuments([
 // Perform search with options
 const results = await searchEngine.search('quick start', {
   fuzzy: true,
-  maxResults: 5
+  maxResults: 5,
+  algorithm: 'bfs' // or 'dfs'
 });
 ```
 
@@ -76,7 +84,8 @@ const searchOptions: SearchOptions = {
   fuzzy: true,              // Enable fuzzy matching
   maxResults: 20,           // Limit results
   threshold: 0.6,           // Minimum relevance score
-  fields: ['title', 'tags'] // Fields to search in
+  fields: ['title', 'tags'], // Fields to search in
+  algorithm: 'bfs'          // or 'dfs'
 };
 ```
 
@@ -125,7 +134,8 @@ class RealTimeSearch {
   async search(query: string) {
     return this.searchEngine.search(query, {
       maxResults: 10,
-      fuzzy: true
+      fuzzy: true,
+      algorithm: 'bfs'
     });
   }
 }
@@ -166,6 +176,7 @@ interface SearchResult<T> {
    - Index only necessary fields
    - Implement pagination for large result sets
    - Use appropriate fuzzy thresholds
+   - Choose the appropriate search algorithm (BFS or DFS) based on requirements
 
 3. **Search Implementation**
    - Use fuzzy search for better matches
@@ -204,4 +215,3 @@ Coming soon...
 - [GitLab](https://gitlab.com/obinexuscomputng)
 - [GitHub](https://github.com/obinexuscomputing)
 - [OnlyFans (non-NSFW)](https://www.onlyfans.com/obinexuscomputing)
-
