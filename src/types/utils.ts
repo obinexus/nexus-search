@@ -1,5 +1,5 @@
-import { SearchStats, SearchOptions } from './models';
-import { SearchContext, TokenInfo } from './internal';
+import { SearchOptions, SearchStats } from "./search";
+
 
 export function createSearchStats(): SearchStats {
   return {
