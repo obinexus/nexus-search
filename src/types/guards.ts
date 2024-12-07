@@ -1,4 +1,4 @@
-import { IndexConfig } from "./compactablity";
+import { IndexConfig } from "./compactability";
 import { SearchOptions, SearchResult } from "./search";
 
   

@@ -1,4 +1,4 @@
-import { IndexOptions } from "./compactablity";
+import { IndexOptions } from "./compactability";
 import { SearchOptions } from "./search";
 
 export const DEFAULT_INDEX_OPTIONS: Required<IndexOptions> = {

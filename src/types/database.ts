@@ -1,5 +1,5 @@
 import { DBSchema as IDBSchema } from 'idb';
-import { IndexConfig } from './compactablity';
+import { IndexConfig } from './compactability';
 
 // Example usage with idb:
 /*

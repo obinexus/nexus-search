@@ -1,4 +1,4 @@
-import { SearchOptions, IndexConfig } from '@/types/compactablity';
+import { SearchOptions, IndexConfig } from '@/types/compactability';
 import { getNestedValue } from './SearchUtils';
 
 export function validateSearchOptions(options: SearchOptions): void {

@@ -1,5 +1,5 @@
 // Reference imports for type definitions
-/// <reference path="./compactablity.ts" />
+/// <reference path="./compactability.ts" />
 /// <reference path="./errors.ts" />
 /// <reference path="./events.ts" />
 /// <reference path="./internal.ts" />
@@ -13,7 +13,7 @@
 /// <reference path="database.ts"/>
 
 export * from './search';
-export * from './compactablity';
+export * from './compactability';
 export * from './database';
 export * from './document';
 export * from './errors';
