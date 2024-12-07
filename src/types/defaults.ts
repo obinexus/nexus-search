@@ -1,3 +1,5 @@
+import { IndexOptions } from "./models";
+import { SearchOptions } from "./search";
 
 export const DEFAULT_INDEX_OPTIONS: Required<IndexOptions> = {
   caseSensitive: false,

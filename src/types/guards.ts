@@ -1,3 +1,6 @@
+import { IndexConfig } from "./models";
+import { SearchOptions, SearchResult } from "./search";
+
   
   export function isSearchOptions(obj: any): obj is SearchOptions {
     return obj && (

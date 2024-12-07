@@ -1,4 +1,4 @@
-import type { SearchResult, SearchOptions, SearchContext, IndexConfig, IndexOptions,SearchStats } from './types';
+import { IndexConfig, IndexOptions, SearchContext, SearchOptions, SearchResult } from './types';
 
 // Define core namespace
 export namespace NexusSearch {

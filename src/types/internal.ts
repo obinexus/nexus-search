@@ -7,13 +7,6 @@ export interface IndexNode {
   children: Map<string, IndexNode>;
 }
 
-export interface SearchContext {
-  query: string;
-  options: SearchOptions;
-  startTime: number;
-  results: SearchResult<any>[];
-  stats: SearchStats;
-}
 
 export interface TokenInfo {
   value: string;
