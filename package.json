@@ -5,7 +5,7 @@
   "main": "dist/index.umd.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
-  "description": "A high-performance search indexing and query system that uses a trie data structure and BFS/DFS algorithms for fast full-text search with fuzzy matching",
+  "description": "A high-performance search indexing and query system that uses a trie data structure and BFS/DFS algorithms for fast full-text search with fuzzy matching.",
   "exports": {
     ".": {
       "import": "./dist/index.esm.js",
@@ -46,7 +46,7 @@
     ".gitignore",
     "package.json"
   ],
-  "devDependencies": {
+  "dependencies": {
     "@eslint/js": "^9.16.0",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-commonjs": "^25.0.8",
