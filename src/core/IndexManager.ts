@@ -1,5 +1,5 @@
 import { IndexMapper } from "@/mappers";
-import { IndexConfig, SearchOptions, SearchResult, IndexedDocument, SearchableDocument } from "@/types";
+import { IndexConfig, SearchOptions, SearchResult, IndexedDocument, SearchableDocument, SerializedState } from "@/types";
 import { SerializedIndex } from "@/types/core";
 import { createSearchableFields } from "@/utils";
 
