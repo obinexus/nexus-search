@@ -1,3 +1,4 @@
+import '../nexus-search.umd.js';
 class NexusSearchBar {
     constructor(container) {
         this.container = container;
