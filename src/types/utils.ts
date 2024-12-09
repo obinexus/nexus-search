@@ -41,19 +41,7 @@ export interface DocumentScore {
     inverseDocFreq: number;
 }
 
-// Algorithm types
-export interface SearchNode {
-    id?: string;
-    score: number;
-    children: Map<string, SearchNode>;
-}
 
-export interface SearchResult {
-    id: string;
-    score: number;
-    distance?: number;
-    rank?: number;
-}
 
 // Optimization types
 export interface OptimizationOptions {
