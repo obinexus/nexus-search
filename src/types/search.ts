@@ -1,31 +1,12 @@
 import { DocumentMetadata, DocumentValue } from './utils';
 
-// Core search result types
-export interface SearchResult {
-    item: unknown;
+export interface SearchResult<T = unknown> {
+    item: T;
     score: number;
     matches: string[];
     highlights?: Record<string, string[]>;
 }
 
-export interface DetailedSearchResult<T> extends Omit<SearchResult, 'item'> {
-    item: T;
-}
-
-// Field types
-export interface SearchableField {
-    value: DocumentValue;
-    weight?: number;
-    metadata?: DocumentMetadata;
-}
-
-export interface NormalizedField {
-    original: DocumentValue;
-    normalized: string;
-    weight: number;
-}
-
-// Search configuration
 export interface SearchOptions {
     fuzzy?: boolean;
     maxResults?: number;
@@ -37,7 +18,6 @@ export interface SearchOptions {
     pageSize?: number;
 }
 
-// Search context and state
 export interface SearchContext {
     query: string;
     options: SearchOptions;
@@ -53,11 +33,16 @@ export interface SearchStats {
     queryComplexity: number;
 }
 
-// Document and node types
 export interface SearchableDocument {
     id: string;
     content: Record<string, string | string[] | number | boolean>;
     metadata?: Record<string, unknown>;
+}
+
+export interface SearchableField {
+    value: DocumentValue;
+    weight?: number;
+    metadata?: DocumentMetadata;
 }
 
 export interface SearchNode {
