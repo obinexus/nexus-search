@@ -54,6 +54,7 @@ export class IndexManager {
             config: this.config
         };
     }
+    
     importIndex(data: unknown): void {
         if (!this.isValidIndexData(data)) {
             throw new Error('Invalid index data format');
@@ -68,8 +69,8 @@ export class IndexManager {
             const indexState = (data as SerializedIndex).indexState;
             if (indexState && typeof indexState === 'object' && 'trie' in indexState && 'dataMap' in indexState) {
                 this.indexMapper.importState({
-                    trie: indexState.trie,
-                    dataMap: indexState.dataMap
+                    trie: indexState.trie as SerializedState,
+                    dataMap: indexState.dataMap as Record<string, string[]>
                 });
             } else {
                 throw new Error('Invalid index state format');
