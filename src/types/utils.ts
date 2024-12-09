@@ -27,20 +27,6 @@ export interface MetricsResult {
     [key: string]: PerformanceMetric;
 }
 
-// Scoring types
-export interface TextScore {
-    termFrequency: number;
-    documentFrequency: number;
-    score: number;
-}
-
-export interface DocumentScore {
-    textScore: number;
-    documentRank: number;
-    termFrequency: number;
-    inverseDocFreq: number;
-}
-
 
 
 // Optimization types

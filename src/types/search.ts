@@ -1,23 +1,32 @@
-import { DocumentValue, DocumentMetadata } from "./utils";
+import { DocumentMetadata, DocumentValue } from './utils';
 
-export interface SearchResult<T> {
+// Remove duplicate types, rename for clarity
+export interface GenericSearchResult {
+  id: string;
+  score: number;
+  distance?: number;
+  rank?: number;
+}
+
+export interface DetailedSearchResult<T> {
   item: T;
   score: number;
   matches: string[];
   highlights?: Record<string, string[]>;
 }
 
-export interface SearchableField {
+export interface IndexedSearchableField {
   value: DocumentValue;
   weight?: number;
   metadata?: DocumentMetadata;
 }
 
-export interface NormalizedField {
+export interface NormalizedSearchField {
   original: DocumentValue;
   normalized: string;
   weight: number;
 }
+
 export interface SearchOptions {
   fuzzy?: boolean;
   maxResults?: number;
@@ -33,7 +42,7 @@ export interface SearchContext {
   query: string;
   options: SearchOptions;
   startTime: number;
-  results: SearchResult<unknown>[];
+  results: DetailedSearchResult<unknown>[];
   stats: SearchStats;
 }
 
@@ -50,22 +59,14 @@ export interface SearchableDocument {
   metadata?: Record<string, unknown>;
 }
 
-export interface SearchableField {
-  name: string;
-  value: string | string[] | number | boolean;
-  weight?: number;
-}
-
-// Algorithm types
 export interface SearchNode {
   id?: string;
   score: number;
   children: Map<string, SearchNode>;
 }
 
-export interface SearchResult {
-  id: string;
-  score: number;
-  distance?: number;
-  rank?: number;
-}
+// Export renamed types to avoid conflicts
+export type {
+  TextScore as SearchTextScore,
+  DocumentScore as SearchDocumentScore
+} from './scoring';
