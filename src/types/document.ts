@@ -10,3 +10,15 @@ export interface DocumentRank {
   incomingLinks: number;
   outgoingLinks: number;
 }
+
+export interface DocumentData {
+  content: string;
+  metadata: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export interface IndexedDocument {
+  id: string;
+  fields: Record<string, string>;
+  metadata?: Record<string, unknown>;
+}

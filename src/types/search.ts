@@ -20,7 +20,7 @@ export interface SearchContext {
   query: string;
   options: SearchOptions;
   startTime: number;
-  results: SearchResult<any>[];
+  results: SearchResult<unknown>[];
   stats: SearchStats;
 }
 
@@ -29,4 +29,16 @@ export interface SearchStats {
   searchTime: number;
   indexSize: number;
   queryComplexity: number;
+}
+
+export interface SearchableDocument {
+  id: string;
+  content: Record<string, string | string[] | number | boolean>;
+  metadata?: Record<string, unknown>;
+}
+
+export interface SearchableField {
+  name: string;
+  value: string | string[] | number | boolean;
+  weight?: number;
 }
