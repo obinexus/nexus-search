@@ -5,6 +5,46 @@
  */
 import { openDB } from 'idb';
 
+class ValidationError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'ValidationError';
+    }
+}
+class StorageError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'StorageError';
+    }
+}
+
+// Factory functions
+function createSearchStats() {
+    return {
+        totalResults: 0,
+        searchTime: 0,
+        indexSize: 0,
+        queryComplexity: 0
+    };
+}
+function createSearchContext(query, options = {}) {
+    return {
+        query,
+        options,
+        startTime: Date.now(),
+        results: [],
+        stats: createSearchStats()
+    };
+}
+function createTokenInfo(value, type, position) {
+    return {
+        value,
+        type,
+        position,
+        length: value.length
+    };
+}
+
 class CacheManager {
     constructor(maxSize = 1000, ttlMinutes = 5) {
         this.cache = new Map();
@@ -301,7 +341,7 @@ class SearchStorage {
 function createSearchableFields(document, fields) {
     const searchableFields = {};
     fields.forEach(field => {
-        const value = getNestedValue(document, field);
+        const value = getNestedValue(document.content, field);
         if (value !== undefined) {
             searchableFields[field] = normalizeFieldValue(value);
         }
@@ -321,13 +361,29 @@ function normalizeFieldValue(value) {
     return String(value);
 }
 function getNestedValue(obj, path) {
-    return path.split('.').reduce((current, key) => current && current[key] !== undefined ? current[key] : undefined, obj);
+    const keys = path.split('.');
+    let current = obj;
+    for (const key of keys) {
+        if (current && typeof current === 'object' && !Array.isArray(current) && key in current) {
+            current = current[key];
+        }
+        else {
+            return undefined;
+        }
+    }
+    return current;
 }
 function optimizeIndex(data) {
-    // Remove duplicates
     const uniqueData = Array.from(new Set(data.map(item => JSON.stringify(item)))).map(item => JSON.parse(item));
-    // Sort for binary search optimization
-    return uniqueData.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+    const sorted = uniqueData.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+    return {
+        data: sorted,
+        stats: {
+            originalSize: data.length,
+            optimizedSize: sorted.length,
+            compressionRatio: sorted.length / data.length
+        }
+    };
 }
 
 class PerformanceMonitor {
@@ -357,7 +413,7 @@ class PerformanceMonitor {
                 avg: this.average(durations),
                 min: Math.min(...durations),
                 max: Math.max(...durations),
-                count: durations.length,
+                count: durations.length
             };
         });
         return results;
@@ -394,7 +450,7 @@ function validateIndexConfig(config) {
 }
 function validateDocument(document, fields) {
     return fields.every(field => {
-        const value = getNestedValue(document, field);
+        const value = getNestedValue(document.content, field);
         return value !== undefined;
     });
 }
@@ -447,6 +503,23 @@ class TrieSearch {
         this.root = new TrieNode();
         this.documents = new Map();
         this.documentLinks = new Map();
+    }
+    // Main methods remain the same
+    exportState() {
+        return {
+            trie: this.serializeNode(this.root),
+            documents: Array.from(this.documents.entries()),
+            documentLinks: Array.from(this.documentLinks.entries())
+        };
+    }
+    importState(state) {
+        this.root = this.deserializeNode(state.trie);
+        if (state.documents) {
+            this.documents = new Map(state.documents);
+        }
+        if (state.documentLinks) {
+            this.documentLinks = new Map(state.documentLinks);
+        }
     }
     insert(word, documentId) {
         let current = this.root;
@@ -522,30 +595,6 @@ class TrieSearch {
             }
         }
         return dp[s1.length][s2.length];
-    }
-    /**
-   * Exports the trie state for persistence
-   * @returns Serialized trie state
-   */
-    exportState() {
-        return {
-            trie: this.serializeNode(this.root),
-            documents: Array.from(this.documents.entries()),
-            documentLinks: Array.from(this.documentLinks.entries())
-        };
-    }
-    /**
-     * Imports a previously exported trie state
-     * @param state The state to import
-     */
-    importState(state) {
-        this.root = this.deserializeNode(state.trie);
-        if (state.documents) {
-            this.documents = new Map(state.documents);
-        }
-        if (state.documentLinks) {
-            this.documentLinks = new Map(state.documentLinks);
-        }
     }
     /**
      * Serializes a TrieNode for persistence
@@ -671,9 +720,16 @@ class IndexManager {
     async addDocuments(documents) {
         documents.forEach((doc, index) => {
             const id = this.generateDocumentId(index);
-            this.documents.set(id, doc);
-            const searchableFields = createSearchableFields(doc, this.config.fields);
-            this.indexMapper.indexDocument(searchableFields, id, this.config.fields);
+            const searchableDoc = {
+                id,
+                content: createSearchableFields({
+                    content: doc.fields,
+                    id: ""
+                }, this.config.fields),
+                metadata: doc.metadata
+            };
+            this.documents.set(id, { ...doc, id });
+            this.indexMapper.indexDocument(searchableDoc, id, this.config.fields);
         });
     }
     async search(query, options) {
@@ -688,31 +744,28 @@ class IndexManager {
         }));
     }
     exportIndex() {
-        // Convert Map to a serializable format and include indexMapper state
         return {
             documents: Array.from(this.documents.entries()).map(([key, value]) => ({
                 key,
-                value: JSON.parse(JSON.stringify(value)) // Handle potential proxy objects
+                value: this.serializeDocument(value)
             })),
             indexState: this.indexMapper.exportState(),
-            config: JSON.parse(JSON.stringify(this.config)) // Ensure config is serializable
+            config: this.config
         };
     }
     importIndex(data) {
-        if (!data || !data.documents || !data.indexState || !data.config) {
+        if (!this.isValidIndexData(data)) {
             throw new Error('Invalid index data format');
         }
         try {
-            // Restore documents
-            this.documents = new Map(data.documents.map((item) => [item.key, item.value]));
-            // Restore config
+            this.documents = new Map(data.documents.map(item => [item.key, item.value]));
             this.config = data.config;
-            // Restore index mapper state
             this.indexMapper = new IndexMapper();
             this.indexMapper.importState(data.indexState);
         }
         catch (error) {
-            throw new Error(`Failed to import index: ${error}`);
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            throw new Error(`Failed to import index: ${message}`);
         }
     }
     clear() {
@@ -721,6 +774,19 @@ class IndexManager {
     }
     generateDocumentId(index) {
         return `${this.config.name}-${index}-${Date.now()}`;
+    }
+    isValidIndexData(data) {
+        if (!data || typeof data !== 'object')
+            return false;
+        const indexData = data;
+        return Boolean(indexData.documents &&
+            Array.isArray(indexData.documents) &&
+            indexData.indexState !== undefined &&
+            indexData.config &&
+            typeof indexData.config === 'object');
+    }
+    serializeDocument(doc) {
+        return JSON.parse(JSON.stringify(doc));
     }
 }
 
@@ -831,6 +897,7 @@ class SearchEngine {
     }
 }
 
+// Re-export all types
 // Constants
 const DEFAULT_INDEX_OPTIONS = {
     caseSensitive: false,
@@ -887,7 +954,7 @@ function isSearchResult(obj) {
         typeof result.score === 'number' &&
         Array.isArray(result.matches));
 }
-// Create a consolidated export object
+// Create consolidated export object
 const NexusSearch = {
     DEFAULT_INDEX_OPTIONS,
     DEFAULT_SEARCH_OPTIONS,
@@ -898,5 +965,5 @@ const NexusSearch = {
     isSearchResult
 };
 
-export { CacheManager, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, IndexError, IndexManager, IndexMapper, IndexedDB, NexusSearch, PerformanceMonitor, QueryProcessor, SearchEngine, SearchError, TrieNode, TrieSearch, createSearchableFields, NexusSearch as default, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
+export { CacheManager, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, IndexError, IndexManager, IndexMapper, IndexedDB, NexusSearch, PerformanceMonitor, QueryProcessor, SearchEngine, SearchError, StorageError, TrieNode, TrieSearch, ValidationError, createSearchContext, createSearchStats, createSearchableFields, createTokenInfo, NexusSearch as default, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
 //# sourceMappingURL=index.esm.js.map

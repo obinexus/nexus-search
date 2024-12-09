@@ -1,5 +1,5 @@
 import { IndexMapper } from "@/mappers";
-import { IndexConfig, SearchOptions, SearchResult, IndexedDocument, SearchableDocument, MapperState } from "@/types";
+import { IndexConfig, SearchOptions, SearchResult, IndexedDocument, SearchableDocument } from "@/types";
 import { SerializedIndex } from "@/types/core";
 import { createSearchableFields } from "@/utils";
 
@@ -65,7 +65,10 @@ export class IndexManager {
             );
             this.config = (data as SerializedIndex).config;
             this.indexMapper = new IndexMapper();
-            this.indexMapper.importState(data.indexState as MapperState);
+            this.indexMapper.importState({
+                trie: (data as SerializedIndex).indexState.trie,
+                dataMap: (data as SerializedIndex).indexState.dataMap
+            });
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             throw new Error(`Failed to import index: ${message}`);

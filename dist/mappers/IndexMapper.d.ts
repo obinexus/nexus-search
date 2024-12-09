@@ -1,4 +1,4 @@
-import { MapperState, SearchableDocument, SearchResult } from "@/types";
+import { SearchableDocument, SearchResult, SerializedState } from "@/types";
 export declare class IndexMapper {
     private dataMapper;
     private trieSearch;
@@ -9,7 +9,10 @@ export declare class IndexMapper {
         maxResults?: number;
     }): SearchResult<string>[];
     exportState(): unknown;
-    importState(state: MapperState): void;
+    importState(state: {
+        trie: SerializedState;
+        dataMap: Record<string, string[]>;
+    }): void;
     private tokenizeText;
     private calculateScore;
     clear(): void;
