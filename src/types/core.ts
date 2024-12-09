@@ -1,8 +1,10 @@
+import { IndexConfig } from "./compactability";
+import { IndexedDocument } from "./document";
 
   
 export interface IndexNode {
   id: string;
-  value: any;
+  value: unknown;
   score: number;
   children: Map<string, IndexNode>;
 }
@@ -16,3 +18,13 @@ export interface TokenInfo {
 }
 
 
+
+
+export interface SerializedIndex {
+  documents: Array<{
+      key: string;
+      value: IndexedDocument;
+  }>;
+  indexState: unknown;
+  config: IndexConfig;
+}
