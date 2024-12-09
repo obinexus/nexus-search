@@ -22,3 +22,16 @@ export interface IndexedDocument {
   fields: Record<string, string>;
   metadata?: Record<string, unknown>;
 }
+
+
+export type PrimitiveValue = string | number | boolean | null;
+export type ArrayValue = PrimitiveValue[];
+export type ComplexValue = Record<string, PrimitiveValue | ArrayValue>;
+export type DocumentValue = PrimitiveValue | ArrayValue | ComplexValue;
+export type DocumentMetadata = Record<string, DocumentValue>;
+
+export interface IndexableDocument {
+    id: string;
+    content: Record<string, DocumentValue>;
+    metadata?: DocumentMetadata;
+}

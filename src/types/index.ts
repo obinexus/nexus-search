@@ -10,7 +10,7 @@ export * from './core';
 export * from './models';
 export * from './mapper';
 export * from './storage';
-export * from './utils';
 export * from './cache';
 export * from './scoring'
-export * from './performance'
+export * from './performance';
+export * from './optimization';

@@ -65,8 +65,37 @@ export interface SearchNode {
   children: Map<string, SearchNode>;
 }
 
-// Export renamed types to avoid conflicts
-export type {
-  TextScore as SearchTextScore,
-  DocumentScore as SearchDocumentScore
-} from './scoring';
+export interface DetailedSearchResult<T> {
+  item: T;
+  score: number;
+  matches: string[];
+  highlights?: Record<string, string[]>;
+}
+
+export interface SearchOptions {
+  fuzzy?: boolean;
+  maxResults?: number;
+  threshold?: number;
+  fields?: string[];
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface SearchContext {
+  query: string;
+  options: SearchOptions;
+  startTime: number;
+  results: DetailedSearchResult<unknown>[];
+  stats: SearchStats;
+}
+
+export interface SearchStats {
+  totalResults: number;
+  searchTime: number;
+  indexSize: number;
+  queryComplexity: number;
+}
+
+// types/scoring.ts
