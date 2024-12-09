@@ -1,5 +1,5 @@
 import { TrieSearch } from "@/algorithms/trie";
-import { MapperState, SearchableDocument, SearchResult } from "@/types";
+import {  SearchableDocument, SearchResult } from "@/types";
 import { DataMapper } from "./DataMapper";
 
 export class IndexMapper {
@@ -61,15 +61,18 @@ export class IndexMapper {
     };
   }
 
-  importState(state: { trie: unknown; dataMap: Record<string, string[]> }): void {
+  importState(state: { trie: SerializedState; dataMap: Record<string, string[]> }): void {
     if (!state || !state.trie || !state.dataMap) {
         throw new Error('Invalid index state');
     }
+
     this.trieSearch = new TrieSearch();
-    this.trieSearch.importState(state.trie as unknown );
+    this.trieSearch.importState(state.trie as unknown);
     this.dataMapper = new DataMapper();
     this.dataMapper.importState(state.dataMap);
 }
+
+
   private tokenizeText(text: string): string[] {
     return text
       .toLowerCase()
