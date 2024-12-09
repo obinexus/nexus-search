@@ -1,3 +1,5 @@
+import { DocumentValue, DocumentMetadata } from "./utils";
+
 export interface SearchResult<T> {
   item: T;
   score: number;
@@ -5,6 +7,17 @@ export interface SearchResult<T> {
   highlights?: Record<string, string[]>;
 }
 
+export interface SearchableField {
+  value: DocumentValue;
+  weight?: number;
+  metadata?: DocumentMetadata;
+}
+
+export interface NormalizedField {
+  original: DocumentValue;
+  normalized: string;
+  weight: number;
+}
 export interface SearchOptions {
   fuzzy?: boolean;
   maxResults?: number;

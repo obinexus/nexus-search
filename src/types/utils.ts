@@ -1,112 +1,101 @@
 import { TokenInfo } from "./internal";
 import { SearchContext, SearchOptions, SearchStats } from "./search";
 
-// types/utils.ts
-
-// Document-related types
-export interface IndexableDocument {
-  id: string;
-  content: Record<string, DocumentValue>;
-  metadata?: DocumentMetadata;
-}
-
-export type DocumentValue = string | number | boolean | string[] | DocumentObject;
+// Document value types
+export type PrimitiveValue = string | number | boolean | null;
+export type ArrayValue = PrimitiveValue[];
+export type ComplexValue = Record<string, PrimitiveValue | ArrayValue>;
+export type DocumentValue = PrimitiveValue | ArrayValue | ComplexValue;
 export type DocumentMetadata = Record<string, DocumentValue>;
-export type DocumentObject = Record<string, DocumentValue>;
+
+// Core document interfaces
+export interface IndexableDocument {
+    id: string;
+    content: Record<string, DocumentValue>;
+    metadata?: DocumentMetadata;
+}
 
 // Performance monitoring types
 export interface PerformanceMetric {
-  avg: number;
-  min: number;
-  max: number;
-  count: number;
+    avg: number;
+    min: number;
+    max: number;
+    count: number;
 }
 
 export interface MetricsResult {
-  [key: string]: PerformanceMetric;
+    [key: string]: PerformanceMetric;
 }
 
 // Scoring types
 export interface TextScore {
-  termFrequency: number;
-  documentFrequency: number;
-  score: number;
+    termFrequency: number;
+    documentFrequency: number;
+    score: number;
 }
 
 export interface DocumentScore {
-  textScore: number;
-  documentRank: number;
-  termFrequency: number;
-  inverseDocFreq: number;
+    textScore: number;
+    documentRank: number;
+    termFrequency: number;
+    inverseDocFreq: number;
 }
 
 // Algorithm types
 export interface SearchNode {
-  id?: string;
-  score: number;
-  children: Map<string, SearchNode>;
+    id?: string;
+    score: number;
+    children: Map<string, SearchNode>;
 }
 
 export interface SearchResult {
-  id: string;
-  score: number;
-  distance?: number;
-  rank?: number;
+    id: string;
+    score: number;
+    distance?: number;
+    rank?: number;
 }
 
-// Search utility types
-export interface SearchableField {
-  value: DocumentValue;
-  weight?: number;
-  metadata?: DocumentMetadata;
-}
-
-export interface NormalizedField {
-  original: DocumentValue;
-  normalized: string;
-  weight: number;
-}
-
-// Index optimization types
+// Optimization types
 export interface OptimizationOptions {
-  deduplication?: boolean;
-  sorting?: boolean;
-  compression?: boolean;
+    deduplication?: boolean;
+    sorting?: boolean;
+    compression?: boolean;
 }
 
 export interface OptimizationResult<T> {
-  data: T[];
-  stats: {
-      originalSize: number;
-      optimizedSize: number;
-      compressionRatio?: number;
-  };
+    data: T[];
+    stats: {
+        originalSize: number;
+        optimizedSize: number;
+        compressionRatio?: number;
+    };
 }
 
+// Factory functions
 export function createSearchStats(): SearchStats {
-  return {
-    totalResults: 0,
-    searchTime: 0,
-    indexSize: 0,
-    queryComplexity: 0
-  };
+    return {
+        totalResults: 0,
+        searchTime: 0,
+        indexSize: 0,
+        queryComplexity: 0
+    };
 }
 
 export function createSearchContext(query: string, options: SearchOptions = {}): SearchContext {
-  return {
-    query,
-    options,
-    startTime: Date.now(),
-    results: [],
-    stats: createSearchStats()
-  };
+    return {
+        query,
+        options,
+        startTime: Date.now(),
+        results: [],
+        stats: createSearchStats()
+    };
 }
 
 export function createTokenInfo(value: string, type: TokenInfo['type'], position: number): TokenInfo {
-  return {
-    value,
-    type,
-    position,
-    length: value.length
-  };
+    return {
+        value,
+        type,
+        position,
+        length: value.length
+    };
 }
