@@ -1,4 +1,4 @@
-import { SearchOptions, IndexConfig } from "@/types";
+import { SearchOptions, IndexConfig, SearchableDocument } from "@/types";
 import { getNestedValue } from "./SearchUtils";
 
 
@@ -30,7 +30,7 @@ export function validateIndexConfig(config: IndexConfig): void {
   }
 }
 
-export function validateDocument(document: any, fields: string[]): boolean {
+export function validateDocument(document: SearchableDocument, fields: string[]): boolean {
   return fields.every(field => {
     const value = getNestedValue(document, field);
     return value !== undefined;

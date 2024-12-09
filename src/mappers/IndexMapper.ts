@@ -1,5 +1,5 @@
 import { TrieSearch } from "@/algorithms/trie";
-import { SearchResult } from "@/types";
+import { SearchableDocument, SearchResult } from "@/types";
 import { DataMapper } from "./DataMapper";
 
 export class IndexMapper {
@@ -11,7 +11,7 @@ export class IndexMapper {
     this.trieSearch = new TrieSearch();
   }
 
-  indexDocument(document: any, id: string, fields: string[]): void {
+  indexDocument(document: SearchableDocument, id: string, fields: string[]): void  {
     fields.forEach(field => {
       const value = document[field];
       if (typeof value === 'string') {
