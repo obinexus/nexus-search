@@ -1,3 +1,4 @@
+// Import all types from a single barrel file
 import type {
     IndexConfig,
     IndexOptions,
@@ -8,11 +9,40 @@ import type {
     SearchEventType,
     SearchEvent,
     DocumentLink,
-    DocumentRank
-} from './types';
+    DocumentRank,
+} from './types/index';
+
+// Core imports
+import { SearchEngine } from './core/SearchEngine';
+import { IndexManager } from './core/IndexManager';
+import { QueryProcessor } from './core/QueryProcessor';
+
+// Algorithm imports
+import { TrieNode } from './algorithms/trie/TrieNode';
+import { TrieSearch } from './algorithms/trie/TrieSearch';
+
+// Mapper imports
+import { DataMapper } from './mappers/DataMapper';
+import { IndexMapper } from './mappers/IndexMapper';
+
+// Storage imports
+import { CacheManager } from './storage/CacheManager';
+import { IndexedDB } from './storage/IndexedDBService';
+
+// Utility imports
+import {
+    PerformanceMonitor,
+    createSearchableFields,
+    optimizeIndex,
+    getNestedValue,
+    normalizeFieldValue,
+    validateSearchOptions,
+    validateIndexConfig,
+    validateDocument
+} from './utils/index';
 
 // Re-export all types
-export * from './types';
+export * from './types/index';
 
 // Constants
 export const DEFAULT_INDEX_OPTIONS: Required<IndexOptions> = {
@@ -35,7 +65,7 @@ export const DEFAULT_SEARCH_OPTIONS: Required<SearchOptions> = {
     pageSize: 10
 };
 
-// Error types
+// Error classes
 export class SearchError extends Error {
     constructor(message: string) {
         super(message);
@@ -83,24 +113,17 @@ export function isSearchResult<T>(obj: unknown): obj is SearchResult<T> {
     );
 }
 
-// Core exports
-export { SearchEngine } from './core/SearchEngine';
-export { IndexManager } from './core/IndexManager';
-export { QueryProcessor } from './core/QueryProcessor';
-
-// Algorithm exports
-export { TrieNode } from './algorithms/trie/TrieNode';
-export { TrieSearch } from './algorithms/trie/TrieSearch';
-
-// Mapper exports
-export { DataMapper } from './mappers/DataMapper';
-export { IndexMapper } from './mappers/IndexMapper';
-
-// Storage exports
-export { CacheManager, IndexedDB } from './storage/index';
-
-// Utility exports
+// Export individual components
 export {
+    SearchEngine,
+    IndexManager,
+    QueryProcessor,
+    TrieNode,
+    TrieSearch,
+    DataMapper,
+    IndexMapper,
+    CacheManager,
+    IndexedDB,
     PerformanceMonitor,
     createSearchableFields,
     optimizeIndex,
@@ -109,7 +132,7 @@ export {
     validateSearchOptions,
     validateIndexConfig,
     validateDocument
-} from './utils';
+};
 
 // Create consolidated export object
 export const NexusSearch = {
@@ -117,6 +140,11 @@ export const NexusSearch = {
     DEFAULT_SEARCH_OPTIONS,
     SearchError,
     IndexError,
+    SearchEngine,
+    IndexManager,
+    QueryProcessor,
+    TrieNode,
+    TrieSearch,
     isSearchOptions,
     isIndexConfig,
     isSearchResult
