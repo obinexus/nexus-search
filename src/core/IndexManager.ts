@@ -1,81 +1,101 @@
 import { IndexMapper } from "@/mappers";
-import { IndexConfig, SearchOptions, SearchResult } from "@/types";
+import { IndexConfig, SearchOptions, SearchResult, IndexedDocument } from "@/types";
 import { createSearchableFields } from "@/utils";
+
+interface SerializedIndex {
+    documents: Array<{
+        key: string;
+        value: IndexedDocument;
+    }>;
+    indexState: unknown;
+    config: IndexConfig;
+}
 
 export class IndexManager {
     private indexMapper: IndexMapper;
     private config: IndexConfig;
-    private documents: Map<string, any>;
-  
+    private documents: Map<string, IndexedDocument>;
+
     constructor(config: IndexConfig) {
-      this.config = config;
-      this.indexMapper = new IndexMapper();
-      this.documents = new Map();
-    }
-  
-    async addDocuments<T>(documents: T[]): Promise<void> {
-      documents.forEach((doc, index) => {
-        const id = this.generateDocumentId(index);
-        this.documents.set(id, doc);
-        
-        const searchableFields = createSearchableFields(doc, this.config.fields);
-        this.indexMapper.indexDocument(searchableFields, id, this.config.fields);
-      });
-    }
-  
-    async search<T>(query: string, options: SearchOptions): Promise<SearchResult<T>[]> {
-      const searchResults = this.indexMapper.search(query, {
-        fuzzy: options.fuzzy,
-        maxResults: options.maxResults
-      });
-  
-      return searchResults.map(result => ({
-        item: this.documents.get(result.item) as T,
-        score: result.score,
-        matches: result.matches
-      }));
-    }
-  
-    exportIndex(): any {
-      // Convert Map to a serializable format and include indexMapper state
-      return {
-        documents: Array.from(this.documents.entries()).map(([key, value]) => ({
-          key,
-          value: JSON.parse(JSON.stringify(value)) // Handle potential proxy objects
-        })),
-        indexState: this.indexMapper.exportState(),
-        config: JSON.parse(JSON.stringify(this.config)) // Ensure config is serializable
-      };
-    }
-  
-    importIndex(data: any): void {
-      if (!data || !data.documents || !data.indexState || !data.config) {
-        throw new Error('Invalid index data format');
-      }
-
-      try {
-        // Restore documents
-        this.documents = new Map(
-          data.documents.map((item: any) => [item.key, item.value])
-        );
-
-        // Restore config
-        this.config = data.config;
-
-        // Restore index mapper state
+        this.config = config;
         this.indexMapper = new IndexMapper();
-        this.indexMapper.importState(data.indexState);
-      } catch (error) {
-        throw new Error(`Failed to import index: ${error}`);
-      }
+        this.documents = new Map();
     }
-  
+
+    async addDocuments<T extends IndexedDocument>(documents: T[]): Promise<void> {
+        documents.forEach((doc, index) => {
+            const id = this.generateDocumentId(index);
+            this.documents.set(id, doc);
+            const searchableFields = createSearchableFields(doc, this.config.fields);
+            this.indexMapper.indexDocument(searchableFields, id, this.config.fields);
+        });
+    }
+
+    async search<T extends IndexedDocument>(query: string, options: SearchOptions): Promise<SearchResult<T>[]> {
+        const searchResults = this.indexMapper.search(query, {
+            fuzzy: options.fuzzy,
+            maxResults: options.maxResults
+        });
+
+        return searchResults.map(result => ({
+            item: this.documents.get(result.item) as T,
+            score: result.score,
+            matches: result.matches
+        }));
+    }
+
+    exportIndex(): SerializedIndex {
+        return {
+            documents: Array.from(this.documents.entries()).map(([key, value]) => ({
+                key,
+                value: this.serializeDocument(value)
+            })),
+            indexState: this.indexMapper.exportState(),
+            config: this.config
+        };
+    }
+
+    importIndex(data: unknown): void {
+        if (!this.isValidIndexData(data)) {
+            throw new Error('Invalid index data format');
+        }
+
+        try {
+            this.documents = new Map(
+                data.documents.map(item => [item.key, item.value])
+            );
+            this.config = data.config;
+            this.indexMapper = new IndexMapper();
+            this.indexMapper.importState(data.indexState);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            throw new Error(`Failed to import index: ${message}`);
+        }
+    }
+
     clear(): void {
-      this.documents.clear();
-      this.indexMapper = new IndexMapper();
+        this.documents.clear();
+        this.indexMapper = new IndexMapper();
     }
-  
+
     private generateDocumentId(index: number): string {
-      return `${this.config.name}-${index}-${Date.now()}`;
+        return `${this.config.name}-${index}-${Date.now()}`;
+    }
+
+    private isValidIndexData(data: unknown): data is SerializedIndex {
+        if (!data || typeof data !== 'object') return false;
+        
+        const indexData = data as Partial<SerializedIndex>;
+        return Boolean(
+            indexData.documents &&
+            Array.isArray(indexData.documents) &&
+            indexData.indexState !== undefined &&
+            indexData.config &&
+            typeof indexData.config === 'object'
+        );
+    }
+
+    private serializeDocument(doc: IndexedDocument): IndexedDocument {
+        return JSON.parse(JSON.stringify(doc));
     }
 }
