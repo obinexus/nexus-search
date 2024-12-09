@@ -18,7 +18,7 @@ export interface SearchContext {
     query: string;
     options: SearchOptions;
     startTime: number;
-    results: SearchResult<any>[];
+    results: SearchResult<unknown>[];
     stats: SearchStats;
 }
 export interface SearchStats {

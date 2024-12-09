@@ -1,6 +1,87 @@
 import { TokenInfo } from "./internal";
 import { SearchContext, SearchOptions, SearchStats } from "./search";
 
+// types/utils.ts
+
+// Document-related types
+export interface IndexableDocument {
+  id: string;
+  content: Record<string, DocumentValue>;
+  metadata?: DocumentMetadata;
+}
+
+export type DocumentValue = string | number | boolean | string[] | DocumentObject;
+export type DocumentMetadata = Record<string, DocumentValue>;
+export type DocumentObject = Record<string, DocumentValue>;
+
+// Performance monitoring types
+export interface PerformanceMetric {
+  avg: number;
+  min: number;
+  max: number;
+  count: number;
+}
+
+export interface MetricsResult {
+  [key: string]: PerformanceMetric;
+}
+
+// Scoring types
+export interface TextScore {
+  termFrequency: number;
+  documentFrequency: number;
+  score: number;
+}
+
+export interface DocumentScore {
+  textScore: number;
+  documentRank: number;
+  termFrequency: number;
+  inverseDocFreq: number;
+}
+
+// Algorithm types
+export interface SearchNode {
+  id?: string;
+  score: number;
+  children: Map<string, SearchNode>;
+}
+
+export interface SearchResult {
+  id: string;
+  score: number;
+  distance?: number;
+  rank?: number;
+}
+
+// Search utility types
+export interface SearchableField {
+  value: DocumentValue;
+  weight?: number;
+  metadata?: DocumentMetadata;
+}
+
+export interface NormalizedField {
+  original: DocumentValue;
+  normalized: string;
+  weight: number;
+}
+
+// Index optimization types
+export interface OptimizationOptions {
+  deduplication?: boolean;
+  sorting?: boolean;
+  compression?: boolean;
+}
+
+export interface OptimizationResult<T> {
+  data: T[];
+  stats: {
+      originalSize: number;
+      optimizedSize: number;
+      compressionRatio?: number;
+  };
+}
 
 export function createSearchStats(): SearchStats {
   return {

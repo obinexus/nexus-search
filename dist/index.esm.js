@@ -831,65 +831,72 @@ class SearchEngine {
     }
 }
 
-// Define the namespace
-var NexusSearch;
-(function (NexusSearch) {
-    // Constants
-    NexusSearch.DEFAULT_INDEX_OPTIONS = {
-        caseSensitive: false,
-        stemming: true,
-        stopWords: ['the', 'a', 'an', 'and', 'or', 'but'],
-        minWordLength: 2,
-        maxWordLength: 50,
-        fuzzyThreshold: 0.8
-    };
-    NexusSearch.DEFAULT_SEARCH_OPTIONS = {
-        fuzzy: false,
-        maxResults: 10,
-        threshold: 0.5,
-        fields: [],
-        sortBy: 'score',
-        sortOrder: 'desc',
-        page: 1,
-        pageSize: 10
-    };
-    // Error types
-    class SearchError extends Error {
-        constructor(message) {
-            super(message);
-            this.name = 'SearchError';
-        }
+// Constants
+const DEFAULT_INDEX_OPTIONS = {
+    caseSensitive: false,
+    stemming: true,
+    stopWords: ['the', 'a', 'an', 'and', 'or', 'but'],
+    minWordLength: 2,
+    maxWordLength: 50,
+    fuzzyThreshold: 0.8
+};
+const DEFAULT_SEARCH_OPTIONS = {
+    fuzzy: false,
+    maxResults: 10,
+    threshold: 0.5,
+    fields: [],
+    sortBy: 'score',
+    sortOrder: 'desc',
+    page: 1,
+    pageSize: 10
+};
+// Error types
+class SearchError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'SearchError';
     }
-    NexusSearch.SearchError = SearchError;
-    class IndexError extends Error {
-        constructor(message) {
-            super(message);
-            this.name = 'IndexError';
-        }
+}
+class IndexError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'IndexError';
     }
-    NexusSearch.IndexError = IndexError;
-    // Type guards
-    function isSearchOptions(obj) {
-        return obj && (typeof obj.fuzzy === 'undefined' || typeof obj.fuzzy === 'boolean') && (typeof obj.maxResults === 'undefined' || typeof obj.maxResults === 'number');
-    }
-    NexusSearch.isSearchOptions = isSearchOptions;
-    function isIndexConfig(obj) {
-        return obj &&
-            typeof obj.name === 'string' &&
-            typeof obj.version === 'number' &&
-            Array.isArray(obj.fields);
-    }
-    NexusSearch.isIndexConfig = isIndexConfig;
-    function isSearchResult(obj) {
-        return obj &&
-            'item' in obj &&
-            typeof obj.score === 'number' &&
-            Array.isArray(obj.matches);
-    }
-    NexusSearch.isSearchResult = isSearchResult;
-})(NexusSearch || (NexusSearch = {}));
-// Make namespace the default export
-var NexusSearch$1 = NexusSearch;
+}
+// Type guards
+function isSearchOptions(obj) {
+    if (!obj || typeof obj !== 'object')
+        return false;
+    const options = obj;
+    return ((typeof options.fuzzy === 'undefined' || typeof options.fuzzy === 'boolean') &&
+        (typeof options.maxResults === 'undefined' || typeof options.maxResults === 'number'));
+}
+function isIndexConfig(obj) {
+    if (!obj || typeof obj !== 'object')
+        return false;
+    const config = obj;
+    return Boolean(typeof config.name === 'string' &&
+        typeof config.version === 'number' &&
+        Array.isArray(config.fields));
+}
+function isSearchResult(obj) {
+    if (!obj || typeof obj !== 'object')
+        return false;
+    const result = obj;
+    return Boolean('item' in result &&
+        typeof result.score === 'number' &&
+        Array.isArray(result.matches));
+}
+// Create a consolidated export object
+const NexusSearch = {
+    DEFAULT_INDEX_OPTIONS,
+    DEFAULT_SEARCH_OPTIONS,
+    SearchError,
+    IndexError,
+    isSearchOptions,
+    isIndexConfig,
+    isSearchResult
+};
 
-export { CacheManager, DataMapper, IndexManager, IndexMapper, IndexedDB, NexusSearch, PerformanceMonitor, QueryProcessor, SearchEngine, TrieNode, TrieSearch, createSearchableFields, NexusSearch$1 as default, getNestedValue, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
+export { CacheManager, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, IndexError, IndexManager, IndexMapper, IndexedDB, NexusSearch, PerformanceMonitor, QueryProcessor, SearchEngine, SearchError, TrieNode, TrieSearch, createSearchableFields, NexusSearch as default, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
 //# sourceMappingURL=index.esm.js.map
