@@ -11,18 +11,18 @@ export class IndexMapper {
     this.trieSearch = new TrieSearch();
   }
 
-  indexDocument(document: SearchableDocument, id: string, fields: string[]): void  {
+  indexDocument(document: SearchableDocument, id: string, fields: string[]): void {
     fields.forEach(field => {
-      const value = document[field];
-      if (typeof value === 'string') {
-        const words = this.tokenizeText(value);
-        words.forEach(word => {
-          this.trieSearch.insert(word, id);
-          this.dataMapper.mapData(word.toLowerCase(), id);
-        });
-      }
+        const value = document[field];
+        if (typeof value === 'string') {
+            const words = this.tokenizeText(value);
+            words.forEach(word => {
+                this.trieSearch.insert(word, id);
+                this.dataMapper.mapData(word.toLowerCase(), id);
+            });
+        }
     });
-  }
+}
 
   search(query: string, options: { fuzzy?: boolean; maxResults?: number } = {}): SearchResult<string>[] {
     const { fuzzy = false, maxResults = 10 } = options;

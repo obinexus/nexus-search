@@ -33,7 +33,7 @@ export class IndexManager {
                 }, this.config.fields),
                 metadata: doc.metadata
             };
-            this.documents.set(id, { ...doc, id }); // Add the 'id' property to the document
+            this.documents.set(id, { ...doc, id }); 
             this.indexMapper.indexDocument(searchableDoc, id, this.config.fields);
         });
     }

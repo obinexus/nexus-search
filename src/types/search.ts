@@ -37,6 +37,7 @@ export interface SearchableDocument {
     id: string;
     content: Record<string, string | string[] | number | boolean>;
     metadata?: Record<string, unknown>;
+    [key: string]: unknown;
 }
 
 export interface SearchableField {
