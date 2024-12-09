@@ -6,7 +6,7 @@ export * from './database';
 export * from './document';
 export * from './errors';
 export * from './events';
-export * from './internal';
+export * from './core;
 export * from './models';
 export * from './mapper';
 export * from './storage';

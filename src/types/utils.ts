@@ -1,4 +1,4 @@
-import { TokenInfo } from "./internal";
+import { TokenInfo } from "./core";
 import { SearchContext, SearchOptions, SearchStats } from "./search";
 
 // Document value types
