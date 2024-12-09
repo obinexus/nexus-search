@@ -1,5 +1,6 @@
 
-import NexusSearch from '../dist/index.esm.js';
+import NexusSearch from '/dist/index.esm.js';
+
 console.log(window.NexusSearch)
 window.NexusSearch = NexusSearch;
 class NexusSearchBar {
