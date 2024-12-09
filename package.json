@@ -11,9 +11,8 @@
       "require": "./dist/index.cjs.js",
       "browser": "./dist/index.umd.js",
       "types": "./dist/index.d.ts"
-    
-  }
-},
+    }
+  },
   "scripts": {
     "build": "rollup -c",
     "demo": "node fixtures/server.js",
@@ -56,6 +55,7 @@
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.1",
     "@types/punycode": "^2.1.4",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
@@ -67,16 +67,13 @@
     "jest-environment-jsdom": "^29.7.0",
     "prettier": "^2.8.7",
     "punycode": "^2.3.1",
-    "rollup": "^4.28.0",
+    "rollup": "^4.28.1",
     "rollup-plugin-dts": "^6.1.1",
     "rollup-plugin-typescript2": "^0.36.0",
     "ts-jest": "^29.2.5",
     "tslib": "^2.8.1",
     "typescript": "^5.7.2",
-    "typescript-eslint": "^8.16.0",   
-     "@types/node": "^22.10.1"
-
-
+    "typescript-eslint": "^8.16.0"
   },
   "directories": {
     "doc": "docs",
