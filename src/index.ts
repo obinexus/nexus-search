@@ -8,9 +8,7 @@ import type {
     SearchEventType,
     SearchEvent,
     DocumentLink,
-    DocumentRank,
-    InternalConfig,
-    QueryContext
+    DocumentRank
 } from './types';
 
 // Re-export all types
