@@ -1,6 +1,6 @@
 import { TrieNode } from './TrieNode';
 import { DocumentLink } from '../../types/document';
-
+import { IndexableDocument } from '../../types/utils';
 
 interface SerializedTrieNode {
     isEndOfWord: boolean;
@@ -8,9 +8,15 @@ interface SerializedTrieNode {
     children: { [key: string]: SerializedTrieNode };
 }
 
+interface SerializedState {
+    trie: SerializedTrieNode;
+    documents: [string, IndexableDocument][];
+    documentLinks: [string, DocumentLink[]][];
+}
+
 export class TrieSearch {
     private root: TrieNode;
-    private documents: Map<string, any>;
+    private documents: Map<string, IndexableDocument>;
     private documentLinks: Map<string, DocumentLink[]>;
 
     constructor() {
@@ -19,6 +25,28 @@ export class TrieSearch {
         this.documentLinks = new Map();
     }
 
+    // Main methods remain the same
+
+    public exportState(): SerializedState {
+        return {
+            trie: this.serializeNode(this.root),
+            documents: Array.from(this.documents.entries()),
+            documentLinks: Array.from(this.documentLinks.entries())
+        };
+    }
+
+    public importState(state: SerializedState): void {
+        this.root = this.deserializeNode(state.trie);
+
+        if (state.documents) {
+            this.documents = new Map(state.documents);
+        }
+
+        if (state.documentLinks) {
+            this.documentLinks = new Map(state.documentLinks);
+        }
+    }
+    
     insert(word: string, documentId: string): void {
         let current = this.root;
         
@@ -115,41 +143,7 @@ export class TrieSearch {
         return dp[s1.length][s2.length];
     }
 
-      /**
-     * Exports the trie state for persistence
-     * @returns Serialized trie state
-     */
-      public exportState(): { 
-        trie: SerializedTrieNode;
-        documents: [string, any][];
-        documentLinks: [string, DocumentLink[]][];
-    } {
-        return {
-            trie: this.serializeNode(this.root),
-            documents: Array.from(this.documents.entries()),
-            documentLinks: Array.from(this.documentLinks.entries())
-        };
-    }
-
-    /**
-     * Imports a previously exported trie state
-     * @param state The state to import
-     */
-    public importState(state: { 
-        trie: SerializedTrieNode;
-        documents?: [string, any][];
-        documentLinks?: [string, DocumentLink[]][];
-    }): void {
-        this.root = this.deserializeNode(state.trie);
-        
-        if (state.documents) {
-            this.documents = new Map(state.documents);
-        }
-        
-        if (state.documentLinks) {
-            this.documentLinks = new Map(state.documentLinks);
-        }
-    }
+     
 
     /**
      * Serializes a TrieNode for persistence
