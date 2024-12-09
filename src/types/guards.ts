@@ -1,24 +1,17 @@
 import { IndexConfig } from "./compactability";
 import { SearchOptions, SearchResult } from "./search";
 
-  
 export function isSearchOptions(obj: unknown): obj is SearchOptions {
-  return (
-      typeof obj === 'object' &&
-      obj !== null &&
-      (typeof obj.fuzzy === 'undefined' || typeof obj.fuzzy === 'boolean') &&
-      (typeof obj.maxResults === 'undefined' || typeof obj.maxResults === 'number')
-  );
+  return typeof obj === 'object' && obj !== null &&
+      (typeof (obj as any).fuzzy === 'undefined' || typeof (obj as any).fuzzy === 'boolean') &&
+      (typeof (obj as any).maxResults === 'undefined' || typeof (obj as any).maxResults === 'number');
 }
 
 export function isIndexConfig(obj: unknown): obj is IndexConfig {
-  return (
-      typeof obj === 'object' &&
-      obj !== null &&
-      typeof obj.name === 'string' &&
-      typeof obj.version === 'number' &&
-      Array.isArray(obj.fields)
-  );
+  return typeof obj === 'object' && obj !== null &&
+      typeof (obj as any).name === 'string' &&
+      typeof (obj as any).version === 'number' &&
+      Array.isArray((obj as any).fields);
 }
 
 export function isSearchResult<T>(obj: unknown): obj is SearchResult<T> {
