@@ -10,7 +10,7 @@ export type SearchEventType =
   export interface SearchEvent {
     type: SearchEventType;
     timestamp: number;
-    data?: any;
+    data?: unknown;
     error?: Error;
   }
   

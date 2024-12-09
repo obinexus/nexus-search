@@ -2,17 +2,7 @@ import { TrieNode } from './TrieNode';
 import { DocumentLink } from '../../types/document';
 import { IndexableDocument } from '../../types/utils';
 
-interface SerializedTrieNode {
-    isEndOfWord: boolean;
-    documentRefs: string[];
-    children: { [key: string]: SerializedTrieNode };
-}
 
-interface SerializedState {
-    trie: SerializedTrieNode;
-    documents: [string, IndexableDocument][];
-    documentLinks: [string, DocumentLink[]][];
-}
 
 export class TrieSearch {
     private root: TrieNode;
