@@ -27,10 +27,9 @@ export class IndexManager {
             const id = this.generateDocumentId(index);
             this.documents.set(id, doc);
             
-            const fields = createSearchableFields({ fields: doc.fields }, this.config.fields);
             const searchableDoc: SearchableDocument = {
                 id,
-                content: fields,
+                content: createSearchableFields({ content: doc.fields }, this.config.fields),
                 metadata: doc.metadata
             };
             
@@ -81,7 +80,7 @@ export class IndexManager {
 
     clear(): void {
         this.documents.clear();
-        this.indexMapper = new IndexManager(this.config);
+        this.indexMapper = new IndexMapper();
     }
 
     private generateDocumentId(index: number): string {
