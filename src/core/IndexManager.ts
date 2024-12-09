@@ -55,7 +55,7 @@ export class IndexManager {
         };
     }
 
-    importIndex(data: unknown): void {
+    importIndex(data: MapperState ): void {
         if (!this.isValidIndexData(data)) {
             throw new Error('Invalid index data format');
         }
