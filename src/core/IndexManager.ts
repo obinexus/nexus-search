@@ -25,14 +25,15 @@ export class IndexManager {
     async addDocuments<T extends IndexedDocument>(documents: T[]): Promise<void> {
         documents.forEach((doc, index) => {
             const id = this.generateDocumentId(index);
-            this.documents.set(id, doc);
-            
             const searchableDoc: SearchableDocument = {
                 id,
-                content: createSearchableFields({ content: doc.fields }, this.config.fields),
+                content: createSearchableFields({
+                    content: doc.fields,
+                    id: ""
+                }, this.config.fields),
                 metadata: doc.metadata
             };
-            
+            this.documents.set(id, { ...doc, id }); // Add the 'id' property to the document
             this.indexMapper.indexDocument(searchableDoc, id, this.config.fields);
         });
     }
