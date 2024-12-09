@@ -78,7 +78,7 @@ export default [
   {
     input: 'src/index.ts',
     output: {
-      file: 'dist/index.esm.js',
+      file: 'dist/index.js',
       format: 'esm',
       banner,
       sourcemap: true,
@@ -92,7 +92,7 @@ export default [
   {
     input: 'src/index.ts',
     output: {
-      file: 'dist/index.cjs.js',
+      file: 'dist/index.cjs',
       format: 'cjs',
       banner,
       sourcemap: true,
@@ -104,7 +104,7 @@ export default [
 
   // Types
   {
-    input: 'dist/types/index.d.ts',
+    input: 'src/types/index.d.ts',
     output: {
       file: 'dist/index.d.ts',
       format: 'es'
