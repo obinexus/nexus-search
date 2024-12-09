@@ -761,7 +761,16 @@ class IndexManager {
             this.documents = new Map(data.documents.map(item => [item.key, item.value]));
             this.config = data.config;
             this.indexMapper = new IndexMapper();
-            this.indexMapper.importState(data.indexState);
+            const indexState = data.indexState;
+            if (indexState && typeof indexState === 'object' && 'trie' in indexState && 'dataMap' in indexState) {
+                this.indexMapper.importState({
+                    trie: indexState.trie,
+                    dataMap: indexState.dataMap
+                });
+            }
+            else {
+                throw new Error('Invalid index state format');
+            }
         }
         catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';

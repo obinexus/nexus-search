@@ -12,4 +12,5 @@ export { TextScore, DocumentScore, ScoringMetrics } from './scoring';
 export { PerformanceMetric, MetricsResult } from './performance';
 export { OptimizationOptions, OptimizationResult } from './optimization';
 export { SerializedState, SerializedTrieNode } from './state';
+export { QueryToken } from './query';
 export * from './utils';
