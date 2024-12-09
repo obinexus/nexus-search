@@ -54,8 +54,7 @@ export class IndexManager {
             config: this.config
         };
     }
-
-    importIndex(data): void {
+    importIndex(data: unknown): void {
         if (!this.isValidIndexData(data)) {
             throw new Error('Invalid index data format');
         }
@@ -65,10 +64,16 @@ export class IndexManager {
             );
             this.config = (data as SerializedIndex).config;
             this.indexMapper = new IndexMapper();
-            this.indexMapper.importState({
-                trie: (data as SerializedIndex).indexState.trie,
-                dataMap: (data as SerializedIndex).indexState.dataMap
-            });
+    
+            const indexState = (data as SerializedIndex).indexState;
+            if (indexState && typeof indexState.trie !== 'undefined' && typeof indexState.dataMap !== 'undefined') {
+                this.indexMapper.importState({
+                    trie: indexState.trie,
+                    dataMap: indexState.dataMap
+                });
+            } else {
+                throw new Error('Invalid index state format');
+            }
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             throw new Error(`Failed to import index: ${message}`);
