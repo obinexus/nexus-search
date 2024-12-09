@@ -1,5 +1,5 @@
 import { IndexMapper } from "@/mappers";
-import { IndexConfig, SearchOptions, SearchResult, IndexedDocument, SearchableDocument } from "@/types";
+import { IndexConfig, SearchOptions, SearchResult, IndexedDocument, SearchableDocument, MapperState } from "@/types";
 import { SerializedIndex } from "@/types/core";
 import { createSearchableFields } from "@/utils";
 
@@ -55,17 +55,17 @@ export class IndexManager {
         };
     }
 
-    importIndex(data: MapperState ): void {
+    importIndex(data: unknown): void {
         if (!this.isValidIndexData(data)) {
             throw new Error('Invalid index data format');
         }
         try {
             this.documents = new Map(
-                data.documents.map(item => [item.key, item.value])
+                (data as SerializedIndex).documents.map(item => [item.key, item.value])
             );
-            this.config = data.config;
+            this.config = (data as SerializedIndex).config;
             this.indexMapper = new IndexMapper();
-            this.indexMapper.importState(data.indexState);
+            this.indexMapper.importState(data.indexState as MapperState);
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             throw new Error(`Failed to import index: ${message}`);
