@@ -66,7 +66,7 @@ export class IndexManager {
             this.indexMapper = new IndexMapper();
     
             const indexState = (data as SerializedIndex).indexState;
-            if (indexState && typeof indexState.trie !== 'undefined' && typeof indexState.dataMap !== 'undefined') {
+            if (indexState && typeof indexState === 'object' && 'trie' in indexState && 'dataMap' in indexState) {
                 this.indexMapper.importState({
                     trie: indexState.trie,
                     dataMap: indexState.dataMap
