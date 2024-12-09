@@ -1,7 +1,5 @@
-type QueryToken = {
-  type: 'term' | 'operator' | 'modifier';
-  value: string;
-};
+import { QueryToken } from "@/types";
+
 
 export class QueryProcessor {
   private readonly STOP_WORDS = new Set([
