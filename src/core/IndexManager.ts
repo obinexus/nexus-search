@@ -11,38 +11,45 @@ interface SerializedIndex {
     config: IndexConfig;
 }
 
-export class IndexManager {
-    private indexMapper: IndexMapper;
-    private config: IndexConfig;
-    private documents: Map<string, IndexedDocument>;
+export  class IndexManager {
+  private indexMapper: IndexMapper;
+  private config: IndexConfig;
+  private documents: Map<string, IndexedDocument>;
 
-    constructor(config: IndexConfig) {
-        this.config = config;
-        this.indexMapper = new IndexMapper();
-        this.documents = new Map();
-    }
+  constructor(config: IndexConfig) {
+      this.config = config;
+      this.indexMapper = new IndexMapper();
+      this.documents = new Map();
+  }
 
+   
     async addDocuments<T extends IndexedDocument>(documents: T[]): Promise<void> {
-        documents.forEach((doc, index) => {
-            const id = this.generateDocumentId(index);
-            this.documents.set(id, doc);
-            const searchableFields = createSearchableFields(doc, this.config.fields);
-            this.indexMapper.indexDocument(searchableFields, id, this.config.fields);
-        });
-    }
+      documents.forEach((doc, index) => {
+          const id = this.generateDocumentId(index);
+          this.documents.set(id, doc);
+          
+          const searchableDoc: SearchableDocument = {
+              id,
+              content: createSearchableFields(doc, this.config.fields)
+          };
+          
+          this.indexMapper.indexDocument(searchableDoc, id, this.config.fields);
+      });
+  }
 
-    async search<T extends IndexedDocument>(query: string, options: SearchOptions): Promise<SearchResult<T>[]> {
-        const searchResults = this.indexMapper.search(query, {
-            fuzzy: options.fuzzy,
-            maxResults: options.maxResults
-        });
+  async search<T extends IndexedDocument>(query: string, options: SearchOptions): Promise<SearchResult<T>[]> {
+      const searchResults = this.indexMapper.search(query, {
+          fuzzy: options.fuzzy,
+          maxResults: options.maxResults
+      });
 
-        return searchResults.map(result => ({
-            item: this.documents.get(result.item) as T,
-            score: result.score,
-            matches: result.matches
-        }));
-    }
+      return searchResults.map(result => ({
+          item: this.documents.get(result.item) as T,
+          score: result.score,
+          matches: result.matches
+      }));
+  }
+
 
     exportIndex(): SerializedIndex {
         return {
