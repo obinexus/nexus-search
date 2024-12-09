@@ -1,5 +1,5 @@
 import { TrieSearch } from "@/algorithms/trie";
-import {  SearchableDocument, SearchResult } from "@/types";
+import {  SearchableDocument, SearchResult, SerializedState } from "@/types";
 import { DataMapper } from "./DataMapper";
 
 export class IndexMapper {
@@ -67,7 +67,7 @@ export class IndexMapper {
     }
 
     this.trieSearch = new TrieSearch();
-    this.trieSearch.importState(state.trie as unknown);
+    this.trieSearch.importState(state.trie );
     this.dataMapper = new DataMapper();
     this.dataMapper.importState(state.dataMap);
 }
