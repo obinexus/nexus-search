@@ -1,15 +1,8 @@
 import { IndexMapper } from "@/mappers";
 import { IndexConfig, SearchOptions, SearchResult, IndexedDocument, SearchableDocument } from "@/types";
+import { SerializedIndex } from "@/types/core";
 import { createSearchableFields } from "@/utils";
 
-interface SerializedIndex {
-    documents: Array<{
-        key: string;
-        value: IndexedDocument;
-    }>;
-    indexState: unknown;
-    config: IndexConfig;
-}
 
 export class IndexManager {
     private indexMapper: IndexMapper;
