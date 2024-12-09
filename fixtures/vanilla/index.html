@@ -11,17 +11,16 @@
         <h1 style="text-align: center; margin-bottom: 2rem;">Nexus Search Demo</h1>
         
         <div class="search-input-wrapper">
-            <input type="text" class="search-input" placeholder="Search...">
-            <div class="loading-spinner"></div>
+            <input type="text" class="search-input" placeholder="Type to search..." aria-label="Search">
+            <div class="loading-spinner" aria-hidden="true" style="display: none;">Loading...</div>
         </div>
 
-        <div class="error-message"></div>
-        <div class="no-results">No results found</div>
-        <div class="search-results">
-            
-        </div>
+        <div class="error-message" style="display: none; color: red;" aria-live="polite"></div>
+        <div class="no-results" style="display: none;" aria-live="polite">No results found</div>
+        <div class="search-results" style="display: none;"></div>
     </div>
-    <script src="../dist/index.umd.js"></script>
-    <script src="App.js"  type=module defer ></script>
+
+    <!-- JavaScript -->
+    <script type="module" src="App.js" defer></script>
 </body>
 </html>

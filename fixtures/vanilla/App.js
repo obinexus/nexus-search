@@ -1,5 +1,7 @@
-// import './nexus-search.umd.js';
 
+import NexusSearch from '../dist/index.esm.js';
+console.log(window.NexusSearch)
+window.NexusSearch = NexusSearch;
 class NexusSearchBar {
     constructor(container) {
         this.container = container;
