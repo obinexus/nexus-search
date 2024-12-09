@@ -54,14 +54,14 @@ export class IndexMapper {
     return results.slice(0, maxResults);
   }
 
-  exportState(): any {
+  exportState(): unknown {
     return {
       trie: this.trieSearch.exportState(),
       dataMap: this.dataMapper.exportState()
     };
   }
 
-  importState(state: any): void {
+  importState(state: unknown): void {
     if (!state || !state.trie || !state.dataMap) {
       throw new Error('Invalid index state');
     }
