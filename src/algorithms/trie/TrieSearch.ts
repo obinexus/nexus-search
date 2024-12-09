@@ -1,6 +1,7 @@
 import { TrieNode } from './TrieNode';
 import { DocumentLink } from '../../types/document';
 import { IndexableDocument } from '../../types/utils';
+import { SerializedState, SerializedTrieNode } from '@/types';
 
 
 
