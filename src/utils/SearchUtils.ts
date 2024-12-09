@@ -1,12 +1,16 @@
 import { DocumentValue, IndexableDocument, OptimizationResult } from "@/types";
 
+type DocumentContent = {
+    [key: string]: DocumentValue | DocumentContent;
+};
+
 export function createSearchableFields<T extends IndexableDocument>(
     document: T,
     fields: string[]
 ): Record<string, string> {
     const searchableFields: Record<string, string> = {};
     fields.forEach(field => {
-        const value = getNestedValue(document, field);
+        const value = getNestedValue(document.content, field);
         if (value !== undefined) {
             searchableFields[field] = normalizeFieldValue(value);
         }
@@ -27,13 +31,19 @@ export function normalizeFieldValue(value: DocumentValue): string {
     return String(value);
 }
 
-export function getNestedValue(obj: Record<string, DocumentValue>, path: string): DocumentValue {
-    return path.split('.').reduce((current, key) => {
-        if (current && typeof current === 'object' && !Array.isArray(current)) {
-            return (current as Record<string, DocumentValue>)[key];
+export function getNestedValue(obj: DocumentContent, path: string): DocumentValue | undefined {
+    const keys = path.split('.');
+    let current: DocumentValue | DocumentContent = obj;
+
+    for (const key of keys) {
+        if (current && typeof current === 'object' && !Array.isArray(current) && key in current) {
+            current = current[key];
+        } else {
+            return undefined;
         }
-        return undefined;
-    }, obj as Record<string, DocumentValue>);
+    }
+
+    return current as DocumentValue;
 }
 
 export function optimizeIndex<T extends IndexableDocument>(data: T[]): OptimizationResult<T> {
