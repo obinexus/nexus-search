@@ -5,16 +5,16 @@ import type {
     SearchOptions,
     SearchResult,
     SearchStats,
-    SearchEventType
+    SearchEventType,
+    SearchEvent,
+    DocumentLink,
+    DocumentRank,
+    InternalConfig,
+    QueryContext
 } from './types';
-export {    IndexConfig,
-    IndexOptions,
-    SearchContext,
-    SearchOptions,
-    SearchResult,
-    SearchStats,
-    SearchEventType
-}
+
+// Re-export all types
+export * from './types';
 
 // Constants
 export const DEFAULT_INDEX_OPTIONS: Required<IndexOptions> = {
@@ -50,40 +50,6 @@ export class IndexError extends Error {
         super(message);
         this.name = 'IndexError';
     }
-}
-
-// Event interfaces
-export interface SearchEvent {
-    type: SearchEventType;
-    timestamp: number;
-    data?: Record<string, unknown>;
-    error?: Error;
-}
-
-// Document interfaces
-export interface DocumentLink {
-    fromId: string;
-    toId: string;
-    weight: number;
-}
-
-export interface DocumentRank {
-    id: string;
-    rank: number;
-    incomingLinks: number;
-    outgoingLinks: number;
-}
-
-// Internal interfaces
-export interface InternalConfig extends IndexConfig {
-    _id: string;
-    _created: number;
-    _updated: number;
-}
-
-export interface QueryContext extends SearchContext {
-    _processed: boolean;
-    _cached: boolean;
 }
 
 // Type guards
@@ -147,7 +113,7 @@ export {
     validateDocument
 } from './utils';
 
-// Create a consolidated export object
+// Create consolidated export object
 export const NexusSearch = {
     DEFAULT_INDEX_OPTIONS,
     DEFAULT_SEARCH_OPTIONS,
@@ -156,6 +122,6 @@ export const NexusSearch = {
     isSearchOptions,
     isIndexConfig,
     isSearchResult
-};
+} as const;
 
 export default NexusSearch;

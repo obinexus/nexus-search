@@ -1,16 +1,18 @@
 
 
-export * from './search';
-export * from './compactability';
-export * from './database';
-export * from './document';
-export * from './errors';
-export * from './events';
-export * from './core';
-export * from './models';
-export * from './mapper';
-export * from './storage';
-export * from './cache';
-export * from './scoring'
-export * from './performance';
-export * from './optimization';
+export { SearchResult, SearchOptions, SearchContext, SearchStats, 
+    SearchableDocument, SearchableField, SearchNode } from './search';
+
+export { IndexConfig, IndexOptions } from './compactability';
+export { DocumentData, DocumentLink, DocumentRank, IndexedDocument } from './document';
+export { DatabaseConfig, SearchDBSchema, MetadataEntry } from './database';
+export { SearchError, IndexError, ValidationError, StorageError } from './errors';
+export { SearchEvent, SearchEventType, SearchEventListener } from './events';
+export { TokenInfo, IndexNode } from './core';
+export { MapperState, MapperOptions } from './mapper';
+export { StorageEntry, StorageOptions } from './storage';
+export { CacheEntry, CacheOptions } from './cache';
+export { TextScore, DocumentScore, ScoringMetrics } from './scoring';
+export { PerformanceMetric, MetricsResult } from './performance';
+export { OptimizationOptions, OptimizationResult } from './optimization';
+export * from './utils';
