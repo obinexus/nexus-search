@@ -1,3 +1,4 @@
+import { DocumentValue, IndexableDocument, OptimizationResult } from "@/types";
 
 
 export function createSearchableFields<T>(
@@ -16,7 +17,7 @@ export function createSearchableFields<T>(
   return searchableFields;
 }
 
-export function normalizeFieldValue(value: any): string {
+export function normalizeFieldValue(value: DocumentValue): string {
   if (typeof value === 'string') {
     return value.toLowerCase().trim();
   }
@@ -29,14 +30,14 @@ export function normalizeFieldValue(value: any): string {
   return String(value);
 }
 
-export function getNestedValue(obj: any, path: string): any {
+export function getNestedValue(obj: IndexableDocument, path: string): DocumentValue {
   return path.split('.').reduce((current, key) => 
     current && current[key] !== undefined ? current[key] : undefined, 
     obj
   );
 }
 
-export function optimizeIndex(data: any[]): any[] {
+export function optimizeIndex<T extends IndexableDocument>(data: T[]): OptimizationResult<T>  {
   // Remove duplicates
   const uniqueData = Array.from(new Set(data.map(item => 
     JSON.stringify(item)

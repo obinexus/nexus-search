@@ -1,3 +1,4 @@
+import { MetricsResult } from "@/types";
 
 
 export class PerformanceMonitor {
@@ -24,13 +25,8 @@ export class PerformanceMonitor {
       this.metrics.get(name)!.push(duration);
     }
   
-    getMetrics(): Record<string, { 
-      avg: number; 
-      min: number; 
-      max: number; 
-      count: number; 
-    }> {
-      const results: Record<string, any> = {};
+    getMetrics(): MetricsResult {
+      const results: Record<string, unknown> = {};
       
       this.metrics.forEach((durations, name) => {
         results[name] = {

@@ -12,7 +12,7 @@ export class ScoringUtils {
      * @returns Map of document IDs to their calculated ranks
      */
     static calculateDocumentRanks(
-        documents: Map<string, any>,
+        documents: Map<string, unknown>,
         links: DocumentLink[]
     ): Map<string, DocumentRank> {
         const documentRanks = new Map<string, DocumentRank>();

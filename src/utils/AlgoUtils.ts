@@ -2,6 +2,7 @@
 import { DocumentLink } from '@/types/document';
 import { IndexNode } from '@/types/internal';
 import { ScoringUtils } from './ScoringUtils'
+import { IndexableDocument } from '@/types';
 export class AlgoUtils {
   /**
    * Performs Breadth-First Search traversal on a trie structure
@@ -158,7 +159,7 @@ export class AlgoUtils {
   static enhancedSearch(
     root: IndexNode,
     searchText: string,
-    documents: Map<string, any>,
+    documents: Map<string, IndexableDocument>,
     documentLinks: DocumentLink[]
   ): Array<{ id: string; score: number; rank: number }> {
     // Get base results from trie search
