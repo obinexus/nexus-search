@@ -5,7 +5,7 @@ export interface SearchDBSchema extends IDBSchema {
         key: string;
         value: {
             id: string;
-            data: any;
+            data: unknown;
             timestamp: number;
         };
         indexes: {
@@ -25,5 +25,16 @@ export interface MetadataEntry {
     config: IndexConfig;
     lastUpdated: number;
 }
-export interface DBSchema {
+export interface DatabaseConfig {
+    name: string;
+    version: number;
+    stores: Array<{
+        name: string;
+        keyPath: string;
+        indexes: Array<{
+            name: string;
+            keyPath: string;
+            options?: IDBIndexParameters;
+        }>;
+    }>;
 }

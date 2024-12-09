@@ -1,4 +1,5 @@
-export interface SearchResult<T> {
+import { DocumentMetadata, DocumentValue } from './utils';
+export interface SearchResult<T = unknown> {
     item: T;
     score: number;
     matches: string[];
@@ -18,7 +19,7 @@ export interface SearchContext {
     query: string;
     options: SearchOptions;
     startTime: number;
-    results: SearchResult<unknown>[];
+    results: SearchResult[];
     stats: SearchStats;
 }
 export interface SearchStats {
@@ -26,4 +27,20 @@ export interface SearchStats {
     searchTime: number;
     indexSize: number;
     queryComplexity: number;
+}
+export interface SearchableDocument {
+    id: string;
+    content: Record<string, string | string[] | number | boolean>;
+    metadata?: Record<string, unknown>;
+    [key: string]: unknown;
+}
+export interface SearchableField {
+    value: DocumentValue;
+    weight?: number;
+    metadata?: DocumentMetadata;
+}
+export interface SearchNode {
+    id?: string;
+    score: number;
+    children: Map<string, SearchNode>;
 }

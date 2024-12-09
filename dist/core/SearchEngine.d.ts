@@ -1,4 +1,4 @@
-import { IndexConfig, SearchOptions, SearchResult } from "@/types";
+import { IndexConfig, SearchOptions, SearchResult, IndexedDocument } from "@/types";
 export declare class SearchEngine {
     private indexManager;
     private queryProcessor;
@@ -7,8 +7,8 @@ export declare class SearchEngine {
     private config;
     constructor(config: IndexConfig);
     initialize(): Promise<void>;
-    addDocuments<T>(documents: T[]): Promise<void>;
-    search<T>(query: string, options?: SearchOptions): Promise<SearchResult<T>[]>;
+    addDocuments<T extends IndexedDocument>(documents: T[]): Promise<void>;
+    search<T extends IndexedDocument>(query: string, options?: SearchOptions): Promise<SearchResult<T>[]>;
     private loadIndexes;
     private generateCacheKey;
     clearIndex(): Promise<void>;

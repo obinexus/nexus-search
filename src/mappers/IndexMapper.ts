@@ -60,16 +60,16 @@ export class IndexMapper {
       dataMap: this.dataMapper.exportState()
     };
   }
-  importState(state: MapperState): void {
+
+  importState(state: { trie: unknown; dataMap: Record<string, string[]> }): void {
     if (!state || !state.trie || !state.dataMap) {
         throw new Error('Invalid index state');
     }
     this.trieSearch = new TrieSearch();
-    this.trieSearch.importState(state.trie);
+    this.trieSearch.importState(state.trie as unknown );
     this.dataMapper = new DataMapper();
     this.dataMapper.importState(state.dataMap);
 }
-
   private tokenizeText(text: string): string[] {
     return text
       .toLowerCase()

@@ -1,40 +1,17 @@
-import { DocumentLink } from '../../types/document';
-interface SerializedTrieNode {
-    isEndOfWord: boolean;
-    documentRefs: string[];
-    children: {
-        [key: string]: SerializedTrieNode;
-    };
-}
+import { SerializedState } from '@/types';
 export declare class TrieSearch {
     private root;
     private documents;
     private documentLinks;
     constructor();
+    exportState(): SerializedState;
+    importState(state: SerializedState): void;
     insert(word: string, documentId: string): void;
     search(prefix: string, maxResults?: number): Set<string>;
     fuzzySearch(word: string, maxDistance?: number): Set<string>;
     private collectDocumentRefs;
     private fuzzySearchHelper;
     private calculateLevenshteinDistance;
-    /**
-   * Exports the trie state for persistence
-   * @returns Serialized trie state
-   */
-    exportState(): {
-        trie: SerializedTrieNode;
-        documents: [string, any][];
-        documentLinks: [string, DocumentLink[]][];
-    };
-    /**
-     * Imports a previously exported trie state
-     * @param state The state to import
-     */
-    importState(state: {
-        trie: SerializedTrieNode;
-        documents?: [string, any][];
-        documentLinks?: [string, DocumentLink[]][];
-    }): void;
     /**
      * Serializes a TrieNode for persistence
      */
@@ -52,4 +29,3 @@ export declare class TrieSearch {
      */
     getSize(): number;
 }
-export {};

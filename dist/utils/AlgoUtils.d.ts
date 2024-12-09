@@ -1,5 +1,6 @@
 import { DocumentLink } from '@/types/document';
-import { IndexNode } from '@/types/internal';
+import { IndexNode } from '@/types/core';
+import { IndexableDocument } from '@/types';
 export declare class AlgoUtils {
     /**
      * Performs Breadth-First Search traversal on a trie structure
@@ -36,7 +37,7 @@ export declare class AlgoUtils {
         score: number;
         distance: number;
     }>;
-    static enhancedSearch(root: IndexNode, searchText: string, documents: Map<string, any>, documentLinks: DocumentLink[]): Array<{
+    static enhancedSearch(root: IndexNode, searchText: string, documents: Map<string, IndexableDocument>, documentLinks: DocumentLink[]): Array<{
         id: string;
         score: number;
         rank: number;

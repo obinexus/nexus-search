@@ -9,7 +9,7 @@ export declare class ScoringUtils {
      * @param links Array of document links representing relationships
      * @returns Map of document IDs to their calculated ranks
      */
-    static calculateDocumentRanks(documents: Map<string, any>, links: DocumentLink[]): Map<string, DocumentRank>;
+    static calculateDocumentRanks(documents: Map<string, unknown>, links: DocumentLink[]): Map<string, DocumentRank>;
     /**
      * Calculates Term Frequency-Inverse Document Frequency (TF-IDF)
      * @param term Search term
