@@ -1,7 +1,7 @@
 import { CacheManager, SearchStorage } from "@/storage";
 import { SearchOptions, SearchResult, IndexedDocument, SearchEngineConfig } from "@/types";
 import { validateSearchOptions } from "@/utils";
-import { IndexManager } from "./IndexManager";
+import { IndexManager } from "../storage/IndexManager";
 import { QueryProcessor } from "./QueryProcessor";
 
 

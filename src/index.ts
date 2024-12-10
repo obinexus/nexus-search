@@ -15,7 +15,7 @@ import type {
 export { SearchContext,SearchStats, SearchEvent,SearchEventType,DocumentLink,DocumentRank}
 // Core imports
 import { SearchEngine } from './core/SearchEngine';
-import { IndexManager } from './core/IndexManager';
+import { IndexManager } from './storage/IndexManager';
 import { QueryProcessor } from './core/QueryProcessor';
 
 // Algorithm imports
