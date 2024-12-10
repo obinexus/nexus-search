@@ -3,8 +3,6 @@ import { DocumentLink } from '../../types/document';
 import { IndexableDocument } from '../../types/utils';
 import { SerializedState, SerializedTrieNode } from '@/types';
 
-
-
 export class TrieSearch {
     private root: TrieNode;
     private documents: Map<string, IndexableDocument>;
@@ -16,62 +14,64 @@ export class TrieSearch {
         this.documentLinks = new Map();
     }
 
-    // Main methods remain the same
+    public insert(text: string, documentId: string): void {
+        // Handle empty or invalid input
+        if (!text || !documentId) return;
 
-    public exportState(): SerializedState {
-        return {
-            trie: this.serializeNode(this.root),
-            documents: Array.from(this.documents.entries()),
-            documentLinks: Array.from(this.documentLinks.entries())
-        };
-    }
-
-    public importState(state: SerializedState): void {
-        this.root = this.deserializeNode(state.trie);
-
-        if (state.documents) {
-            this.documents = new Map(state.documents);
-        }
-
-        if (state.documentLinks) {
-            this.documentLinks = new Map(state.documentLinks);
-        }
-    }
-    
-    insert(word: string, documentId: string): void {
-        let current = this.root;
+        const words = text.toLowerCase().split(/\s+/).filter(Boolean);
         
-        for (const char of word.toLowerCase()) {
-            if (!current.children.has(char)) {
-                current.children.set(char, new TrieNode());
+        for (const word of words) {
+            let current = this.root;
+            
+            for (const char of word) {
+                if (!current.children.has(char)) {
+                    current.children.set(char, new TrieNode());
+                }
+                current = current.children.get(char)!;
             }
-            current = current.children.get(char)!;
+            
+            current.isEndOfWord = true;
+            current.documentRefs.add(documentId);
+            current.weight += 1.0; // Increment weight for ranking
         }
-        
-        current.isEndOfWord = true;
-        current.documentRefs.add(documentId);
     }
 
-    search(prefix: string, maxResults: number = 10): Set<string> {
+    public search(query: string, maxResults: number = 10): Set<string> {
+        if (!query) return new Set();
+
         const results = new Set<string>();
-        let current = this.root;
+        const words = query.toLowerCase().split(/\s+/).filter(Boolean);
 
-        // Navigate to prefix endpoint
-        for (const char of prefix.toLowerCase()) {
-            if (!current.children.has(char)) {
-                return results;
+        for (const word of words) {
+            let current = this.root;
+            let found = true;
+
+            for (const char of word) {
+                if (!current.children.has(char)) {
+                    found = false;
+                    break;
+                }
+                current = current.children.get(char)!;
             }
-            current = current.children.get(char)!;
+
+            if (found) {
+                this.collectDocumentRefs(current, results, maxResults);
+            }
         }
 
-        // Collect all document references below this point
-        this.collectDocumentRefs(current, results, maxResults);
         return results;
     }
 
-    fuzzySearch(word: string, maxDistance: number = 2): Set<string> {
+    public fuzzySearch(query: string, maxDistance: number = 2): Set<string> {
+        if (!query) return new Set();
+
         const results = new Set<string>();
-        this.fuzzySearchHelper(word.toLowerCase(), this.root, '', maxDistance, results);
+        const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+
+        for (const word of words) {
+            this.fuzzySearchHelper(word, this.root, '', maxDistance, results);
+        }
+
         return results;
     }
 
@@ -105,11 +105,14 @@ export class TrieSearch {
             }
         }
 
-        if (maxDistance > 0) {
-            for (const [char, childNode] of node.children) {
-                // Handle substitution
-                const newDistance = word[currentWord.length] !== char ? maxDistance - 1 : maxDistance;
-                this.fuzzySearchHelper(word, childNode, currentWord + char, newDistance, results);
+        for (const [char, childNode] of node.children) {
+            // Handle substitution, deletion, and insertion
+            const newDistance = word[currentWord.length] !== char ? maxDistance - 1 : maxDistance;
+            this.fuzzySearchHelper(word, childNode, currentWord + char, newDistance, results);
+            
+            // Handle deletion
+            if (maxDistance > 0) {
+                this.fuzzySearchHelper(word, childNode, currentWord, maxDistance - 1, results);
             }
         }
     }
@@ -134,11 +137,20 @@ export class TrieSearch {
         return dp[s1.length][s2.length];
     }
 
-     
+    public exportState(): SerializedState {
+        return {
+            trie: this.serializeNode(this.root),
+            documents: Array.from(this.documents.entries()),
+            documentLinks: Array.from(this.documentLinks.entries())
+        };
+    }
 
-    /**
-     * Serializes a TrieNode for persistence
-     */
+    public importState(state: SerializedState): void {
+        this.root = this.deserializeNode(state.trie);
+        this.documents = new Map(state.documents || []);
+        this.documentLinks = new Map(state.documentLinks || []);
+    }
+
     private serializeNode(node: TrieNode): SerializedTrieNode {
         const children: { [key: string]: SerializedTrieNode } = {};
         
@@ -149,17 +161,16 @@ export class TrieSearch {
         return {
             isEndOfWord: node.isEndOfWord,
             documentRefs: Array.from(node.documentRefs),
+            weight: node.weight,
             children
         };
     }
 
-    /**
-     * Deserializes a node from its serialized form
-     */
     private deserializeNode(serialized: SerializedTrieNode): TrieNode {
         const node = new TrieNode();
         node.isEndOfWord = serialized.isEndOfWord;
         node.documentRefs = new Set(serialized.documentRefs);
+        node.weight = serialized.weight || 0;
 
         Object.entries(serialized.children).forEach(([char, childData]) => {
             node.children.set(char, this.deserializeNode(childData));
@@ -168,19 +179,13 @@ export class TrieSearch {
         return node;
     }
 
-    /**
-     * Clears all data from the trie
-     */
-    clear(): void {
+    public clear(): void {
         this.root = new TrieNode();
         this.documents.clear();
         this.documentLinks.clear();
     }
 
-    /**
-     * Gets the current size of the trie
-     */
-    getSize(): number {
+    public getSize(): number {
         return this.documents.size;
     }
 }
