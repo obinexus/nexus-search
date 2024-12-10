@@ -99,5 +99,8 @@
     "nexus-search"
   ],
   "author": "Nnamdi Michael Okpala",
-  "license": "ISC"
+  "license": "ISC",
+  "publishConfig": {
+    "access": "public"
+  }
 }
