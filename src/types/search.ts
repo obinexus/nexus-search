@@ -1,4 +1,4 @@
-import { DocumentMetadata } from './utils';
+import { DocumentMetadata, DocumentValue } from './document';
 
 export interface SearchResult<T = unknown> {
     item: T;
@@ -45,7 +45,6 @@ export interface SearchableField {
     weight?: number;
     metadata?: DocumentMetadata;
 }
-export type DocumentValue = string | number | boolean | string[] | Record<string, unknown>;
 
 export interface SearchNode {
     id?: string;
