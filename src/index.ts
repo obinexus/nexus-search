@@ -12,6 +12,7 @@ import type {
     DocumentRank,
 } from './types/index';
 
+export { SearchContext,SearchStats, SearchEvent,SearchEventType,DocumentLink,DocumentRank}
 // Core imports
 import { SearchEngine } from './core/SearchEngine';
 import { IndexManager } from './core/IndexManager';
@@ -147,7 +148,7 @@ export const NexusSearch = {
     TrieSearch,
     isSearchOptions,
     isIndexConfig,
-    isSearchResult
+    isSearchResult,
 } as const;
 
 export default NexusSearch;
