@@ -1,6 +1,5 @@
 import { TrieNode } from './TrieNode';
-import { DocumentLink } from '../../types/document';
-import { IndexableDocument } from '../../types/utils';
+import { DocumentLink, IndexableDocument } from '../../types/document';
 import { SerializedState, SerializedTrieNode } from '@/types';
 
 export class TrieSearch {
