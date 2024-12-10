@@ -1,7 +1,7 @@
 import type { IndexConfig, IndexOptions, SearchContext, SearchOptions, SearchResult, SearchStats, SearchEventType, SearchEvent, DocumentLink, DocumentRank } from './types/index';
 export { SearchContext, SearchStats, SearchEvent, SearchEventType, DocumentLink, DocumentRank };
 import { SearchEngine } from './core/SearchEngine';
-import { IndexManager } from './core/IndexManager';
+import { IndexManager } from './storage/IndexManager';
 import { QueryProcessor } from './core/QueryProcessor';
 import { TrieNode } from './algorithms/trie/TrieNode';
 import { TrieSearch } from './algorithms/trie/TrieSearch';

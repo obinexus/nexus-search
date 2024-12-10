@@ -1,4 +1,4 @@
-import { SerializedState } from '@/types';
+import { SerializedState } from "@/types";
 export declare class TrieSearch {
     private root;
     private documents;

@@ -452,7 +452,6 @@ class TrieSearch {
         this.documentLinks = new Map();
     }
     insert(text, documentId) {
-        // Handle empty or invalid input
         if (!text || !documentId)
             return;
         const words = text.toLowerCase().split(/\s+/).filter(Boolean);
@@ -466,7 +465,7 @@ class TrieSearch {
             }
             current.isEndOfWord = true;
             current.documentRefs.add(documentId);
-            current.weight += 1.0; // Increment weight for ranking
+            current.weight += 1.0;
         }
     }
     search(query, maxResults = 10) {
@@ -484,7 +483,7 @@ class TrieSearch {
                 }
                 current = current.children.get(char);
             }
-            if (found) {
+            if (found && current.isEndOfWord) {
                 this.collectDocumentRefs(current, results, maxResults);
             }
         }
@@ -524,10 +523,8 @@ class TrieSearch {
             }
         }
         for (const [char, childNode] of node.children) {
-            // Handle substitution, deletion, and insertion
             const newDistance = word[currentWord.length] !== char ? maxDistance - 1 : maxDistance;
             this.fuzzySearchHelper(word, childNode, currentWord + char, newDistance, results);
-            // Handle deletion
             if (maxDistance > 0) {
                 this.fuzzySearchHelper(word, childNode, currentWord, maxDistance - 1, results);
             }
@@ -556,8 +553,8 @@ class TrieSearch {
     }
     importState(state) {
         this.root = this.deserializeNode(state.trie);
-        this.documents = new Map(state.documents || []);
-        this.documentLinks = new Map(state.documentLinks || []);
+        this.documents = new Map(state.documents);
+        this.documentLinks = new Map(state.documentLinks);
     }
     serializeNode(node) {
         const children = {};
@@ -572,10 +569,11 @@ class TrieSearch {
         };
     }
     deserializeNode(serialized) {
+        var _a;
         const node = new TrieNode();
         node.isEndOfWord = serialized.isEndOfWord;
         node.documentRefs = new Set(serialized.documentRefs);
-        node.weight = serialized.weight || 0;
+        node.weight = (_a = serialized.weight) !== null && _a !== void 0 ? _a : 0;
         Object.entries(serialized.children).forEach(([char, childData]) => {
             node.children.set(char, this.deserializeNode(childData));
         });
