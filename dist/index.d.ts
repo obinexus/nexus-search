@@ -1,4 +1,6 @@
 import { DBSchema } from 'idb';
+import { IndexConfig as IndexConfig$1, IndexedDocument as IndexedDocument$1, SearchOptions as SearchOptions$1, SearchResult as SearchResult$1, SerializedState as SerializedState$1, SearchableDocument as SearchableDocument$1, MetadataEntry as MetadataEntry$1, IndexableDocument as IndexableDocument$1, DocumentValue as DocumentValue$2, OptimizationResult as OptimizationResult$1, MetricsResult as MetricsResult$1 } from '@/types';
+import { SerializedIndex as SerializedIndex$1 } from '@/types/core';
 
 interface IndexOptions {
     caseSensitive?: boolean;
@@ -159,12 +161,6 @@ interface DatabaseConfig {
     }>;
 }
 
-declare class SearchError extends Error {
-    constructor(message: string);
-}
-declare class IndexError extends Error {
-    constructor(message: string);
-}
 declare class ValidationError extends Error {
     constructor(message: string);
 }
@@ -290,15 +286,197 @@ type QueryToken = {
     value: string;
 };
 
-interface TrieNode<T = unknown> {
-    value: T;
-    isEnd: boolean;
-    children: Map<string, TrieNode<T>>;
-}
 interface TrieSearchOptions {
     caseSensitive?: boolean;
     fuzzy?: boolean;
     maxDistance?: number;
 }
 
-export { type ArrayValue$1 as ArrayValue, type CacheEntry, type CacheOptions, type ComplexValue$1 as ComplexValue, type DatabaseConfig, type DocumentData, type DocumentLink, type DocumentMetadata$1 as DocumentMetadata, type DocumentRank, type DocumentScore, type DocumentValue$1 as DocumentValue, type IndexConfig, IndexError, type IndexNode, type IndexOptions, type IndexableDocument, type IndexedDocument, type MapperOptions, type MapperState, type MetadataEntry, type MetricsResult, type OptimizationOptions, type OptimizationResult, type PerformanceData, type PerformanceMetric, type PerformanceMetrics, type PrimitiveValue$1 as PrimitiveValue, type QueryToken, type ScoringMetrics, type SearchContext, type SearchDBSchema, SearchError, type SearchEvent, type SearchEventListener, type SearchEventType, type SearchNode, type SearchOptions, type SearchResult, type SearchStats, type SearchableDocument, type SearchableField, type SerializedIndex, type SerializedState, type SerializedTrieNode, type StorageEntry, StorageError, type StorageOptions, type TextScore, type TokenInfo, type TrieNode, type TrieSearchOptions, ValidationError };
+declare class SearchEngine {
+    private indexManager;
+    private queryProcessor;
+    private storage;
+    private cache;
+    private config;
+    constructor(config: IndexConfig$1);
+    initialize(): Promise<void>;
+    addDocuments<T extends IndexedDocument$1>(documents: T[]): Promise<void>;
+    search<T extends IndexedDocument$1>(query: string, options?: SearchOptions$1): Promise<SearchResult$1<T>[]>;
+    private loadIndexes;
+    private generateCacheKey;
+    clearIndex(): Promise<void>;
+}
+
+declare class IndexManager {
+    private indexMapper;
+    private config;
+    private documents;
+    constructor(config: IndexConfig$1);
+    addDocuments<T extends IndexedDocument$1>(documents: T[]): Promise<void>;
+    search<T extends IndexedDocument$1>(query: string, options: SearchOptions$1): Promise<SearchResult$1<T>[]>;
+    exportIndex(): SerializedIndex$1;
+    importIndex(data: unknown): void;
+    clear(): void;
+    private generateDocumentId;
+    private isValidIndexData;
+    private serializeDocument;
+}
+
+declare class QueryProcessor {
+    private readonly STOP_WORDS;
+    process(query: string): string;
+    private tokenize;
+    private classifyToken;
+    private processTokens;
+    private normalizeToken;
+    private optimizeQuery;
+}
+
+declare class TrieNode {
+    children: Map<string, TrieNode>;
+    isEndOfWord: boolean;
+    documentRefs: Set<string>;
+    weight: number;
+    constructor();
+}
+
+declare class TrieSearch {
+    private root;
+    private documents;
+    private documentLinks;
+    constructor();
+    exportState(): SerializedState$1;
+    importState(state: SerializedState$1): void;
+    insert(word: string, documentId: string): void;
+    search(prefix: string, maxResults?: number): Set<string>;
+    fuzzySearch(word: string, maxDistance?: number): Set<string>;
+    private collectDocumentRefs;
+    private fuzzySearchHelper;
+    private calculateLevenshteinDistance;
+    /**
+     * Serializes a TrieNode for persistence
+     */
+    private serializeNode;
+    /**
+     * Deserializes a node from its serialized form
+     */
+    private deserializeNode;
+    /**
+     * Clears all data from the trie
+     */
+    clear(): void;
+    /**
+     * Gets the current size of the trie
+     */
+    getSize(): number;
+}
+
+declare class DataMapper {
+    private dataMap;
+    constructor();
+    mapData(key: string, documentId: string): void;
+    getDocuments(key: string): Set<string>;
+    getAllKeys(): string[];
+    exportState(): Record<string, string[]>;
+    importState(state: Record<string, string[]>): void;
+    clear(): void;
+}
+
+declare class IndexMapper {
+    private dataMapper;
+    private trieSearch;
+    constructor();
+    indexDocument(document: SearchableDocument$1, id: string, fields: string[]): void;
+    search(query: string, options?: {
+        fuzzy?: boolean;
+        maxResults?: number;
+    }): SearchResult$1<string>[];
+    exportState(): unknown;
+    importState(state: {
+        trie: SerializedState$1;
+        dataMap: Record<string, string[]>;
+    }): void;
+    private tokenizeText;
+    private calculateScore;
+    clear(): void;
+}
+
+declare class CacheManager {
+    private cache;
+    private readonly maxSize;
+    private readonly ttl;
+    constructor(maxSize?: number, ttlMinutes?: number);
+    set(key: string, data: SearchResult$1<any>[]): void;
+    get(key: string): SearchResult$1<any>[] | null;
+    private isExpired;
+    private evictOldest;
+    clear(): void;
+}
+
+declare class IndexedDB {
+    private db;
+    private readonly DB_NAME;
+    private readonly DB_VERSION;
+    private initPromise;
+    constructor();
+    initialize(): Promise<void>;
+    private ensureConnection;
+    storeIndex(key: string, data: any): Promise<void>;
+    getIndex(key: string): Promise<any | null>;
+    updateMetadata(config: IndexConfig$1): Promise<void>;
+    getMetadata(): Promise<MetadataEntry$1 | null>;
+    clearIndices(): Promise<void>;
+    deleteIndex(key: string): Promise<void>;
+    close(): Promise<void>;
+}
+
+type DocumentContent = {
+    [key: string]: DocumentValue$2 | DocumentContent;
+};
+declare function createSearchableFields<T extends IndexableDocument$1>(document: T, fields: string[]): Record<string, string>;
+declare function normalizeFieldValue(value: DocumentValue$2): string;
+declare function getNestedValue(obj: DocumentContent, path: string): DocumentValue$2 | undefined;
+declare function optimizeIndex<T extends IndexableDocument$1>(data: T[]): OptimizationResult$1<T>;
+
+declare class PerformanceMonitor {
+    private metrics;
+    constructor();
+    measure<T>(name: string, fn: () => Promise<T>): Promise<T>;
+    private recordMetric;
+    getMetrics(): MetricsResult$1;
+    private average;
+    clear(): void;
+}
+
+declare function validateSearchOptions(options: SearchOptions$1): void;
+declare function validateIndexConfig(config: IndexConfig$1): void;
+declare function validateDocument(document: SearchableDocument$1, fields: string[]): boolean;
+
+declare const DEFAULT_INDEX_OPTIONS: Required<IndexOptions>;
+declare const DEFAULT_SEARCH_OPTIONS: Required<SearchOptions>;
+declare class SearchError extends Error {
+    constructor(message: string);
+}
+declare class IndexError extends Error {
+    constructor(message: string);
+}
+declare function isSearchOptions(obj: unknown): obj is SearchOptions;
+declare function isIndexConfig(obj: unknown): obj is IndexConfig;
+declare function isSearchResult<T>(obj: unknown): obj is SearchResult<T>;
+
+declare const NexusSearch: {
+    readonly DEFAULT_INDEX_OPTIONS: Required<IndexOptions>;
+    readonly DEFAULT_SEARCH_OPTIONS: Required<SearchOptions>;
+    readonly SearchError: typeof SearchError;
+    readonly IndexError: typeof IndexError;
+    readonly SearchEngine: typeof SearchEngine;
+    readonly IndexManager: typeof IndexManager;
+    readonly QueryProcessor: typeof QueryProcessor;
+    readonly TrieNode: typeof TrieNode;
+    readonly TrieSearch: typeof TrieSearch;
+    readonly isSearchOptions: typeof isSearchOptions;
+    readonly isIndexConfig: typeof isIndexConfig;
+    readonly isSearchResult: typeof isSearchResult;
+};
+
+export { type ArrayValue$1 as ArrayValue, type CacheEntry, CacheManager, type CacheOptions, type ComplexValue$1 as ComplexValue, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, type DatabaseConfig, type DocumentData, type DocumentLink, type DocumentMetadata$1 as DocumentMetadata, type DocumentRank, type DocumentScore, type DocumentValue$1 as DocumentValue, type IndexConfig, IndexError, IndexManager, IndexMapper, type IndexNode, type IndexOptions, type IndexableDocument, IndexedDB, type IndexedDocument, type MapperOptions, type MapperState, type MetadataEntry, type MetricsResult, NexusSearch, type OptimizationOptions, type OptimizationResult, type PerformanceData, type PerformanceMetric, type PerformanceMetrics, PerformanceMonitor, type PrimitiveValue$1 as PrimitiveValue, QueryProcessor, type QueryToken, type ScoringMetrics, type SearchContext, type SearchDBSchema, SearchEngine, SearchError, type SearchEvent, type SearchEventListener, type SearchEventType, type SearchNode, type SearchOptions, type SearchResult, type SearchStats, type SearchableDocument, type SearchableField, type SerializedIndex, type SerializedState, type SerializedTrieNode, type StorageEntry, StorageError, type StorageOptions, type TextScore, type TokenInfo, TrieNode, TrieSearch, type TrieSearchOptions, ValidationError, createSearchableFields, NexusSearch as default, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };

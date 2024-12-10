@@ -1,7 +1,7 @@
 /**
  * @obinexuscomputing/nexus-search v0.1.6
  * A high-performance search indexing and query system that uses a trie data structure and BFS/DFS algorithms for fast full-text search with fuzzy matching.
- * @license MIT
+ * @license ISC
  */
 import { openDB } from 'idb';
 
@@ -949,7 +949,7 @@ const NexusSearch = {
     TrieSearch,
     isSearchOptions,
     isIndexConfig,
-    isSearchResult
+    isSearchResult,
 };
 
 export { CacheManager, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, IndexError, IndexManager, IndexMapper, IndexedDB, NexusSearch, PerformanceMonitor, QueryProcessor, SearchEngine, SearchError, StorageError, TrieNode, TrieSearch, ValidationError, createSearchableFields, NexusSearch as default, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
