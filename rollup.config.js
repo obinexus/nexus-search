@@ -58,7 +58,7 @@ export default [
   {
     input: 'src/index.ts',
     output: {
-      file: 'dist/index.umd.js',
+      file: 'dist/nexus-search.umd.js',
       format: 'umd',
       name: 'NexusSearch',
       banner,
@@ -81,7 +81,7 @@ export default [
   {
     input: 'src/index.ts',
     output: {
-      file: 'dist/index.js',
+      file: 'dist/index.mjs',
       format: 'esm',
       banner,
       sourcemap: true,
@@ -107,7 +107,7 @@ export default [
 
   // Types build
   {
-    input: 'dist/types/index.d.ts',  // Changed from src/index.ts to use generated declarations
+    input: 'dist/types/index.d.ts',  
     output: {
       file: 'dist/index.d.ts',
       format: 'es'

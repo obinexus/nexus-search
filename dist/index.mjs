@@ -3,11 +3,7 @@
  * A high-performance search indexing and query system that uses a trie data structure and BFS/DFS algorithms for fast full-text search with fuzzy matching.
  * @license MIT
  */
-'use strict';
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-var idb = require('idb');
+import { openDB } from 'idb';
 
 class CacheManager {
     constructor(maxSize = 1000, ttlMinutes = 5) {
@@ -68,7 +64,7 @@ class IndexedDB {
         if (this.db)
             return;
         try {
-            this.db = await idb.openDB(this.DB_NAME, this.DB_VERSION, {
+            this.db = await openDB(this.DB_NAME, this.DB_VERSION, {
                 upgrade(db, oldVersion, newVersion, transaction) {
                     // Handle version upgrades
                     if (!db.objectStoreNames.contains('searchIndices')) {
@@ -196,7 +192,7 @@ class SearchStorage {
         if (this.db)
             return;
         try {
-            this.db = await idb.openDB(this.DB_NAME, this.DB_VERSION, {
+            this.db = await openDB(this.DB_NAME, this.DB_VERSION, {
                 upgrade(db, oldVersion, newVersion, transaction) {
                     // Handle version upgrades
                     if (!db.objectStoreNames.contains('searchIndices')) {
@@ -956,32 +952,5 @@ const NexusSearch = {
     isSearchResult
 };
 
-exports.CacheManager = CacheManager;
-exports.DEFAULT_INDEX_OPTIONS = DEFAULT_INDEX_OPTIONS;
-exports.DEFAULT_SEARCH_OPTIONS = DEFAULT_SEARCH_OPTIONS;
-exports.DataMapper = DataMapper;
-exports.IndexError = IndexError;
-exports.IndexManager = IndexManager;
-exports.IndexMapper = IndexMapper;
-exports.IndexedDB = IndexedDB;
-exports.NexusSearch = NexusSearch;
-exports.PerformanceMonitor = PerformanceMonitor;
-exports.QueryProcessor = QueryProcessor;
-exports.SearchEngine = SearchEngine;
-exports.SearchError = SearchError;
-exports.StorageError = StorageError;
-exports.TrieNode = TrieNode;
-exports.TrieSearch = TrieSearch;
-exports.ValidationError = ValidationError;
-exports.createSearchableFields = createSearchableFields;
-exports.default = NexusSearch;
-exports.getNestedValue = getNestedValue;
-exports.isIndexConfig = isIndexConfig;
-exports.isSearchOptions = isSearchOptions;
-exports.isSearchResult = isSearchResult;
-exports.normalizeFieldValue = normalizeFieldValue;
-exports.optimizeIndex = optimizeIndex;
-exports.validateDocument = validateDocument;
-exports.validateIndexConfig = validateIndexConfig;
-exports.validateSearchOptions = validateSearchOptions;
-//# sourceMappingURL=index.cjs.map
+export { CacheManager, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, IndexError, IndexManager, IndexMapper, IndexedDB, NexusSearch, PerformanceMonitor, QueryProcessor, SearchEngine, SearchError, StorageError, TrieNode, TrieSearch, ValidationError, createSearchableFields, NexusSearch as default, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
+//# sourceMappingURL=index.mjs.map

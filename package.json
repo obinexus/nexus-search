@@ -10,7 +10,7 @@
     ".": {
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs",
-      "browser": "./dist/index.umd.js",
+      "browser": "./dist/nexus-search.umd.js",
       "types": "./dist/index.d.ts"
     }
   },

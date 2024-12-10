@@ -1,20 +1,124 @@
+// Core types
+export * from './search';
+export * from './core';
+export * from './document';
+export * from './database';
+export * from './errors';
+export * from './events';
+export * from './mapper';
+export * from './storage';
+export * from './cache';
+export * from './scoring';
+export * from './performance';
+export * from './optimization';
+export * from './state';
+export * from './query';
+export * from './compactability';
 
+// Algorithm types
+export * from './algorithms';
 
-export { SearchResult, SearchOptions, SearchContext, SearchStats, 
-    SearchableDocument, SearchableField, SearchNode } from './search';
+// Utility types
+// export * from './utils'; 
 
-export { IndexConfig, IndexOptions } from './compactability';
-export { DocumentData, DocumentLink, DocumentRank, IndexedDocument } from './document';
-export { DatabaseConfig, SearchDBSchema, MetadataEntry } from './database';
-export { SearchError, IndexError, ValidationError, StorageError } from './errors';
-export { SearchEvent, SearchEventType, SearchEventListener } from './events';
-export { TokenInfo, IndexNode } from './core';
-export { MapperState, MapperOptions } from './mapper';
-export { StorageEntry, StorageOptions } from './storage';
-export { CacheEntry, CacheOptions } from './cache';
-export { TextScore, DocumentScore, ScoringMetrics } from './scoring';
-export { PerformanceMetric, MetricsResult } from './performance';
-export { OptimizationOptions, OptimizationResult } from './optimization';
-export { SerializedState,SerializedTrieNode } from './state';
-export { QueryToken} from './query'
-export * from './utils';
+// Export specific types for backwards compatibility
+export type {
+    // Search types
+    SearchResult,
+    SearchOptions,
+    SearchContext,
+    SearchStats,
+    SearchableDocument,
+    SearchableField,
+    SearchNode
+} from './search';
+
+// Index and configuration types
+export type {
+    IndexConfig,
+    IndexOptions
+} from './compactability';
+
+// Document types
+export type {
+    DocumentData,
+    DocumentLink,
+    DocumentRank,
+    IndexedDocument
+} from './document';
+
+// Database types
+export type {
+    DatabaseConfig,
+    SearchDBSchema,
+    MetadataEntry
+} from './database';
+
+// Error types
+export type {
+    SearchError,
+    IndexError,
+    ValidationError,
+    StorageError
+} from './errors';
+
+// Event types
+export type {
+    SearchEvent,
+    SearchEventType,
+    SearchEventListener
+} from './events';
+
+// Core processing types
+export type {
+    TokenInfo,
+    IndexNode
+} from './core';
+
+// Mapper types
+export type {
+    MapperState,
+    MapperOptions
+} from './mapper';
+
+// Storage types
+export type {
+    StorageEntry,
+    StorageOptions
+} from './storage';
+
+// Cache types
+export type {
+    CacheEntry,
+    CacheOptions
+} from './cache';
+
+// Scoring types
+export type {
+    TextScore,
+    DocumentScore,
+    ScoringMetrics
+} from './scoring';
+
+// Performance types
+export type {
+    PerformanceMetric,
+    MetricsResult
+} from './performance';
+
+// Optimization types
+export type {
+    OptimizationOptions,
+    OptimizationResult
+} from './optimization';
+
+// State types
+export type {
+    SerializedState,
+    SerializedTrieNode
+} from './state';
+
+// Query types
+export type {
+    QueryToken
+} from './query';

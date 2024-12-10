@@ -879,33 +879,6 @@ class StorageError extends Error {
     }
 }
 
-// Factory functions
-function createSearchStats() {
-    return {
-        totalResults: 0,
-        searchTime: 0,
-        indexSize: 0,
-        queryComplexity: 0
-    };
-}
-function createSearchContext(query, options = {}) {
-    return {
-        query,
-        options,
-        startTime: Date.now(),
-        results: [],
-        stats: createSearchStats()
-    };
-}
-function createTokenInfo(value, type, position) {
-    return {
-        value,
-        type,
-        position,
-        length: value.length
-    };
-}
-
 // Core imports
 // Constants
 const DEFAULT_INDEX_OPTIONS = {
@@ -979,5 +952,5 @@ const NexusSearch = {
     isSearchResult
 };
 
-export { CacheManager, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, IndexError, IndexManager, IndexMapper, IndexedDB, NexusSearch, PerformanceMonitor, QueryProcessor, SearchEngine, SearchError, StorageError, TrieNode, TrieSearch, ValidationError, createSearchContext, createSearchStats, createSearchableFields, createTokenInfo, NexusSearch as default, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
+export { CacheManager, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, IndexError, IndexManager, IndexMapper, IndexedDB, NexusSearch, PerformanceMonitor, QueryProcessor, SearchEngine, SearchError, StorageError, TrieNode, TrieSearch, ValidationError, createSearchableFields, NexusSearch as default, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
 //# sourceMappingURL=index.js.map

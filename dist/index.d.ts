@@ -36,6 +36,16 @@ interface IndexedDocument {
     fields: Record<string, string>;
     metadata?: Record<string, unknown>;
 }
+type PrimitiveValue$1 = string | number | boolean | null;
+type ArrayValue$1 = PrimitiveValue$1[];
+type ComplexValue$1 = Record<string, PrimitiveValue$1 | ArrayValue$1>;
+type DocumentValue$1 = PrimitiveValue$1 | ArrayValue$1 | ComplexValue$1;
+type DocumentMetadata$1 = Record<string, DocumentValue$1>;
+interface IndexableDocument {
+    id: string;
+    content: Record<string, DocumentValue$1>;
+    metadata?: DocumentMetadata$1;
+}
 
 interface IndexNode {
     id: string;
@@ -49,20 +59,20 @@ interface TokenInfo {
     position: number;
     length: number;
 }
+interface SerializedIndex {
+    documents: Array<{
+        key: string;
+        value: IndexedDocument;
+    }>;
+    indexState: unknown;
+    config: IndexConfig;
+}
 
 type PrimitiveValue = string | number | boolean | null;
 type ArrayValue = PrimitiveValue[];
 type ComplexValue = Record<string, PrimitiveValue | ArrayValue>;
 type DocumentValue = PrimitiveValue | ArrayValue | ComplexValue;
 type DocumentMetadata = Record<string, DocumentValue>;
-interface IndexableDocument {
-    id: string;
-    content: Record<string, DocumentValue>;
-    metadata?: DocumentMetadata;
-}
-declare function createSearchStats(): SearchStats;
-declare function createSearchContext(query: string, options?: SearchOptions): SearchContext;
-declare function createTokenInfo(value: string, type: TokenInfo['type'], position: number): TokenInfo;
 
 interface SearchResult<T = unknown> {
     item: T;
@@ -229,6 +239,15 @@ interface ScoringMetrics {
     inverseDocFreq: number;
 }
 
+interface PerformanceMetrics {
+    avg: number;
+    min: number;
+    max: number;
+    count: number;
+}
+interface PerformanceData {
+    [key: string]: PerformanceMetrics;
+}
 interface PerformanceMetric {
     avg: number;
     min: number;
@@ -271,4 +290,15 @@ type QueryToken = {
     value: string;
 };
 
-export { type ArrayValue, type CacheEntry, type CacheOptions, type ComplexValue, type DatabaseConfig, type DocumentData, type DocumentLink, type DocumentMetadata, type DocumentRank, type DocumentScore, type DocumentValue, type IndexConfig, IndexError, type IndexNode, type IndexOptions, type IndexableDocument, type IndexedDocument, type MapperOptions, type MapperState, type MetadataEntry, type MetricsResult, type OptimizationOptions, type OptimizationResult, type PerformanceMetric, type PrimitiveValue, type QueryToken, type ScoringMetrics, type SearchContext, type SearchDBSchema, SearchError, type SearchEvent, type SearchEventListener, type SearchEventType, type SearchNode, type SearchOptions, type SearchResult, type SearchStats, type SearchableDocument, type SearchableField, type SerializedState, type SerializedTrieNode, type StorageEntry, StorageError, type StorageOptions, type TextScore, type TokenInfo, ValidationError, createSearchContext, createSearchStats, createTokenInfo };
+interface TrieNode<T = unknown> {
+    value: T;
+    isEnd: boolean;
+    children: Map<string, TrieNode<T>>;
+}
+interface TrieSearchOptions {
+    caseSensitive?: boolean;
+    fuzzy?: boolean;
+    maxDistance?: number;
+}
+
+export { type ArrayValue$1 as ArrayValue, type CacheEntry, type CacheOptions, type ComplexValue$1 as ComplexValue, type DatabaseConfig, type DocumentData, type DocumentLink, type DocumentMetadata$1 as DocumentMetadata, type DocumentRank, type DocumentScore, type DocumentValue$1 as DocumentValue, type IndexConfig, IndexError, type IndexNode, type IndexOptions, type IndexableDocument, type IndexedDocument, type MapperOptions, type MapperState, type MetadataEntry, type MetricsResult, type OptimizationOptions, type OptimizationResult, type PerformanceData, type PerformanceMetric, type PerformanceMetrics, type PrimitiveValue$1 as PrimitiveValue, type QueryToken, type ScoringMetrics, type SearchContext, type SearchDBSchema, SearchError, type SearchEvent, type SearchEventListener, type SearchEventType, type SearchNode, type SearchOptions, type SearchResult, type SearchStats, type SearchableDocument, type SearchableField, type SerializedIndex, type SerializedState, type SerializedTrieNode, type StorageEntry, StorageError, type StorageOptions, type TextScore, type TokenInfo, type TrieNode, type TrieSearchOptions, ValidationError };
