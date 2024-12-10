@@ -13,3 +13,4 @@ export interface IndexConfig {
   fields: string[];
   options?: IndexOptions;
 }
+

@@ -1,5 +1,5 @@
 import { DBSchema } from 'idb';
-import { SearchEngineConfig as SearchEngineConfig$1, IndexedDocument as IndexedDocument$1, SearchOptions as SearchOptions$1, SearchResult as SearchResult$1, IndexConfig as IndexConfig$1, SerializedState as SerializedState$1, SearchableDocument as SearchableDocument$1, MetadataEntry as MetadataEntry$1, IndexableDocument as IndexableDocument$1, DocumentValue as DocumentValue$1, OptimizationResult as OptimizationResult$1, MetricsResult as MetricsResult$1 } from '@/types';
+import { SearchEngineConfig as SearchEngineConfig$1, IndexedDocument as IndexedDocument$1, SearchOptions as SearchOptions$1, SearchResult as SearchResult$1, IndexConfig as IndexConfig$1, SerializedState as SerializedState$1, SearchableDocument as SearchableDocument$1, CacheStrategy as CacheStrategy$1, MetadataEntry as MetadataEntry$1, IndexableDocument as IndexableDocument$1, DocumentValue as DocumentValue$1, OptimizationResult as OptimizationResult$1, MetricsResult as MetricsResult$1 } from '@/types';
 import { SerializedIndex as SerializedIndex$1 } from '@/types/core';
 
 type PrimitiveValue = string | number | boolean | null;
@@ -202,13 +202,30 @@ interface MapperOptions {
     normalization?: boolean;
 }
 
-interface CacheEntry<T> {
-    data: T;
+interface CacheEntry {
+    data: SearchResult<unknown>[];
     timestamp: number;
+    lastAccessed: number;
+    accessCount: number;
 }
 interface CacheOptions {
     maxSize: number;
     ttlMinutes: number;
+}
+interface CacheOptions {
+    strategy: CacheStrategy;
+    maxSize: number;
+    ttlMinutes: number;
+}
+declare enum CacheStrategyType {
+    LRU = "LRU",
+    MRU = "MRU"
+}
+type CacheStrategy = keyof typeof CacheStrategyType;
+interface CacheStats {
+    hits: number;
+    misses: number;
+    evictions: number;
 }
 
 interface DocumentScore {
@@ -396,12 +413,38 @@ declare class CacheManager {
     private cache;
     private readonly maxSize;
     private readonly ttl;
-    constructor(maxSize?: number, ttlMinutes?: number);
-    set(key: string, data: SearchResult$1<any>[]): void;
-    get(key: string): SearchResult$1<any>[] | null;
-    private isExpired;
-    private evictOldest;
+    private strategy;
+    private accessOrder;
+    private stats;
+    constructor(maxSize?: number, ttlMinutes?: number, initialStrategy?: CacheStrategy$1);
+    set(key: string, data: SearchResult$1<unknown>[]): void;
+    get(key: string): SearchResult$1<unknown>[] | null;
     clear(): void;
+    getStats(): {
+        size: number;
+        maxSize: number;
+        hitRate: number;
+        strategy: "LRU" | "MRU";
+        hits: number;
+        misses: number;
+        evictions: number;
+    };
+    private isExpired;
+    private evict;
+    private findLRUKey;
+    private findMRUKey;
+    private updateAccessOrder;
+    private removeFromAccessOrder;
+    setStrategy(newStrategy: CacheStrategy$1): void;
+    prune(): number;
+    analyze(): {
+        hitRate: number;
+        averageAccessCount: number;
+        mostAccessedKeys: Array<{
+            key: string;
+            count: number;
+        }>;
+    };
 }
 
 declare class IndexedDB {
@@ -470,4 +513,4 @@ declare const NexusSearch: {
     readonly isSearchResult: typeof isSearchResult;
 };
 
-export { type ArrayValue, type CacheEntry, CacheManager, type CacheOptions, type ComplexValue, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, type DatabaseConfig, type DocumentData, type DocumentLink, type DocumentMetadata, type DocumentRank, type DocumentScore, type DocumentValue, type IndexConfig, IndexError, IndexManager, IndexMapper, type IndexNode, type IndexOptions, type IndexableDocument, IndexedDB, type IndexedDocument, type MapperOptions, type MapperState, type MetadataEntry, type MetricsResult, NexusSearch, type OptimizationOptions, type OptimizationResult, type PerformanceData, type PerformanceMetric, type PerformanceMetrics, PerformanceMonitor, type PrimitiveValue, QueryProcessor, type QueryToken, type ScoringMetrics, type SearchContext, type SearchDBSchema, SearchEngine, type SearchEngineConfig, SearchError, type SearchEvent, type SearchEventListener, type SearchEventType, type SearchNode, type SearchOptions, type SearchResult, type SearchStats, type SearchableDocument, type SearchableField, type SerializedIndex, type SerializedState, type SerializedTrieNode, type StorageEntry, StorageError, type StorageOptions, type TextScore, type TokenInfo, TrieNode, TrieSearch, type TrieSearchOptions, ValidationError, createSearchableFields, NexusSearch as default, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
+export { type ArrayValue, type CacheEntry, CacheManager, type CacheOptions, type CacheStats, type CacheStrategy, CacheStrategyType, type ComplexValue, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, type DatabaseConfig, type DocumentData, type DocumentLink, type DocumentMetadata, type DocumentRank, type DocumentScore, type DocumentValue, type IndexConfig, IndexError, IndexManager, IndexMapper, type IndexNode, type IndexOptions, type IndexableDocument, IndexedDB, type IndexedDocument, type MapperOptions, type MapperState, type MetadataEntry, type MetricsResult, NexusSearch, type OptimizationOptions, type OptimizationResult, type PerformanceData, type PerformanceMetric, type PerformanceMetrics, PerformanceMonitor, type PrimitiveValue, QueryProcessor, type QueryToken, type ScoringMetrics, type SearchContext, type SearchDBSchema, SearchEngine, type SearchEngineConfig, SearchError, type SearchEvent, type SearchEventListener, type SearchEventType, type SearchNode, type SearchOptions, type SearchResult, type SearchStats, type SearchableDocument, type SearchableField, type SerializedIndex, type SerializedState, type SerializedTrieNode, type StorageEntry, StorageError, type StorageOptions, type TextScore, type TokenInfo, TrieNode, TrieSearch, type TrieSearchOptions, ValidationError, createSearchableFields, NexusSearch as default, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
