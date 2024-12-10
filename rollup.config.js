@@ -18,14 +18,13 @@ const banner = `/**
  * @license ISC
  */`;
 
-// Add all dependencies as external
+// Only mark actual external dependencies
 const external = [
   'idb',
-  ...Object.keys(pkg.dependencies || {}),
-  /node_modules/
+  'punycode',
+  'tslib'
 ];
 
-// Configure aliases
 const aliasEntries = [
   { find: '@', replacement: path.resolve(__dirname, 'src') },
   { find: '@core', replacement: path.resolve(__dirname, 'src/core') },
@@ -35,22 +34,6 @@ const aliasEntries = [
   { find: '@types', replacement: path.resolve(__dirname, 'src/types') }
 ];
 
-// TypeScript configuration
-const typescriptConfig = {
-  tsconfig: './tsconfig.json',
-  useTsconfigDeclarationDir: true,
-  clean: true,
-  exclude: ['**/__tests__/**', '**/*.test.ts', 'src/**/*.spec.ts'],
-  tsconfigOverride: {
-    compilerOptions: {
-      sourceMap: true,
-      declaration: true,
-      declarationDir: './dist/types'
-    }
-  }
-};
-
-// Base plugins
 const basePlugins = [
   alias({
     entries: aliasEntries
@@ -61,10 +44,21 @@ const basePlugins = [
     extensions: ['.ts', '.js']
   }),
   commonjs(),
-  typescript(typescriptConfig)
+  typescript({
+    tsconfig: './tsconfig.json',
+    clean: true,
+    useTsconfigDeclarationDir: true,
+    tsconfigOverride: {
+      compilerOptions: {
+        declaration: true,
+        declarationDir: './dist/types',
+        sourceMap: true
+      },
+      exclude: ['**/__tests__/**', '**/*.test.ts', 'src/**/*.spec.ts']
+    }
+  })
 ];
 
-// Base output configuration
 const baseOutput = {
   banner,
   sourcemap: true,
@@ -72,7 +66,7 @@ const baseOutput = {
 };
 
 export default [
-  // UMD build (browser-friendly)
+  // UMD build
   {
     input: 'src/index.ts',
     output: {
@@ -81,9 +75,12 @@ export default [
       format: 'umd',
       name: 'NexusSearch',
       globals: {
-        idb: 'idb'
+        idb: 'idb',
+        punycode: 'punycode',
+        tslib: 'tslib'
       }
     },
+    external,
     plugins: [
       ...basePlugins,
       terser({

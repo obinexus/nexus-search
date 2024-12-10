@@ -1,5 +1,5 @@
 /**
- * @obinexuscomputing/nexus-search v0.1.6
+ * @obinexuscomputing/nexus-search v0.1.7
  * A high-performance search indexing and query system that uses a trie data structure and BFS/DFS algorithms for fast full-text search with fuzzy matching.
  * @license ISC
  */

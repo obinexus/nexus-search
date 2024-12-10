@@ -15,17 +15,12 @@
     }
   },
   "scripts": {
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
     "build": "rollup -c",
+    "postbuild": "node scripts/verify-build.js",
     "demo": "node fixtures/server.js",
     "dev": "rollup -c -w",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:watch": "jest --config jest.config.js --watch",
-    "test:coverage": "jest --config jest.config.js --coverage",
-    "test:ci": "jest --config jest.config.js --ci --coverage --maxWorkers=2",
-    "test:debug": "node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand --config jest.config.js",
-    "lint": "eslint 'src/**/*.{js,ts}'",
-    "format": "prettier --write 'src/**/*.{js,ts}'",
-    "postinstall": "npm run build",
     "prepublishOnly": "npm run build"
   },
   "files": [
@@ -102,5 +97,8 @@
   "license": "ISC",
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1"
   }
 }
