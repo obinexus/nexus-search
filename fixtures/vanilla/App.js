@@ -1,5 +1,5 @@
 
-import NexusSearch from '/dist/index.esm.js';
+import NexusSearch from '/dist/index.mjs';
 
 console.log(window.NexusSearch)
 window.NexusSearch = NexusSearch;
