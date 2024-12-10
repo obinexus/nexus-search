@@ -179,115 +179,97 @@ class IndexedDB {
         }
     }
 }
+
 class SearchStorage {
-    constructor() {
+    constructor(options = {
+        type: 'memory'
+    }) {
         this.db = null;
-        this.DB_NAME = 'nexus_search_db';
-        this.DB_VERSION = 1;
-        this.initPromise = null;
-        // Initialize immediately to catch early failures
-        this.initPromise = this.initialize();
+        this.memoryStorage = new Map();
+        this.storageType = this.determineStorageType(options);
+    }
+    determineStorageType(options) {
+        // Use memory storage if explicitly specified or if in Node.js environment
+        if (options.type === 'memory' || !this.isIndexedDBAvailable()) {
+            return 'memory';
+        }
+        return 'indexeddb';
+    }
+    isIndexedDBAvailable() {
+        try {
+            return typeof indexedDB !== 'undefined' && indexedDB !== null;
+        }
+        catch (_a) {
+            return false;
+        }
     }
     async initialize() {
-        if (this.db)
+        if (this.storageType === 'memory') {
+            // No initialization needed for memory storage
             return;
+        }
         try {
-            this.db = await openDB(this.DB_NAME, this.DB_VERSION, {
-                upgrade(db, oldVersion, newVersion, transaction) {
-                    // Handle version upgrades
-                    if (!db.objectStoreNames.contains('searchIndices')) {
-                        const indexStore = db.createObjectStore('searchIndices', { keyPath: 'id' });
-                        indexStore.createIndex('timestamp', 'timestamp');
-                    }
-                    if (!db.objectStoreNames.contains('metadata')) {
-                        const metaStore = db.createObjectStore('metadata', { keyPath: 'id' });
-                        metaStore.createIndex('lastUpdated', 'lastUpdated');
-                    }
-                },
-                blocked() {
-                    console.warn('Database upgrade was blocked');
-                },
-                blocking() {
-                    console.warn('Current database version is blocking a newer version');
-                },
-                terminated() {
-                    console.error('Database connection was terminated');
+            this.db = await openDB('nexus-search-db', 1, {
+                upgrade(db) {
+                    const indexStore = db.createObjectStore('searchIndices', { keyPath: 'id' });
+                    indexStore.createIndex('timestamp', 'timestamp');
+                    const metaStore = db.createObjectStore('metadata', { keyPath: 'id' });
+                    metaStore.createIndex('lastUpdated', 'lastUpdated');
                 }
             });
         }
         catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            throw new Error(`Storage initialization failed: ${message}`);
+            // Fallback to memory storage if IndexedDB fails
+            this.storageType = 'memory';
+            console.warn('Failed to initialize IndexedDB, falling back to memory storage:', error);
         }
     }
-    async ensureConnection() {
-        if (this.initPromise) {
-            await this.initPromise;
+    async storeIndex(name, data) {
+        var _a;
+        if (this.storageType === 'memory') {
+            this.memoryStorage.set(name, data);
+            return;
         }
-        if (!this.db) {
-            throw new Error('Database connection not available');
-        }
-    }
-    async storeIndex(key, data) {
-        await this.ensureConnection();
         try {
-            const entry = {
-                id: key,
+            await ((_a = this.db) === null || _a === void 0 ? void 0 : _a.put('searchIndices', {
+                id: name,
                 data,
-                timestamp: Date.now(),
-            };
-            await this.db.put('searchIndices', entry);
+                timestamp: Date.now()
+            }));
         }
         catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            throw new Error(`Failed to store index: ${message}`);
+            console.error('Storage error:', error);
+            // Fallback to memory storage
+            this.memoryStorage.set(name, data);
         }
     }
-    async getIndex(key) {
-        await this.ensureConnection();
+    async getIndex(name) {
+        var _a;
+        if (this.storageType === 'memory') {
+            return this.memoryStorage.get(name);
+        }
         try {
-            const entry = await this.db.get('searchIndices', key);
-            return (entry === null || entry === void 0 ? void 0 : entry.data) || null;
+            const entry = await ((_a = this.db) === null || _a === void 0 ? void 0 : _a.get('searchIndices', name));
+            return entry === null || entry === void 0 ? void 0 : entry.data;
         }
         catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            throw new Error(`Failed to retrieve index: ${message}`);
-        }
-    }
-    async updateMetadata(config) {
-        await this.ensureConnection();
-        try {
-            const metadata = {
-                id: 'config', // Set id field directly
-                config,
-                lastUpdated: Date.now()
-            };
-            await this.db.put('metadata', metadata); // Use metadata directly
-        }
-        catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            throw new Error(`Failed to update metadata: ${message}`);
-        }
-    }
-    async getMetadata() {
-        await this.ensureConnection();
-        try {
-            const result = await this.db.get('metadata', 'config');
-            return result || null; // Return `null` if `result` is `undefined`
-        }
-        catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            throw new Error(`Failed to retrieve metadata: ${message}`);
+            console.error('Retrieval error:', error);
+            // Fallback to memory storage
+            return this.memoryStorage.get(name);
         }
     }
     async clearIndices() {
-        await this.ensureConnection();
+        var _a;
+        if (this.storageType === 'memory') {
+            this.memoryStorage.clear();
+            return;
+        }
         try {
-            await this.db.clear('searchIndices');
+            await ((_a = this.db) === null || _a === void 0 ? void 0 : _a.clear('searchIndices'));
         }
         catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            throw new Error(`Failed to clear indices: ${message}`);
+            console.error('Clear error:', error);
+            this.memoryStorage.clear();
         }
     }
     async close() {
@@ -295,6 +277,7 @@ class SearchStorage {
             this.db.close();
             this.db = null;
         }
+        this.memoryStorage.clear();
     }
 }
 
@@ -814,55 +797,116 @@ class QueryProcessor {
 
 class SearchEngine {
     constructor(config) {
+        this.isInitialized = false;
         this.config = config;
         this.indexManager = new IndexManager(config);
         this.queryProcessor = new QueryProcessor();
-        this.storage = new SearchStorage();
+        this.storage = new SearchStorage(config.storage);
         this.cache = new CacheManager();
     }
     async initialize() {
+        if (this.isInitialized) {
+            return;
+        }
         try {
-            await this.storage.initialize();
+            // Initialize storage with fallback handling
+            try {
+                await this.storage.initialize();
+            }
+            catch (storageError) {
+                console.warn('Storage initialization failed, falling back to memory storage:', storageError);
+                // Create new memory storage instance
+                this.storage = new SearchStorage({ type: 'memory' });
+                await this.storage.initialize();
+            }
+            // Load existing indexes
             await this.loadIndexes();
+            this.isInitialized = true;
         }
         catch (error) {
-            throw new Error(`Failed to initialize search engine: ${error}`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            throw new Error(`Failed to initialize search engine: ${errorMessage}`);
         }
     }
     async addDocuments(documents) {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
         try {
+            // Add documents to index
             await this.indexManager.addDocuments(documents);
-            await this.storage.storeIndex(this.config.name, this.indexManager.exportIndex());
+            // Store index in storage
+            try {
+                await this.storage.storeIndex(this.config.name, this.indexManager.exportIndex());
+            }
+            catch (storageError) {
+                console.warn('Failed to persist index, continuing in memory:', storageError);
+            }
+            // Clear cache as index has changed
+            this.cache.clear();
         }
         catch (error) {
-            throw new Error(`Failed to add documents: ${error}`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            throw new Error(`Failed to add documents: ${errorMessage}`);
         }
     }
     async search(query, options = {}) {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
         validateSearchOptions(options);
+        // Try cache first
         const cacheKey = this.generateCacheKey(query, options);
         const cachedResults = this.cache.get(cacheKey);
         if (cachedResults) {
             return cachedResults;
         }
-        const processedQuery = this.queryProcessor.process(query);
-        const results = await this.indexManager.search(processedQuery, options);
-        this.cache.set(cacheKey, results);
-        return results;
+        try {
+            // Process query and perform search
+            const processedQuery = this.queryProcessor.process(query);
+            const results = await this.indexManager.search(processedQuery, options);
+            // Cache results
+            this.cache.set(cacheKey, results);
+            return results;
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            throw new Error(`Search failed: ${errorMessage}`);
+        }
     }
     async loadIndexes() {
-        const storedIndex = await this.storage.getIndex(this.config.name);
-        if (storedIndex) {
-            this.indexManager.importIndex(storedIndex);
+        try {
+            const storedIndex = await this.storage.getIndex(this.config.name);
+            if (storedIndex) {
+                this.indexManager.importIndex(storedIndex);
+            }
+        }
+        catch (error) {
+            console.warn('Failed to load stored index, starting fresh:', error);
         }
     }
     generateCacheKey(query, options) {
-        return `${query}-${JSON.stringify(options)}`;
+        return `${this.config.name}-${query}-${JSON.stringify(options)}`;
     }
     async clearIndex() {
-        await this.storage.clearIndices();
+        try {
+            await this.storage.clearIndices();
+        }
+        catch (error) {
+            console.warn('Failed to clear storage, continuing:', error);
+        }
         this.indexManager.clear();
         this.cache.clear();
+    }
+    async close() {
+        try {
+            await this.storage.close();
+            this.cache.clear();
+            this.isInitialized = false;
+        }
+        catch (error) {
+            console.warn('Error during close:', error);
+        }
     }
 }
 

@@ -1,5 +1,9 @@
 import { IndexConfig } from "./compactability";
 import { IndexedDocument } from "./document";
+import { StorageOptions } from "./storage";
+export interface SearchEngineConfig extends IndexConfig {
+    storage?: StorageOptions;
+}
 export interface IndexNode {
     id: string;
     value: unknown;

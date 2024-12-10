@@ -4,6 +4,7 @@ export interface StorageEntry<T> {
     timestamp: number;
 }
 export interface StorageOptions {
+    type: string;
     maxSize?: number;
     ttl?: number;
 }
