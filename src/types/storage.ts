@@ -5,6 +5,7 @@ export interface StorageEntry<T> {
 }
 
 export interface StorageOptions {
+    type: string;
     maxSize?: number;
     ttl?: number;
 }
