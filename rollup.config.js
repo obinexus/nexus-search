@@ -15,15 +15,17 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 const banner = `/**
  * ${pkg.name} v${pkg.version}
  * ${pkg.description}
- * @license MIT
+ * @license ISC
  */`;
 
+// Add all dependencies as external
 const external = [
-  ...Object.keys(pkg.peerDependencies || {}),
-  ...Object.keys(pkg.dependencies || {})
+  'idb',
+  ...Object.keys(pkg.dependencies || {}),
+  /node_modules/
 ];
 
-// Alias entries configuration
+// Configure aliases
 const aliasEntries = [
   { find: '@', replacement: path.resolve(__dirname, 'src') },
   { find: '@core', replacement: path.resolve(__dirname, 'src/core') },
@@ -33,6 +35,22 @@ const aliasEntries = [
   { find: '@types', replacement: path.resolve(__dirname, 'src/types') }
 ];
 
+// TypeScript configuration
+const typescriptConfig = {
+  tsconfig: './tsconfig.json',
+  useTsconfigDeclarationDir: true,
+  clean: true,
+  exclude: ['**/__tests__/**', '**/*.test.ts', 'src/**/*.spec.ts'],
+  tsconfigOverride: {
+    compilerOptions: {
+      sourceMap: true,
+      declaration: true,
+      declarationDir: './dist/types'
+    }
+  }
+};
+
+// Base plugins
 const basePlugins = [
   alias({
     entries: aliasEntries
@@ -43,28 +61,28 @@ const basePlugins = [
     extensions: ['.ts', '.js']
   }),
   commonjs(),
-  typescript({
-    tsconfig: './tsconfig.json',
-    verbosity: 0,
-    declaration: true,
-    declarationDir: './dist/types',
-    exclude: ['**/__tests__/**', '**/*.test.ts', 'src/**/*.spec.ts'],
-    sourceMap: true
-  })
+  typescript(typescriptConfig)
 ];
 
+// Base output configuration
+const baseOutput = {
+  banner,
+  sourcemap: true,
+  exports: 'named'
+};
+
 export default [
-  // UMD build
+  // UMD build (browser-friendly)
   {
     input: 'src/index.ts',
     output: {
+      ...baseOutput,
       file: 'dist/nexus-search.umd.js',
       format: 'umd',
       name: 'NexusSearch',
-      banner,
-      sourcemap: true,
-      exports: 'named',
-      globals: { idb: 'idb' }
+      globals: {
+        idb: 'idb'
+      }
     },
     plugins: [
       ...basePlugins,
@@ -81,25 +99,21 @@ export default [
   {
     input: 'src/index.ts',
     output: {
+      ...baseOutput,
       file: 'dist/index.mjs',
-      format: 'esm',
-      banner,
-      sourcemap: true,
-      exports: 'named'
+      format: 'esm'
     },
     external,
     plugins: basePlugins
   },
 
-  // CJS build
+  // CommonJS build
   {
     input: 'src/index.ts',
     output: {
+      ...baseOutput,
       file: 'dist/index.cjs',
-      format: 'cjs',
-      banner,
-      sourcemap: true,
-      exports: 'named'
+      format: 'cjs'
     },
     external,
     plugins: basePlugins
@@ -107,7 +121,7 @@ export default [
 
   // Types build
   {
-    input: 'dist/types/index.d.ts',  
+    input: 'dist/types/index.d.ts',
     output: {
       file: 'dist/index.d.ts',
       format: 'es'
@@ -115,12 +129,12 @@ export default [
     external: [
       ...external,
       /\.css$/,
-      /@types\/.*/,  // Exclude @types imports
-      /@core\/.*/,   // Exclude @core imports
-      /@algorithms\/.*/,  // Exclude @algorithms imports
-      /@storage\/.*/,    // Exclude @storage imports
-      /@utils\/.*/,      // Exclude @utils imports
-      /@\/.*/           // Exclude all other @ imports
+      /@types\/.*/,
+      /@core\/.*/,
+      /@algorithms\/.*/,
+      /@storage\/.*/,
+      /@utils\/.*/,
+      /@\/.*/
     ],
     plugins: [
       alias({
