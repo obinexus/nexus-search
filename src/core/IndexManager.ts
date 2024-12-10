@@ -5,7 +5,8 @@ import {
     SearchResult, 
     IndexedDocument, 
     SearchableDocument, 
-    SerializedState 
+    SerializedState,
+    DocumentValue 
 } from "@/types";
 import { SerializedIndex } from "@/types/core";
 import { createSearchableFields } from "@/utils";
@@ -25,11 +26,19 @@ export class IndexManager {
         for (const [index, doc] of documents.entries()) {
             const id = this.generateDocumentId(index);
 
+            // Convert document fields to Record<string, DocumentValue>
+            const contentRecord: Record<string, DocumentValue> = {};
+            for (const field of this.config.fields) {
+                if (field in doc) {
+                    contentRecord[field] = doc[field] as DocumentValue;
+                }
+            }
+
             // Create searchable document with proper field extraction
             const searchableDoc: SearchableDocument = {
                 id,
                 content: createSearchableFields({
-                    content: doc,
+                    content: contentRecord,
                     id
                 }, this.config.fields),
                 metadata: doc.metadata
@@ -40,7 +49,7 @@ export class IndexManager {
 
             // Index the document
             try {
-                this.indexMapper.indexDocument(searchableDoc, id, this.config.fields);
+                await this.indexMapper.indexDocument(searchableDoc, id, this.config.fields);
             } catch (error) {
                 console.warn(`Failed to index document ${id}:`, error);
             }
@@ -54,10 +63,9 @@ export class IndexManager {
         if (!query.trim()) return [];
 
         try {
-            const searchResults = this.indexMapper.search(query, {
+            const searchResults = await this.indexMapper.search(query, {
                 fuzzy: options.fuzzy ?? false,
-                maxResults: options.maxResults ?? 10,
-                threshold: options.threshold ?? 0.5
+                maxResults: options.maxResults ?? 10
             });
 
             return searchResults
@@ -93,16 +101,10 @@ export class IndexManager {
 
         try {
             const typedData = data as SerializedIndex;
-
-            // Import documents
             this.documents = new Map(
                 typedData.documents.map(item => [item.key, item.value])
             );
-
-            // Update config
             this.config = typedData.config;
-
-            // Reset and import index state
             this.indexMapper = new IndexMapper();
             
             if (this.isValidIndexState(typedData.indexState)) {

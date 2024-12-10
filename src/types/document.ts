@@ -19,6 +19,7 @@ export interface DocumentData {
 
 export interface IndexedDocument {
   id: string;
+  [key: string]: DocumentValue | undefined;
   fields: Record<string, string>;
   metadata?: Record<string, unknown>;
 }
