@@ -9,8 +9,9 @@
 - [ ] Add more examples and use cases in the documentation
 - [ ] Optimize indexing performance for large datasets
 - [ ] Implement versioned indices
-- [ ] Add LRU,MRU Caching to mitigate algo bottlneckand optmize
+- [ ] Add LRU,MRU Caching to mitigate algo bottlneck and optmize
   document queries
+  
 ## Build System
 - [ ] Fix sourcemap generation in Rollup configuration
   - [ ] Properly configure sourcemaps for all output formats
