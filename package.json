@@ -21,7 +21,8 @@
     "postbuild": "node scripts/verify-build.js",
     "demo": "node fixtures/server.js",
     "dev": "rollup -c -w",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "postinstall": "npm run build"
   },
   "files": [
     "dist/",
