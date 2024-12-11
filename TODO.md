@@ -1,7 +1,8 @@
 # TODO
 
 ## Features
-- [ ] Add support for advanced search operators
+- [ ] Add support for advanced search operators (regular expression)
+- [ ] Simplifty the API.
 - [ ] Using BFS/DFS Trie traversal algorithms to support character-based fuzzy searching in directory HTML, markdown etc.
 - [ ] Implement role-based access control
 - [ ] Create detailed user and developer documentation
