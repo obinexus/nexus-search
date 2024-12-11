@@ -26,6 +26,9 @@ The search process involves traversing the trie using either a breadth-first sea
 
 The choice between BFS and DFS can be made based on the specific use case and requirements of the search engine. For example, if speed is the primary concern, DFS might be the better choice. If relevance is more important, BFS could be the preferred algorithm.
 
+
+Use it with a html search bar,node or your favourite library.
+
 ## Installation
 
 ```bash
