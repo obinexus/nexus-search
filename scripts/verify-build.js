@@ -4,7 +4,7 @@ import { resolve } from 'path';
 const requiredFiles = [
   'dist/index.mjs',
   'dist/index.cjs',
-  'dist/nexus-search.umd.js',
+  'dist/index.umd.js',
   'dist/index.d.ts'
 ];
 
