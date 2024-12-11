@@ -1,6 +1,7 @@
 # TODO
 
 ## Features
+- [ ] Add support for extension markdown and html laoding 
 - [ ] Add support for advanced search operators (regular expression)
 - [ ] Simplifty the API.
 - [ ] Using BFS/DFS Trie traversal algorithms to support character-based fuzzy searching in directory HTML, markdown etc.
