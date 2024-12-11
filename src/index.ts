@@ -43,7 +43,7 @@ import {
 } from '@utils/index';
 
 // Export all types
-export * from '@types/index';
+export * from './types/';
 
 // Constants
 export const DEFAULT_INDEX_OPTIONS: Required<IndexOptions> = {
