@@ -256,13 +256,13 @@ export class SearchEngine {
     }
 
     // Reset methods
-    private resetTrie(): void {
-        this.trie = new TrieSearch();
-    }
+    // private resetTrie(): void {
+    //     this.trie = new TrieSearch();
+    // }
     
-    private resetStorage(options: { type: 'memory' }): void {
-        this.storage = new SearchStorage(options);
-    }
+    // private resetStorage(options: { type: 'memory' }): void {
+    //     this.storage = new SearchStorage(options);
+    // }
 
     // Cleanup methods
     async clearIndex(): Promise<void> {
