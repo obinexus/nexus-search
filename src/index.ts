@@ -10,8 +10,9 @@ import type {
     SearchEvent,
     DocumentLink,
     DocumentRank,
-} from '@types/index';
+} from './types/index';
 
+export { DocumentLink,DocumentRank,SearchEvent, SearchEventType,SearchStats, SearchContext }
 // Core imports
 import { SearchEngine } from '@core/SearchEngine';
 import { IndexManager } from '@storage/IndexManager';
