@@ -77,7 +77,7 @@ export class IndexedDB {
     }
   }
 
-  async storeIndex(key: string, data: any): Promise<void> {
+  async storeIndex(key: string, data: unknown): Promise<void> {
     await this.ensureConnection();
 
     try {
