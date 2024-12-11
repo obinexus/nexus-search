@@ -21,7 +21,21 @@
       "@storage/*": ["src/storage/*"],
       "@utils/*": ["src/utils/*"],
       "@types/*": ["src/types/*"]
-    }
+    },
+    "plugins": [
+      { "transform": "typescript-transform-paths" },
+      { "transform": "typescript-transform-paths", "afterDeclarations": true }
+    ],
+    "rootDir": "src",
+    "types": ["node"],
+    "typeRoots": ["node_modules/@types", "src/types"],
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist", "**/__tests__/**"]

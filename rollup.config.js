@@ -71,7 +71,7 @@ export default [
     input: 'src/index.ts',
     output: {
       ...baseOutput,
-      file: 'dist/nexus-search.umd.js',
+      file: 'dist/index.umd.js',
       format: 'umd',
       name: 'NexusSearch',
       globals: {

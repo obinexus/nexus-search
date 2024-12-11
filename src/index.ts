@@ -1,4 +1,4 @@
-// Import all types from a single barrel file
+// src/index.ts
 import type {
     IndexConfig,
     IndexOptions,
@@ -10,25 +10,24 @@ import type {
     SearchEvent,
     DocumentLink,
     DocumentRank,
-} from './types/index';
+} from '@types/index';
 
-export { SearchContext,SearchStats, SearchEvent,SearchEventType,DocumentLink,DocumentRank}
 // Core imports
-import { SearchEngine } from './core/SearchEngine';
-import { IndexManager } from './storage/IndexManager';
-import { QueryProcessor } from './core/QueryProcessor';
+import { SearchEngine } from '@core/SearchEngine';
+import { IndexManager } from '@storage/IndexManager';
+import { QueryProcessor } from '@core/QueryProcessor';
 
 // Algorithm imports
-import { TrieNode } from './algorithms/trie/TrieNode';
-import { TrieSearch } from './algorithms/trie/TrieSearch';
+import { TrieNode } from '@algorithms/trie/TrieNode';
+import { TrieSearch } from '@algorithms/trie/TrieSearch';
 
 // Mapper imports
-import { DataMapper } from './mappers/DataMapper';
-import { IndexMapper } from './mappers/IndexMapper';
+import { DataMapper } from '@/mappers/DataMapper';
+import { IndexMapper } from '@/mappers/IndexMapper';
 
 // Storage imports
-import { CacheManager } from './storage/CacheManager';
-import { IndexedDB } from './storage/IndexedDBService';
+import { CacheManager } from '@storage/CacheManager';
+import { IndexedDB } from '@storage/IndexedDBService';
 
 // Utility imports
 import {
@@ -40,10 +39,10 @@ import {
     validateSearchOptions,
     validateIndexConfig,
     validateDocument
-} from './utils/index';
+} from '@utils/index';
 
-// Re-export all types
-export * from './types/index';
+// Export all types
+export * from '@types/index';
 
 // Constants
 export const DEFAULT_INDEX_OPTIONS: Required<IndexOptions> = {
@@ -114,6 +113,29 @@ export function isSearchResult<T>(obj: unknown): obj is SearchResult<T> {
     );
 }
 
+// Global window type declaration
+declare global {
+    interface Window {
+        NexusSearch: typeof NexusSearchNamespace;
+    }
+}
+
+// Create namespace
+const NexusSearchNamespace = {
+    DEFAULT_INDEX_OPTIONS,
+    DEFAULT_SEARCH_OPTIONS,
+    SearchError,
+    IndexError,
+    SearchEngine,
+    IndexManager,
+    QueryProcessor,
+    TrieNode,
+    TrieSearch,
+    isSearchOptions,
+    isIndexConfig,
+    isSearchResult,
+} as const;
+
 // Export individual components
 export {
     SearchEngine,
@@ -135,20 +157,11 @@ export {
     validateDocument
 };
 
-// Create consolidated export object
-export const NexusSearch = {
-    DEFAULT_INDEX_OPTIONS,
-    DEFAULT_SEARCH_OPTIONS,
-    SearchError,
-    IndexError,
-    SearchEngine,
-    IndexManager,
-    QueryProcessor,
-    TrieNode,
-    TrieSearch,
-    isSearchOptions,
-    isIndexConfig,
-    isSearchResult,
-} as const;
+// Initialize global namespace if in browser environment
+if (typeof window !== 'undefined') {
+    window.NexusSearch = NexusSearchNamespace;
+}
 
+// Export namespace
+export const NexusSearch = NexusSearchNamespace;
 export default NexusSearch;
