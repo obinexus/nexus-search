@@ -18,11 +18,11 @@ import { TrieSearch } from "@/algorithms/trie";
 export class SearchEngine {
     private readonly indexManager: IndexManager;
     private readonly queryProcessor: QueryProcessor;
-    private readonly storage: SearchStorage;
+    private storage: SearchStorage; // Remove readonly
     private readonly cache: CacheManager;
     private readonly config: SearchEngineConfig;
     private readonly eventListeners: Set<SearchEventListener>;
-    private readonly trie: TrieSearch;
+    private trie: TrieSearch; // Remove readonly
     private isInitialized: boolean = false;
     private documents: Map<string, IndexedDocument>;
 
@@ -37,7 +37,7 @@ export class SearchEngine {
         this.documents = new Map();
     }
 
-    async initialize(): Promise<void> {
+    public async initialize(): Promise<void> {
         if (this.isInitialized) {
             return;
         }
@@ -53,7 +53,7 @@ export class SearchEngine {
                     error: storageError instanceof Error ? storageError : new Error(String(storageError))
                 });
                 
-                // Create new memory storage instance
+                // Create new memory storage instance - now allowed as property isn't readonly
                 this.storage = new SearchStorage({ type: 'memory' });
                 await this.storage.initialize();
             }
@@ -72,7 +72,7 @@ export class SearchEngine {
         }
     }
 
-    async addDocuments<T extends IndexedDocument>(documents: T[]): Promise<void> {
+    public async addDocuments<T extends IndexedDocument>(documents: T[]): Promise<void> {
         if (!this.isInitialized) {
             await this.initialize();
         }
@@ -141,6 +141,18 @@ export class SearchEngine {
             });
             throw new Error(`Failed to add documents: ${error}`);
         }
+    }
+
+    public async clearIndex(): Promise<void> {
+        try {
+            await this.storage.clearIndices();
+        } catch (error) {
+            console.warn('Failed to clear storage, continuing:', error);
+        }
+        this.documents.clear();
+        this.trie = new TrieSearch(); // Now allowed as property isn't readonly
+        this.indexManager.clear();
+        this.cache.clear();
     }
 
     async search<T extends IndexedDocument>(
@@ -234,16 +246,12 @@ export class SearchEngine {
         return `${this.config.name}-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
     }
 
-    async clearIndex(): Promise<void> {
-        try {
-            await this.storage.clearIndices();
-        } catch (error) {
-            console.warn('Failed to clear storage, continuing:', error);
-        }
-        this.documents.clear();
+    private resetTrie(): void {
         this.trie = new TrieSearch();
-        this.indexManager.clear();
-        this.cache.clear();
+    }
+    
+    private resetStorage(options: { type: 'memory' }): void {
+        this.storage = new SearchStorage(options);
     }
 
     async close(): Promise<void> {
