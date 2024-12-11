@@ -1,4 +1,17 @@
-// src/core/SearchEngine.ts
+/**
+ * SearchEngine.ts - Reference Implementation
+ * 
+ * This file contains the complete unoptimized version of the SearchEngine class
+ * with all features intact. This version includes:
+ * - Full event handling
+ * - Debug methods
+ * - Storage fallback
+ * - Cache management
+ * - Document indexing
+ * - Search functionality
+ */
+
+// Core imports
 import { CacheManager, SearchStorage } from "@/storage";
 import { 
     SearchOptions, 
@@ -15,14 +28,23 @@ import { IndexManager } from "../storage/IndexManager";
 import { QueryProcessor } from "./QueryProcessor";
 import { TrieSearch } from "@/algorithms/trie";
 
+/**
+ * SearchEngine class provides full-text search functionality with:
+ * - Document indexing and storage
+ * - Search with fuzzy matching
+ * - Event handling
+ * - Cache management
+ * - Debug capabilities
+ */
 export class SearchEngine {
+    // Core components
     private readonly indexManager: IndexManager;
     private readonly queryProcessor: QueryProcessor;
-    private storage: SearchStorage; // Remove readonly
+    private storage: SearchStorage; // Mutable for fallback
     private readonly cache: CacheManager;
     private readonly config: SearchEngineConfig;
     private readonly eventListeners: Set<SearchEventListener>;
-    private trie: TrieSearch; // Remove readonly
+    private trie: TrieSearch; // Mutable for reset
     private isInitialized: boolean = false;
     private documents: Map<string, IndexedDocument>;
 
@@ -37,13 +59,15 @@ export class SearchEngine {
         this.documents = new Map();
     }
 
+    /**
+     * Initializes the search engine and storage
+     */
     public async initialize(): Promise<void> {
         if (this.isInitialized) {
             return;
         }
 
         try {
-            // Initialize storage with fallback handling
             try {
                 await this.storage.initialize();
             } catch (storageError) {
@@ -53,12 +77,10 @@ export class SearchEngine {
                     error: storageError instanceof Error ? storageError : new Error(String(storageError))
                 });
                 
-                // Create new memory storage instance - now allowed as property isn't readonly
                 this.storage = new SearchStorage({ type: 'memory' });
                 await this.storage.initialize();
             }
 
-            // Load existing indexes
             await this.loadIndexes();
             this.isInitialized = true;
 
@@ -72,6 +94,9 @@ export class SearchEngine {
         }
     }
 
+    /**
+     * Adds documents to the search index
+     */
     public async addDocuments<T extends IndexedDocument>(documents: T[]): Promise<void> {
         if (!this.isInitialized) {
             await this.initialize();
@@ -84,12 +109,10 @@ export class SearchEngine {
                 data: { documentCount: documents.length }
             });
 
-            // Process and index each document
             for (const doc of documents) {
                 const docId = doc.id || this.generateDocumentId();
                 this.documents.set(docId, doc);
 
-                // Create searchable fields
                 const searchableDoc: SearchableDocument = {
                     id: docId,
                     content: createSearchableFields({
@@ -98,7 +121,6 @@ export class SearchEngine {
                     }, this.config.fields)
                 };
 
-                // Index each field
                 for (const field of this.config.fields) {
                     if (searchableDoc.content[field]) {
                         const content = String(searchableDoc.content[field]).toLowerCase();
@@ -111,10 +133,8 @@ export class SearchEngine {
                 }
             }
 
-            // Add documents to index manager
             await this.indexManager.addDocuments(documents);
 
-            // Store index in storage
             try {
                 await this.storage.storeIndex(this.config.name, this.indexManager.exportIndex());
             } catch (storageError) {
@@ -125,7 +145,6 @@ export class SearchEngine {
                 });
             }
 
-            // Clear cache as index has changed
             this.cache.clear();
 
             this.emitEvent({
@@ -143,18 +162,9 @@ export class SearchEngine {
         }
     }
 
-    public async clearIndex(): Promise<void> {
-        try {
-            await this.storage.clearIndices();
-        } catch (error) {
-            console.warn('Failed to clear storage, continuing:', error);
-        }
-        this.documents.clear();
-        this.trie = new TrieSearch(); // Now allowed as property isn't readonly
-        this.indexManager.clear();
-        this.cache.clear();
-    }
-
+    /**
+     * Searches the index for documents matching the query
+     */
     async search<T extends IndexedDocument>(
         query: string,
         options: SearchOptions = {}
@@ -172,7 +182,6 @@ export class SearchEngine {
             data: { query, options }
         });
 
-        // Try cache first
         const cacheKey = this.generateCacheKey(query, options);
         const cachedResults = this.cache.get(cacheKey);
         if (cachedResults) {
@@ -180,11 +189,9 @@ export class SearchEngine {
         }
 
         try {
-            // Process query and perform search
             const processedQuery = this.queryProcessor.process(query);
             const results = await this.indexManager.search<T>(processedQuery, options);
 
-            // Cache results
             this.cache.set(cacheKey, results);
 
             this.emitEvent({
@@ -209,6 +216,7 @@ export class SearchEngine {
         }
     }
 
+    // Event handling methods
     addEventListener(listener: SearchEventListener): void {
         this.eventListeners.add(listener);
     }
@@ -227,6 +235,7 @@ export class SearchEngine {
         });
     }
 
+    // Utility methods
     private async loadIndexes(): Promise<void> {
         try {
             const storedIndex = await this.storage.getIndex(this.config.name);
@@ -246,12 +255,26 @@ export class SearchEngine {
         return `${this.config.name}-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
     }
 
+    // Reset methods
     private resetTrie(): void {
         this.trie = new TrieSearch();
     }
     
     private resetStorage(options: { type: 'memory' }): void {
         this.storage = new SearchStorage(options);
+    }
+
+    // Cleanup methods
+    async clearIndex(): Promise<void> {
+        try {
+            await this.storage.clearIndices();
+        } catch (error) {
+            console.warn('Failed to clear storage, continuing:', error);
+        }
+        this.documents.clear();
+        this.trie = new TrieSearch();
+        this.indexManager.clear();
+        this.cache.clear();
     }
 
     async close(): Promise<void> {
