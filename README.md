@@ -218,8 +218,6 @@ npm run demo
 Coming soon...
 
 ## Support and Community
-
 - [Buy Me a Coffee](https://buymeacoffee.com/obinexuscomputing)
 - [GitLab](https://gitlab.com/obinexuscomputng)
 - [GitHub](https://github.com/obinexuscomputing)
-- [OnlyFans (non-NSFW)](https://www.onlyfans.com/obinexuscomputing)
