@@ -1268,4 +1268,4 @@ if (typeof window !== 'undefined') {
 const NexusSearch = NexusSearchNamespace;
 
 export { CacheManager, CacheStrategyType, DEFAULT_INDEX_OPTIONS, DEFAULT_SEARCH_OPTIONS, DataMapper, IndexError, IndexManager, IndexMapper, IndexedDB, NexusSearch, PerformanceMonitor, QueryProcessor, SearchEngine, SearchError, StorageError, TrieNode, TrieSearch, ValidationError, createSearchableFields, NexusSearch as default, getNestedValue, isIndexConfig, isSearchOptions, isSearchResult, normalizeFieldValue, optimizeIndex, validateDocument, validateIndexConfig, validateSearchOptions };
-//# sourceMappingURL=index.mjs.map
+//# sourceMappingURL=index.js.map

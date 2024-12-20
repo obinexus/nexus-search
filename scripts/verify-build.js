@@ -2,7 +2,7 @@ import { existsSync } from 'fs';
 import { resolve } from 'path';
 
 const requiredFiles = [
-  'dist/index.mjs',
+  'dist/index.js',
   'dist/index.cjs',
   'dist/index.umd.js',
   'dist/index.d.ts'
