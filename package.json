@@ -14,6 +14,10 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "funding": {
+    "type": "individual",
+    "url": "https://www.buymeacoffee.com/obinexuscomputing"
+  },
   "scripts": {
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
@@ -27,19 +31,10 @@
     "dist/",
     "src/",
     "README.md",
-    "./rollup.config.js",
     "TODO.md",
-    "tsconfig.json",
-    "jest.setup.ts",
-    ".eslintrc.mjs",
     "fixtures/",
     "docs/",
-    "./prettierc",
-    "TODO.md",
-    "jest.config.mjs",
-    "eslint.config.js",
-    ".gitignore",
-    "package.json"
+    "TODO.md"
   ],
   "dependencies": {
     "@eslint/js": "^9.16.0",
