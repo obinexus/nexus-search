@@ -5,7 +5,7 @@ export class SearchStorage {
     private db: IDBPDatabase<SearchDBSchema> | null = null;
     private memoryStorage: Map<string, unknown> = new Map();
     private storageType: 'indexeddb' | 'memory';
-
+    
     constructor(options: StorageOptions = {
         type: 'memory'
     }) {

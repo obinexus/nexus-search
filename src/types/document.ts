@@ -8,7 +8,7 @@ export interface IndexedDocument {
     };
     metadata?: DocumentMetadata;
 }
----
+
 // Types for primitive and complex values
 export type PrimitiveValue = string | number | boolean | null;
 export type ArrayValue = PrimitiveValue[];
@@ -43,6 +43,16 @@ export interface IndexableDocument {
     id: string;
     content: Record<string, DocumentValue>;
     metadata?: DocumentMetadata;
+
+    [key: string]: DocumentValue | string | Record<string, any> | undefined;
+
+    // Optional fields
+    title?: string;
+    author?: string;
+    tags?: string[];
+
+    // Additional fields
+    
 }
 
 // Serialization interfaces

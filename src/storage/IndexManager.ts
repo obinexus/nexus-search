@@ -30,7 +30,9 @@ export class IndexManager {
             const contentRecord: Record<string, DocumentValue> = {};
             for (const field of this.config.fields) {
                 if (field in doc) {
-                    contentRecord[field] = doc[field] as DocumentValue;
+                    if (field in doc) {
+                        contentRecord[field] = (doc as any)[field] as DocumentValue;
+                    }
                 }
             }
 
