@@ -132,7 +132,21 @@ export class IndexManager {
         const id = document.id;
         if (this.documents.has(id)) {
             this.documents.set(id, document);
-            await this.indexMapper.updateDocument(document, id, this.config.fields);
+            const contentRecord: Record<string, DocumentValue> = {};
+            for (const field of this.config.fields) {
+                if (field in document) {
+                    contentRecord[field] = document[field] as DocumentValue;
+                }
+            }
+            const searchableDoc: SearchableDocument = {
+                id,
+                content: createSearchableFields({
+                    content: contentRecord,
+                    id
+                }, this.config.fields),
+                metadata: document.metadata
+            };
+            await this.indexMapper.updateDocument(searchableDoc, id, this.config.fields);
         }
     }
 
