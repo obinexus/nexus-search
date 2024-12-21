@@ -4,130 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document Search</title>
-    <script>
-        // Manually create the NexusSearch namespace and required classes
-        window.NexusSearch = {
-            SearchEngine: class SearchEngine {
-                constructor(config) {
-                    this.config = config;
-                    this.documents = new Map();
-                }
-
-                async initialize() {
-                    console.log('Search engine initialized');
-                }
-
-                async addDocuments(documents) {
-                    documents.forEach(doc => {
-                        this.documents.set(doc.id, doc);
-                    });
-                    console.log('Documents added:', documents.length);
-                }
-
-                async search(query, options = {}) {
-                    const results = [];
-                    const searchTerm = query.toLowerCase();
-                    
-                    this.documents.forEach((doc, id) => {
-                        let score = 0;
-                        let matches = [];
-                        
-                        // Search in title
-                        if (doc.fields.title.toLowerCase().includes(searchTerm)) {
-                            score += 2;
-                            matches.push('title');
-                        }
-                        
-                        // Search in content
-                        if (doc.fields.content.toLowerCase().includes(searchTerm)) {
-                            score += 1;
-                            matches.push('content');
-                        }
-                        
-                        if (score > 0) {
-                            results.push({
-                                item: doc,
-                                score: score,
-                                matches: matches
-                            });
-                        }
-                    });
-
-                    // Sort by score
-                    results.sort((a, b) => b.score - a.score);
-                    
-                    // Apply maxResults limit
-                    return results.slice(0, options.maxResults || 10);
-                }
-            }
-        };
-    </script>
-    <style>
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        .search-container {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .search-input {
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            border: 2px solid #ddd;
-            border-radius: 4px;
-            margin-bottom: 20px;
-        }
-        .results {
-            display: grid;
-            gap: 16px;
-        }
-        .result-item {
-            background: #f8f9fa;
-            padding: 16px;
-            border-radius: 4px;
-            border: 1px solid #e9ecef;
-        }
-        .result-title {
-            font-size: 18px;
-            color: #2c5282;
-            margin: 0 0 8px 0;
-        }
-        .result-content {
-            color: #4a5568;
-            margin: 0;
-        }
-        .highlight {
-            background: #ffd700;
-            padding: 0 2px;
-        }
-        .meta {
-            font-size: 14px;
-            color: #718096;
-            margin-top: 8px;
-        }
-        .debug {
-            margin-top: 20px;
-            padding: 10px;
-            background: #e2e8f0;
-            border-radius: 4px;
-        }
-    </style>
+    <link rel="stylesheet" type=text/css href="main.css"/>
 </head>
 <body>
     <div class="search-container">
         <input type="text" class="search-input" placeholder="Search documents...">
         <div class="results"></div>
-        <div class="debug"></div>
     </div>
+    <script src="../nexus-search.umd.js" defer></script>
 
-    <script>
+    <script defer>
         // Initialize search engine
         const searchEngine = new NexusSearch.SearchEngine({
             name: 'document-search',
@@ -136,81 +22,88 @@
             storage: { type: 'memory' }
         });
 
-        // Sample documents
+        // Sample documents (HTML and Markdown)
         const documents = [
             {
                 id: 'doc1',
-                fields: {
-                    title: 'Getting Started with JavaScript',
-                    content: '# Getting Started with JavaScript\n\nJavaScript is a versatile programming language that runs in browsers.',
-                    type: 'markdown'
-                }
+                title: 'Getting Started with JavaScript',
+                content: `
+                    # Getting Started with JavaScript
+                    
+                    JavaScript is a versatile programming language that runs in browsers.
+                    Here's what you'll learn:
+                    
+                    * Basic syntax and variables
+                    * Functions and scope
+                    * DOM manipulation
+                `,
+                type: 'markdown'
             },
             {
                 id: 'doc2',
-                fields: {
-                    title: 'HTML Fundamentals',
-                    content: '<article><h1>HTML Fundamentals</h1><p>HTML is the backbone of web development.</p></article>',
-                    type: 'html'
-                }
+                title: 'HTML Fundamentals',
+                content: `
+                    <article>
+                        <h1>HTML Fundamentals</h1>
+                        <p>HTML is the backbone of web development.</p>
+                        <ul>
+                            <li>Elements and tags</li>
+                            <li>Document structure</li>
+                            <li>Semantic markup</li>
+                        </ul>
+                    </article>
+                `,
+                type: 'html'
             },
             {
                 id: 'doc3',
-                fields: {
-                    title: 'CSS Best Practices',
-                    content: '# CSS Best Practices\n\nWriting maintainable CSS requires following key principles.',
-                    type: 'markdown'
-                }
+                title: 'CSS Best Practices',
+                content: `
+                    # CSS Best Practices
+                    
+                    Writing maintainable CSS requires following some key principles:
+                    
+                    1. Use meaningful class names
+                    2. Keep specificity low
+                    3. Follow a consistent methodology
+                `,
+                type: 'markdown'
             }
         ];
-
-        // Debug function
-        function updateDebug(message) {
-            const debugEl = document.querySelector('.debug');
-            debugEl.innerHTML += `<div>${new Date().toISOString()}: ${message}</div>`;
-        }
 
         // Initialize and add documents
         async function initializeSearch() {
             try {
                 await searchEngine.initialize();
                 await searchEngine.addDocuments(documents);
-                updateDebug('Search engine initialized with documents');
+                console.log('Search engine initialized with documents');
             } catch (error) {
-                updateDebug(`Initialization error: ${error.message}`);
                 console.error('Initialization error:', error);
             }
         }
 
-        // Highlight search terms
+        // Highlight search terms in content
         function highlightText(text, searchTerm) {
             if (!searchTerm) return text;
             const regex = new RegExp(`(${searchTerm})`, 'gi');
             return text.replace(regex, '<span class="highlight">$1</span>');
         }
 
-        // Render results
+        // Render search results
         function renderResults(results) {
             const resultsContainer = document.querySelector('.results');
-            const searchTerm = document.querySelector('.search-input').value;
-            
-            if (results.length === 0) {
-                resultsContainer.innerHTML = '<div class="result-item">No results found</div>';
-                return;
-            }
-
             resultsContainer.innerHTML = results.map(result => `
                 <div class="result-item">
-                    <h3 class="result-title">${highlightText(result.item.fields.title, searchTerm)}</h3>
-                    <p class="result-content">${highlightText(result.item.fields.content.slice(0, 200), searchTerm)}...</p>
+                    <h3 class="result-title">${highlightText(result.item.title, document.querySelector('.search-input').value)}</h3>
+                    <p class="result-content">${highlightText(result.item.content.slice(0, 200))}...</p>
                     <div class="meta">
-                        Type: ${result.item.fields.type} | Score: ${result.score.toFixed(2)} | Matches: ${result.matches.join(', ')}
+                        Type: ${result.item.type} | Score: ${result.score.toFixed(2)}
                     </div>
                 </div>
             `).join('');
         }
 
-        // Handle search with debouncing
+        // Handle search
         let searchTimeout;
         document.querySelector('.search-input').addEventListener('input', async (e) => {
             clearTimeout(searchTimeout);
@@ -223,16 +116,13 @@
                 }
 
                 try {
-                    updateDebug(`Searching for: ${query}`);
                     const results = await searchEngine.search(query, {
                         fuzzy: true,
                         maxResults: 10,
                         threshold: 0.2
                     });
-                    updateDebug(`Found ${results.length} results`);
                     renderResults(results);
                 } catch (error) {
-                    updateDebug(`Search error: ${error.message}`);
                     console.error('Search error:', error);
                 }
             }, 300);
