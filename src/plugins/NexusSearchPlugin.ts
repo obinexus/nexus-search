@@ -55,12 +55,12 @@ export class NexusSearchPlugin {
     async search(query: string, options?: SearchOptions): Promise<IndexedDocument[]> {
         const results = await this.searchEngine.search(query, options);
 
-        if (options?.regex instanceof RegExp) {
-            return results.filter(result => options.regex!.test(result.item.fields.content)).map(result => result.item);
-        }
-
-        return results.map(result => result.item);
+    if (options?.regex instanceof RegExp) {
+        return options?.regex ? results.filter(result => options.regex?.test(result.item.fields.content)).map(result => result.item) : results.map(result => result.item);
     }
+
+    return results.map(result => result.item);
+}
 
     async addDocument(document: IndexedDocument) {
         const indexedDocument = {
