@@ -56,7 +56,7 @@ export class NexusSearchPlugin {
     async search(query: string, options?: SearchOptions): Promise<IndexedDocument[]> {
         const results = await this.searchEngine.search(query, options);
     
-        if (options && isSearchOptions(options) && options.regex && options.regex instanceof RegExp) {
+        if (options && isSearchOptions(options) && options.regex instanceof RegExp) {
             return results
                 .filter(result => typeof result.item.fields.content === "string" && options.regex instanceof RegExp && options.regex.test(result.item.fields.content))
                 .map(result => result.item);
@@ -64,7 +64,7 @@ export class NexusSearchPlugin {
     
         return results.map(result => result.item);
     }
-
+    
     async searchByTag(tag: string): Promise<IndexedDocument[]> {
         const results = await this.searchEngine.search(tag);
         return results.map(result => result.item);
