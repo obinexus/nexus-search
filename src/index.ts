@@ -68,8 +68,7 @@ export const DEFAULT_SEARCH_OPTIONS: Required<SearchOptions> = {
     highlight: false,
     includeMatches: false,
     includeScore: false,
-    includeStats: false,
-  
+    includeStats: false
 };
 
 // Error classes

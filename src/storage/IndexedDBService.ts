@@ -18,7 +18,12 @@ export const DEFAULT_SEARCH_OPTIONS: Required<SearchOptions> = {
     sortBy: 'score',
     sortOrder: 'desc',
     page: 1,
-    pageSize: 10
+    pageSize: 10,
+    regex: false,
+    highlight: false,
+    includeMatches: false,
+    includeScore: false,
+    includeStats: false
 };
 
 export class IndexedDB {
