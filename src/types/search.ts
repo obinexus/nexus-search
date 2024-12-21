@@ -16,7 +16,11 @@ export interface SearchOptions {
     sortOrder?: 'asc' | 'desc';
     page?: number;
     pageSize?: number;
-    regex?: boolean;
+    regex?: RegExp;
+    highlight?: boolean;
+    includeMatches?: boolean;
+    includeScore?: boolean;
+    includeStats?: boolean;
 }
 
 export interface SearchContext {
