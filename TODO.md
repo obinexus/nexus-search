@@ -1,23 +1,22 @@
 # TODO
 
 ## Features
-- [ ] Add support for extension markdown and html laoding 
-- [ ] Add support for advanced search operators (regular expression)
-- [ ] Simplifty the API.
-- [ ] Using BFS/DFS Trie traversal algorithms to support character-based fuzzy searching in directory HTML, markdown etc.
+- [ ] Add support for extension markdown and HTML loading
+- [ ] Add support for advanced search operators (regular expressions)
+- [x] Simplify the API
+- [ ] Use BFS/DFS Trie traversal algorithms to support character-based fuzzy searching in directory HTML, markdown, etc.
 - [ ] Implement role-based access control
 - [ ] Create detailed user and developer documentation
 - [ ] Integrate with more storage backends (e.g., MongoDB)
 - [ ] Add more examples and use cases in the documentation
 - [ ] Optimize indexing performance for large datasets
 - [ ] Implement versioned indices
-- [ ] Add LRU,MRU Caching to mitigate algo bottlneck and optmize
-  document queries
-  
+- [ ] Add LRU, MRU caching to mitigate algorithm bottlenecks and optimize document queries
+
 ## Build System
 - [ ] Fix sourcemap generation in Rollup configuration
   - [ ] Properly configure sourcemaps for all output formats
-  - [ ] Ensure terser plugin generates valid sourcemaps
+  - [ ] Ensure Terser plugin generates valid sourcemaps
   - [ ] Add sourcemap validation in build process
 - [ ] Improve bundling process
   - [ ] Optimize chunk generation
@@ -31,7 +30,7 @@
 ## Bugs
 - [ ] Fix issue with fuzzy search on large datasets
 - [ ] Resolve conflicts with specific browsers in IndexedDB handling
-- [ ] Fix Rollup Config to correctly reference dependencies internally dev
+- [ ] Fix Rollup config to correctly reference dependencies internally
 
 ## Improvements
 - [ ] Improve error handling and messaging
