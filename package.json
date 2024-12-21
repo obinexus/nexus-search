@@ -25,7 +25,12 @@
     "postbuild": "node scripts/verify-build.js",
     "demo": "node fixtures/server.js",
     "dev": "rollup -c -w",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "jest",
+    "lint": "eslint src/ --ext .ts",
+    "format": "prettier --write src/**/*.ts",
+    "prepare": "npm run build"
+
   },
   "files": [
     "dist/",
