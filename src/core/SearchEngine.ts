@@ -216,6 +216,120 @@ export class SearchEngine {
         }
     }
 
+    public async removeDocument(documentId: string): Promise<void> {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
+
+        if (!this.documents.has(documentId)) {
+            throw new Error(`Document ${documentId} not found`);
+        }
+
+        try {
+            this.emitEvent({
+                type: 'remove:start',
+                timestamp: Date.now(),
+                data: { documentId }
+            });
+
+            this.documents.delete(documentId);
+            await this.indexManager.removeDocument(documentId);
+
+            try {
+                await this.storage.storeIndex(this.config.name, this.indexManager.exportIndex());
+            } catch (storageError) {
+                this.emitEvent({
+                    type: 'storage:error',
+                    timestamp: Date.now(),
+                    error: storageError instanceof Error ? storageError : new Error(String(storageError))
+                });
+            }
+
+            this.cache.clear();
+
+            this.emitEvent({
+                type: 'remove:complete',
+                timestamp: Date.now(),
+                data: { documentId }
+            });
+        } catch (error) {
+            this.emitEvent({
+                type: 'remove:error',
+                timestamp: Date.now(),
+                error: error instanceof Error ? error : new Error(String(error))
+            });
+            throw new Error(`Failed to remove document: ${error}`);
+        }
+    }
+
+    public async updateDocument<T extends IndexedDocument>(document: T): Promise<void> {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
+
+        const documentId = document.id;
+        if (!documentId || !this.documents.has(documentId)) {
+            throw new Error(`Document ${documentId} not found`);
+        }
+
+        try {
+            this.emitEvent({
+                type: 'update:start',
+                timestamp: Date.now(),
+                data: { documentId }
+            });
+
+            this.documents.set(documentId, document);
+
+            const searchableDoc: SearchableDocument = {
+                id: documentId,
+                content: createSearchableFields({
+                    content: document.fields as Record<string, DocumentValue>,
+                    id: documentId
+                }, this.config.fields)
+            };
+
+            for (const field of this.config.fields) {
+                if (searchableDoc.content[field]) {
+                    const content = String(searchableDoc.content[field]).toLowerCase();
+                    const words = content.split(/\s+/).filter(Boolean);
+
+                    for (const word of words) {
+                        this.trie.insert(word, documentId);
+                    }
+                }
+            }
+
+            await this.indexManager.updateDocument(document);
+
+            try {
+                await this.storage.storeIndex(this.config.name, this.indexManager.exportIndex());
+            } catch (storageError) {
+                this.emitEvent({
+                    type: 'storage:error',
+                    timestamp: Date.now(),
+                    error: storageError instanceof Error ? storageError : new Error(String(storageError))
+                });
+            }
+
+            this.cache.clear();
+
+            this.emitEvent({
+                type: 'update:complete',
+                timestamp: Date.now(),
+                data: { documentId }
+            });
+        } catch (error) {
+            this.emitEvent({
+                type: 'update:error',
+                timestamp: Date.now(),
+                error: error instanceof Error ? error : new Error(String(error))
+            });
+            throw new Error(`Failed to update document: ${error}`);
+        }
+    }
+
+
     // Event handling methods
     addEventListener(listener: SearchEventListener): void {
         this.eventListeners.add(listener);
@@ -286,6 +400,14 @@ export class SearchEngine {
         } catch (error) {
             console.warn('Error during close:', error);
         }
+    }
+
+    get isReady(): boolean {
+        return this.isInitialized;
+    }
+
+    public getAllDocuments(): IndexedDocument[] {
+        return Array.from(this.documents.values());
     }
 
     // Debug methods

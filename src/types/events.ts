@@ -1,3 +1,4 @@
+
 export type SearchEventType =
     | 'search:start'
     | 'search:complete'
@@ -5,7 +6,13 @@ export type SearchEventType =
     | 'index:start'
     | 'index:complete'
     | 'index:error'
-    | 'storage:error';
+    | 'storage:error'
+    | 'remove:start'
+    | 'remove:complete'
+    | 'remove:error'
+    | 'update:start'
+    | 'update:complete'
+    | 'update:error';
 
 export interface SearchEvent {
     type: SearchEventType;
