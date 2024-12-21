@@ -137,7 +137,9 @@ export class IndexManager {
             const contentRecord: Record<string, DocumentValue> = {};
             for (const field of this.config.fields) {
                 if (field in document) {
-                    contentRecord[field] = document[field] as DocumentValue;
+                    if (field in document) {
+                        contentRecord[field] = (document as any)[field] as DocumentValue;
+                    }
                 }
             }
             const searchableDoc: SearchableDocument = {
