@@ -1,4 +1,3 @@
-
 export type SearchEventType =
     | 'search:start'
     | 'search:complete'

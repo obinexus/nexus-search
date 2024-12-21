@@ -16,6 +16,7 @@ export interface SearchOptions {
     sortOrder?: 'asc' | 'desc';
     page?: number;
     pageSize?: number;
+    regex?: boolean;
 }
 
 export interface SearchContext {
