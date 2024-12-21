@@ -122,7 +122,7 @@ export class NexusSearchPlugin {
                 title: 'Markdown Title',
                 content: markdownContent,
                 author: 'Unknown',
-                tags: ['markdown']
+                tags: 'markdown'
             }
         }];
     }
@@ -134,7 +134,7 @@ export class NexusSearchPlugin {
                 title: 'HTML Title',
                 content: htmlContent,
                 author: 'Unknown',
-                tags: ['html']
+                tags: 'html'
             }
         }];
     }
