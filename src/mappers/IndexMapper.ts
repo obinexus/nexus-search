@@ -81,11 +81,23 @@ export class IndexMapper {
       .filter(word => word.length > 0);
   }
 
+
   private calculateScore(documentId: string, term: string): number {
     const baseScore = this.dataMapper.getDocuments(term.toLowerCase()).has(documentId) ? 1.0 : 0.5;
     return baseScore
   
   }
+  removeDocument(id: string): void {
+    this.trieSearch.remove(id);
+    this.dataMapper.removeData(id);
+  }
+
+
+
+  addDocument(id: string, fields: string[], document: SearchableDocument): void {
+    this.indexDocument(document, id, fields);
+  }
+
   clear(): void {
     this.trieSearch = new TrieSearch();
     this.dataMapper = new DataMapper();

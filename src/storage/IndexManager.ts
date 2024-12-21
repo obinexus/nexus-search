@@ -121,6 +121,21 @@ export class IndexManager {
         }
     }
 
+    async removeDocument(documentId: string): Promise<void> {
+        if (this.documents.has(documentId)) {
+            this.documents.delete(documentId);
+            await this.indexMapper.removeDocument(documentId);
+        }
+    }
+
+    async updateDocument<T extends IndexedDocument>(document: T): Promise<void> {
+        const id = document.id;
+        if (this.documents.has(id)) {
+            this.documents.set(id, document);
+            await this.indexMapper.updateDocument(document, id, this.config.fields);
+        }
+    }
+
     clear(): void {
         this.documents.clear();
         this.indexMapper = new IndexMapper();

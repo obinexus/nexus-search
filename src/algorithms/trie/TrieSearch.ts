@@ -59,6 +59,41 @@ export class TrieSearch {
         return results;
     }
 
+    public remove(documentId: string): void {
+        for (const [, node] of this.root.children) {
+            this.removeHelper(documentId, node);
+        }
+
+        this.documents.delete(documentId);
+        this.documentLinks.delete(documentId);
+    }
+
+    private removeHelper(documentId: string, node: TrieNode): void {
+        if (node.documentRefs.has(documentId)) {
+            node.documentRefs.delete(documentId);
+            node.weight -= 1.0;
+        }
+
+        for (const [, child] of node.children) {
+            this.removeHelper(documentId, child);
+        }
+
+        if (node.children.size === 0 && node.documentRefs.size === 0 && node.weight === 0) {
+            node.children.clear();
+        }
+    }
+
+    public linkDocument(documentId: string, links: DocumentLink[]): void {
+        this.documentLinks.set(documentId, links);
+    }
+
+    public getDocumentLinks(documentId: string): DocumentLink[] {
+        return this.documentLinks.get(documentId) ?? [];
+    }   
+    public removeData(documentId: string): void {
+        this.remove(documentId);
+    }
+
     public fuzzySearch(query: string, maxDistance: number = 2): Set<string> {
         if (!query) return new Set();
 
