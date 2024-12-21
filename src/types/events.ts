@@ -18,6 +18,8 @@ export interface SearchEvent {
     timestamp: number;
     data?: unknown;
     error?: Error;
+    region?: string;
+    regex?: RegExp;
 }
 
 export interface SearchEventListener {
