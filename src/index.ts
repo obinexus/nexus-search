@@ -64,12 +64,11 @@ export const DEFAULT_SEARCH_OPTIONS: Required<SearchOptions> = {
     sortOrder: 'desc',
     page: 1,
     pageSize: 10,
-    regex: 'string',
+    regex: '',
     highlight: false,
     includeMatches: false,
     includeScore: false,
     includeStats: false,
-  
 };
 
 // Error classes
