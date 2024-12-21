@@ -64,7 +64,7 @@ export const DEFAULT_SEARCH_OPTIONS: Required<SearchOptions> = {
     sortOrder: 'desc',
     page: 1,
     pageSize: 10,
-    regex: false,
+    regex: 'string',
     highlight: false,
     includeMatches: false,
     includeScore: false,

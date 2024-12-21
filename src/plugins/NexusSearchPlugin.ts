@@ -12,9 +12,9 @@ export class NexusSearchPlugin {
     constructor(options: NexusSearchPluginOptions) {
         this.options = options;
         this.searchEngine = new SearchEngine({
-            name: 'nexus-search-plugin',
+            name: "nexus-search-plugin",
             version: 1,
-            fields: ['title', 'content', 'author', 'tags']
+            fields: ["title", "content", "author", "tags"]
         });
     }
 
@@ -54,13 +54,15 @@ export class NexusSearchPlugin {
 
     async search(query: string, options?: SearchOptions): Promise<IndexedDocument[]> {
         const results = await this.searchEngine.search(query, options);
+        
+        if (options?.regex instanceof RegExp) {
+            return results
+                .filter(result => typeof result.item.fields.content === "string" && options.regex!.test(result.item.fields.content))
+                .map(result => result.item);
+        }
 
-    if (options?.regex instanceof RegExp) {
-        return options?.regex ? results.filter(result => options.regex?.test(result.item.fields.content)).map(result => result.item) : results.map(result => result.item);
+        return results.map(result => result.item);
     }
-
-    return results.map(result => result.item);
-}
 
     async addDocument(document: IndexedDocument) {
         const indexedDocument = {
@@ -113,37 +115,51 @@ export class NexusSearchPlugin {
 
     async loadHTML(htmlContent: string) {
         const documents = this.parseHTML(htmlContent);
-        await this.searchEngine.addDocuments(documents);
+        const indexedDocuments = documents.map(doc => ({
+            ...doc,
+            id: doc.id || this.generateDocumentId(),
+            fields: {
+                title: doc.fields.title,
+                content: doc.fields.content,
+                author: doc.fields.author,
+                tags: doc.fields.tags
+            }
+        }));
+        await this.searchEngine.addDocuments(indexedDocuments);
     }
 
     async searchWithRegex(query: string, regex: RegExp): Promise<IndexedDocument[]> {
         const allResults = await this.searchEngine.search(query);
         return allResults
-            .filter(result => typeof result.item.fields.content === 'string' && regex.test(result.item.fields.content))
+            .filter(result => typeof result.item.fields.content === "string" && regex.test(result.item.fields.content))
             .map(result => result.item);
     }
 
     parseMarkdown(markdownContent: string): IndexedDocument[] {
-        return [{
-            id: this.generateDocumentId(),
-            fields: {
-                title: 'Markdown Title',
-                content: markdownContent,
-                author: 'Unknown',
-                tags: 'markdown'
+        return [
+            {
+                id: this.generateDocumentId(),
+                fields: {
+                    title: "Markdown Title",
+                    content: markdownContent,
+                    author: "Unknown",
+                    tags: "markdown"
+                }
             }
-        }];
+        ];
     }
 
     parseHTML(htmlContent: string): IndexedDocument[] {
-        return [{
-            id: this.generateDocumentId(),
-            fields: {
-                title: 'HTML Title',
-                content: htmlContent,
-                author: 'Unknown',
-                tags: 'html'
+        return [
+            {
+                id: this.generateDocumentId(),
+                fields: {
+                    title: "HTML Title",
+                    content: htmlContent,
+                    author: "Unknown",
+                    tags: ["html"]
+                }
             }
-        }];
+        ];
     }
 }
