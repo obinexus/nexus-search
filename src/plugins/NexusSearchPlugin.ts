@@ -54,7 +54,7 @@ export class NexusSearchPlugin {
 
     async search(query: string, options?: SearchOptions): Promise<IndexedDocument[]> {
         const results = await this.searchEngine.search(query, options);
-        
+
         if (options?.regex instanceof RegExp) {
             return results
                 .filter(result => typeof result.item.fields.content === "string" && options.regex!.test(result.item.fields.content))
@@ -72,7 +72,7 @@ export class NexusSearchPlugin {
                 title: document.fields.title,
                 content: document.fields.content,
                 author: document.fields.author,
-                tags: document.fields.tags
+                tags: Array.isArray(document.fields.tags) ? document.fields.tags : [document.fields.tags]
             }
         };
         await this.searchEngine.addDocuments([indexedDocument]);
@@ -90,7 +90,7 @@ export class NexusSearchPlugin {
                 title: document.fields.title,
                 content: document.fields.content,
                 author: document.fields.author,
-                tags: document.fields.tags
+                tags: Array.isArray(document.fields.tags) ? document.fields.tags : [document.fields.tags]
             }
         };
         await this.searchEngine.updateDocument(indexedDocument);
@@ -107,7 +107,7 @@ export class NexusSearchPlugin {
                 title: doc.fields.title,
                 content: doc.fields.content,
                 author: doc.fields.author,
-                tags: doc.fields.tags
+                tags: Array.isArray(doc.fields.tags) ? doc.fields.tags : [doc.fields.tags]
             }
         }));
         await this.searchEngine.addDocuments(indexedDocuments);
@@ -122,7 +122,7 @@ export class NexusSearchPlugin {
                 title: doc.fields.title,
                 content: doc.fields.content,
                 author: doc.fields.author,
-                tags: doc.fields.tags
+                tags: Array.isArray(doc.fields.tags) ? doc.fields.tags : [doc.fields.tags]
             }
         }));
         await this.searchEngine.addDocuments(indexedDocuments);
@@ -143,7 +143,7 @@ export class NexusSearchPlugin {
                     title: "Markdown Title",
                     content: markdownContent,
                     author: "Unknown",
-                    tags: "markdown"
+                    tags: ["markdown"]
                 }
             }
         ];

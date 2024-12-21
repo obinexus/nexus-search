@@ -1,3 +1,14 @@
+export interface IndexedDocument {
+    id: string;
+    fields: {
+        title: string;
+        content: string;
+        author: string;
+        tags: string[]; // Ensure this is a string array
+    };
+    metadata?: DocumentMetadata;
+}
+---
 // Types for primitive and complex values
 export type PrimitiveValue = string | number | boolean | null;
 export type ArrayValue = PrimitiveValue[];
@@ -26,14 +37,6 @@ export interface DocumentData {
     content: string;
     metadata?: DocumentMetadata;
     [key: string]: unknown;
-}
-
-// Fixed IndexedDocument interface to resolve the conflict
-export interface IndexedDocument {
-    id: string;
-    fields: Record<string, string>;
-    metadata?: DocumentMetadata;
-    [key: string]: DocumentValue | DocumentMetadata | undefined | string | Record<string, string>;
 }
 
 export interface IndexableDocument {
