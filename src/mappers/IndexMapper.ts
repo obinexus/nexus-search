@@ -89,12 +89,17 @@ export class IndexMapper {
   }
   removeDocument(id: string): void {
     this.trieSearch.remove(id);
-    this.dataMapper.removeData(id);
+    this.dataMapper.removeDocument(id);
   }
 
 
-
+  
   addDocument(id: string, fields: string[], document: SearchableDocument): void {
+    this.indexDocument(document, id, fields);
+  }
+
+  updateDocument(document: SearchableDocument, id: string, fields: string[]): void {
+    this.removeDocument(id);
     this.indexDocument(document, id, fields);
   }
 

@@ -20,6 +20,16 @@ export class DataMapper {
     return Array.from(this.dataMap.keys());
   }
 
+  removeDocument(documentId: string): void {
+    this.dataMap.forEach(value => {
+      value.delete(documentId);
+    });
+  }
+
+  removeKey(key: string): void {
+    this.dataMap.delete(key);
+  }
+  
   exportState(): Record<string, string[]> {
     const serializedMap: Record<string, string[]> = {};
     
