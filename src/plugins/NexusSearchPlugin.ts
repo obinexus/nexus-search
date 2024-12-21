@@ -1,7 +1,7 @@
 import { SearchEngine } from "@/core";
-import { SearchOptions,  IndexedDocument } from "@/types";
+import { SearchOptions, IndexedDocument } from "@/types";
 
-interface NexusSearchPluginOptions {
+interface NexusSearchPluginOptions extends SearchOptions {
     documents: IndexedDocument[];
 }
 
@@ -52,8 +52,14 @@ export class NexusSearchPlugin {
         return Math.random().toString(36).substring(2, 11);
     }
 
-    async search(query: string, options?: SearchOptions) {
-        return this.searchEngine.search(query, options);
+    async search(query: string, options?: SearchOptions): Promise<IndexedDocument[]> {
+        const results = await this.searchEngine.search(query, options);
+
+        if (options?.regex instanceof RegExp) {
+            return results.filter(result => options.regex!.test(result.item.fields.content)).map(result => result.item);
+        }
+
+        return results.map(result => result.item);
     }
 
     async addDocument(document: IndexedDocument) {
@@ -110,9 +116,11 @@ export class NexusSearchPlugin {
         await this.searchEngine.addDocuments(documents);
     }
 
-    async searchWithRegex(query: string, regex: RegExp) {
+    async searchWithRegex(query: string, regex: RegExp): Promise<IndexedDocument[]> {
         const allResults = await this.searchEngine.search(query);
-        return allResults.filter(result => typeof result.item.fields.content === 'string' && regex.test(result.item.fields.content));
+        return allResults
+            .filter(result => typeof result.item.fields.content === 'string' && regex.test(result.item.fields.content))
+            .map(result => result.item);
     }
 
     parseMarkdown(markdownContent: string): IndexedDocument[] {
