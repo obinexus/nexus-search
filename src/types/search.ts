@@ -1,10 +1,12 @@
 import { DocumentMetadata, DocumentValue } from './document';
 
 export interface SearchResult<T = unknown> {
+    id: string;
+    document: T;
+    metadata: DocumentMetadata | undefined;
     item: T;
     score: number;
     matches: string[];
-    highlights?: Record<string, string[]>;
 }
 
 export interface SearchOptions {

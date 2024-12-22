@@ -12,6 +12,9 @@ import { SerializedIndex } from "@/types/core";
 import { createSearchableFields } from "@/utils";
 
 export class IndexManager {
+    getAllDocuments() {
+        throw new Error("Method not implemented.");
+    }
     private indexMapper: IndexMapper;
     private config: IndexConfig;
     private documents: Map<string, IndexedDocument>;
@@ -72,11 +75,17 @@ export class IndexManager {
 
             return searchResults
                 .filter(result => this.documents.has(result.item))
-                .map(result => ({
-                    item: this.documents.get(result.item) as T,
-                    score: result.score,
-                    matches: result.matches
-                }))
+                .map(result => {
+                    const item = this.documents.get(result.item) as T;
+                    return {
+                        id: item.id,
+                        document: item,
+                        metadata: item.metadata,
+                        item,
+                        score: result.score,
+                        matches: result.matches
+                    };
+                })
                 .filter(result => result.score >= (options.threshold ?? 0.5));
 
         } catch (error) {
