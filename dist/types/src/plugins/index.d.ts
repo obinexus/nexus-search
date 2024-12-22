@@ -1,0 +1,1 @@
+export { NexusSearchPlugin } from './NexusSearchPlugin';
