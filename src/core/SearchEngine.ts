@@ -293,6 +293,7 @@ export class SearchEngine {
         });
     }
 
+  
     private async loadIndexes(): Promise<void> {
         try {
             const storedIndex = await this.storage.getIndex(this.config.name);
@@ -319,14 +320,28 @@ export class SearchEngine {
     }
 
     public async clearIndex(): Promise<void> {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
+
         try {
             await this.storage.clearIndices();
             this.documents.clear();
             this.trie = new TrieSearch();
             this.indexManager.clear();
             this.cache.clear();
+
+            this.emitEvent({
+                type: 'index:clear',
+                timestamp: Date.now()
+            });
         } catch (error) {
-            console.warn('Failed to clear storage, continuing:', error);
+            this.emitEvent({
+                type: 'index:clear:error',
+                timestamp: Date.now(),
+                error: error instanceof Error ? error : new Error(String(error))
+            });
+            throw new Error(`Failed to clear index: ${error}`);
         }
     }
 

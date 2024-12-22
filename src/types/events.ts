@@ -1,17 +1,18 @@
 export type SearchEventType =
-    | 'search:start'
-    | 'search:complete'
-    | 'search:error'
+    | 'engine:initialized'
     | 'index:start'
     | 'index:complete'
     | 'index:error'
-    | 'storage:error'
-    | 'remove:start'
+    | 'search:start'
+    | 'search:complete'
+    | 'search:error'
+    | 'update:complete'
+    | 'update:error'
     | 'remove:complete'
     | 'remove:error'
-    | 'update:start'
-    | 'update:complete'
-    | 'update:error';
+    | 'storage:error'
+    | 'index:clear'
+    | 'index:clear:error';
 
 export interface SearchEvent {
     type: SearchEventType;
