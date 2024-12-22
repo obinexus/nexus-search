@@ -1,4 +1,4 @@
-const { SearchEngine } = require('../../dist/index.cjs');
+const { SearchEngine, IndexedDocument } = require('../../dist/index.cjs').default;
 
 // Initialize search engine
 const searchEngine = new SearchEngine({
@@ -12,7 +12,7 @@ async function main() {
     await searchEngine.initialize();
     console.log('Search engine initialized.');
 
-  // Initialize with proper config
+// Initialize with proper config
 
 // Create properly structured documents
 const documents = [
@@ -41,28 +41,34 @@ const results = await searchEngine.search('nodejs', {
 }
 
 main().catch(console.error);
-// Create a document
-const doc = new IndexedDocument({
-    id: 'test-1',
-    fields: {
-        title: 'Test Document',
-        content: 'Test content',
-        author: 'Test Author',
-        tags: ['test']
-    },
-    metadata: {
-        indexed: Date.now(),
-        lastModified: Date.now()
-    }
-});
+async function additionalSearch() {
+    // Create a document
+    const doc = new IndexedDocument({
+        id: 'test-1',
+        fields: {
+            title: 'Test Document',
+            content: 'Test content',
+            author: 'Test Author',
+            tags: ['test']
+        },
+        metadata: {
+            indexed: Date.now(),
+            lastModified: Date.now()
+        }
+    });
 
-// Use in search engine
-await searchEngine.addDocuments([doc]);
+    // Use in search engine
+    await searchEngine.addDocuments([doc]);
 
-// Perform search
-const results = await searchEngine.search('test', {
-    fuzzy: true,
-    fields: ['title', 'content']
-});
+    // Perform search
+    const results = await searchEngine.search('test', {
+        fuzzy: true,
+        fields: ['title', 'content']
+    });
 
-console.log('Search results:', results);
+    console.log('Search results:', results);
+}
+
+(async () => {
+    await additionalSearch().catch(console.error);
+})();
