@@ -10,7 +10,16 @@ export class IndexedDocument implements IIndexedDocument {
     };
     metadata?: DocumentMetadata;
 
-    constructor(id: string, fields: { title: string; content: string; author: string; tags: string[] }, metadata?: DocumentMetadata) {
+    constructor(
+        id: string,
+        fields: {
+            title: string;
+            content: string;
+            author: string;
+            tags: string[];
+        },
+        metadata?: DocumentMetadata
+    ) {
         this.id = id;
         this.fields = fields;
         this.metadata = metadata;

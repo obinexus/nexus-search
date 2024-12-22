@@ -139,7 +139,6 @@ export class SearchEngine {
             throw new Error(`Failed to add documents: ${error}`);
         }
     }
-
     public async search(
         query: string,
         options: SearchOptions = {}
