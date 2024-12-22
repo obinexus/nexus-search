@@ -8,17 +8,18 @@ import { IndexedDocument } from "./IndexedDocument";
 export class BaseDocument implements IndexedDocument {
     id: string;
     fields: {
+        [key: string]: string | string[];
         title: string;
         content: string;
         type: string;
         tags: string[];
-        category?: string;
+        category: string;
         author: string;
         created: string;
         modified: string;
-        status: 'draft' | 'published' | 'archived';
-        version: number;
-        locale?: string;
+        status: string;
+        version: string;
+        locale: string;
     };
     versions?: DocumentVersion[];
     relations?: DocumentRelation[];
@@ -41,11 +42,13 @@ export class BaseDocument implements IndexedDocument {
             content: '',
             type: '',
             tags: [],
+            category: '',
             author: '',
             created: new Date().toISOString(),
             modified: new Date().toISOString(),
-            status: 'draft',
-            version: 1
+            status: '',
+            version: '1',
+            locale: ''
         };
         this.versions = doc.versions || [];
         this.relations = doc.relations || [];
@@ -73,7 +76,7 @@ export class BaseDocument implements IndexedDocument {
         if (fields.content && fields.content !== this.fields.content) {
             this.versions = this.versions || [];
             this.versions.push({
-                version: currentVersion,
+                version: Number(currentVersion),
                 content: this.fields.content,
                 modified: new Date(this.fields.modified),
                 author: this.fields.author
@@ -103,4 +106,9 @@ export class BaseDocument implements IndexedDocument {
             toObject: this.toObject.bind(this)
         };
     }
-}
+    document(): IndexedDocument {
+        return this;
+    }
+    }
+
+
