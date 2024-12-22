@@ -25,6 +25,10 @@ export class IndexedDocument implements IIndexedDocument {
         this.fields = fields;
         this.metadata = metadata;
     }
+    [x: string]: any;
+    document(): import(".").IndexedDocument {
+        throw new Error("Method not implemented.");
+    }
 
     static fromObject(obj: Partial<IIndexedDocument> & { id: string; fields: any }): IndexedDocument {
         // Ensure fields have the correct structure
@@ -59,7 +63,8 @@ export class IndexedDocument implements IIndexedDocument {
                 tags: [...this.fields.tags] // Create new array to avoid references
             },
             metadata: this.metadata ? { ...this.metadata } : undefined,
-            toObject: this.toObject.bind(this)
+            toObject: this.toObject.bind(this),
+            document: () => this // Add the document property
         };
     }
 
