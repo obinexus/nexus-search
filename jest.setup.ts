@@ -1,5 +1,7 @@
 import '@testing-library/jest-dom';
-import { TextEncoder, TextDecoder } from 'util'; 
+import { TextEncoder, TextDecoder } from 'util';
+
+// Define proper types for IDB interfaces
 interface IDBEventTarget {
   result: any;
 }
@@ -9,7 +11,6 @@ interface IDBEvent {
   type: string;
 }
 
-// Mock Event Handler Types
 type IDBEventHandler = (event: IDBEvent) => void;
 
 interface IDBRequest {
@@ -19,18 +20,23 @@ interface IDBRequest {
   onupgradeneeded: IDBEventHandler | null;
 }
 
-interface IDBObjectStore {
-  createIndex: jest.Mock;
-  put: jest.Mock;
-  get: jest.Mock;
-  delete: jest.Mock;
-  clear: jest.Mock;
+interface IDBObjectStoreIndex {
+  // Add necessary index properties
 }
 
-// Handle Node.js TextEncoder/TextDecoder
+interface IDBObjectStore {
+  createIndex(name: string, keyPath: string, options?: { unique?: boolean }): IDBObjectStoreIndex;
+  put(value: any, key?: any): IDBRequest;
+  get(key: any): IDBRequest;
+  delete(key: any): IDBRequest;
+  clear(): IDBRequest;
+}
+
+// Handle Node.js TextEncoder/TextDecoder with proper typing
 const textEncodingPolyfill = () => {
   global.TextEncoder = TextEncoder;
-  global.TextDecoder = TextDecoder;
+  // Use type assertion to handle the compatibility issue
+  global.TextDecoder = TextDecoder as typeof global.TextDecoder;
 };
 
 textEncodingPolyfill();
@@ -53,7 +59,7 @@ afterEach(() => {
   testStartTime = Date.now();
 });
 
-// Mock IndexedDB
+// Mock IndexedDB with proper parameter usage
 const createMockIDBRequest = (): IDBRequest => ({
   result: {
     objectStoreNames: {
@@ -64,11 +70,11 @@ const createMockIDBRequest = (): IDBRequest => ({
     }),
     transaction: jest.fn().mockReturnValue({
       objectStore: jest.fn().mockReturnValue({
-        put: jest.fn().mockImplementation((value: any) => ({
+        put: jest.fn().mockImplementation((_value: any) => ({
           onsuccess: null,
           onerror: null
         })),
-        get: jest.fn().mockImplementation((key: string) => ({
+        get: jest.fn().mockImplementation((_key: string) => ({
           onsuccess: null,
           onerror: null,
           result: null
@@ -86,7 +92,7 @@ const createMockIDBRequest = (): IDBRequest => ({
 const indexedDBMock = {
   databases: new Map(),
 
-  open: jest.fn().mockImplementation((name: string) => {
+  open: jest.fn().mockImplementation((_name: string) => {
     const request = createMockIDBRequest();
 
     setTimeout(() => {
@@ -107,7 +113,7 @@ const indexedDBMock = {
     return request;
   }),
 
-  deleteDatabase: jest.fn().mockImplementation((name: string) => {
+  deleteDatabase: jest.fn().mockImplementation((_name: string) => {
     const request = createMockIDBRequest();
 
     setTimeout(() => {
@@ -176,3 +182,5 @@ declare global {
 
   function sleep(ms: number): Promise<void>;
 }
+
+export {};
