@@ -3,7 +3,7 @@ import { DocumentMetadata, DocumentValue } from './document';
 export interface SearchResult<T = unknown> {
     id: string;
     document: T;
-    metadata: DocumentMetadata | undefined;
+    metadata?: DocumentMetadata;
     item: T;
     score: number;
     matches: string[];

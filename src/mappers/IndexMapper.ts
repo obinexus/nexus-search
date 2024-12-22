@@ -55,6 +55,8 @@ export class IndexMapper {
 
     const results = Array.from(documentScores.entries())
       .map(([id, { score, matches }]) => ({
+        id: id,
+        document: id,
         item: id,
         score: score / searchTerms.length,
         matches: Array.from(matches)
