@@ -729,6 +729,15 @@ class TrieSearch {
     }
 }
 
+/**
+ * IndexMapper class
+ * @description IndexMapper class that indexes documents and performs search operations
+ * @class IndexMapper
+ * @implements {IndexMapper}
+ * @method indexDocument
+ * @method search
+ *
+ */
 class IndexMapper {
     constructor() {
         this.dataMapper = new DataMapper();

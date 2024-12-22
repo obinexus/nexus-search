@@ -1,4 +1,13 @@
 import { SearchableDocument, SearchResult, SerializedState } from "@/types";
+/**
+ * IndexMapper class
+ * @description IndexMapper class that indexes documents and performs search operations
+ * @class IndexMapper
+ * @implements {IndexMapper}
+ * @method indexDocument
+ * @method search
+ *
+ */
 export declare class IndexMapper {
     private dataMapper;
     private trieSearch;
