@@ -1330,13 +1330,6 @@ class SearchEngine {
     generateDocumentId() {
         return `${this.config.name}-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
     }
-    // Reset methods
-    // private resetTrie(): void {
-    //     this.trie = new TrieSearch();
-    // }
-    // private resetStorage(options: { type: 'memory' }): void {
-    //     this.storage = new SearchStorage(options);
-    // }
     // Cleanup methods
     async clearIndex() {
         try {
