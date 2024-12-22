@@ -12,29 +12,57 @@ async function main() {
     await searchEngine.initialize();
     console.log('Search engine initialized.');
 
-    // Add documents to the index
-    const documents = [
-        {
+  // Initialize with proper config
+
+// Create properly structured documents
+const documents = [
+    new IndexedDocument({
+        id: 'doc1',
+        fields: {
             title: 'Getting Started with Node.js',
-            content: 'Node.js is a JavaScript runtime built on Chrome\'s V8 JavaScript engine.',
-            tags: ['nodejs', 'javascript', 'runtime']
-        },
-        {
-            title: 'Advanced Node.js Patterns',
-            content: 'Explore advanced patterns and techniques in Node.js development.',
-            tags: ['nodejs', 'advanced', 'patterns']
+            content: 'Node.js is a JavaScript runtime...',
+            tags: ['nodejs', 'javascript']
         }
-    ];
-    await searchEngine.addDocuments(documents);
-    console.log('Documents added:', documents);
+    })
+];
 
-    // Perform a search
-    const results = await searchEngine.search('nodejs', {
-        fuzzy: true,
-        maxResults: 5
-    });
+// Add documents
+await searchEngine.addDocuments(documents);
 
-    console.log('Search Results:', await results);
+// Search with proper options
+const results = await searchEngine.search('nodejs', {
+    fuzzy: true,
+    maxResults: 5,
+    fields: ['title', 'content']
+});
+
+    console.log('Search results:', results); // is an array of search results(currently empty)Search results: []
+
 }
 
 main().catch(console.error);
+// Create a document
+const doc = new IndexedDocument({
+    id: 'test-1',
+    fields: {
+        title: 'Test Document',
+        content: 'Test content',
+        author: 'Test Author',
+        tags: ['test']
+    },
+    metadata: {
+        indexed: Date.now(),
+        lastModified: Date.now()
+    }
+});
+
+// Use in search engine
+await searchEngine.addDocuments([doc]);
+
+// Perform search
+const results = await searchEngine.search('test', {
+    fuzzy: true,
+    fields: ['title', 'content']
+});
+
+console.log('Search results:', results);
