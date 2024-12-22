@@ -20,7 +20,7 @@ export class SearchEngine {
     private readonly eventListeners: Set<SearchEventListener>;
     private trie: TrieSearch;
     private isInitialized: boolean = false;
-    private documents: Map<string, IndexedDocument>;
+    private documents: Map<string, IndexedDocument & { fields: { [key: string]: string } }>;
 
     constructor(config: SearchEngineConfig) {
         this.config = config;
@@ -76,18 +76,40 @@ export class SearchEngine {
 
             for (const doc of documents) {
                 const docId = doc.id || this.generateDocumentId();
-                const indexedDoc = IndexedDocument.fromObject({
-                    ...doc,
-                    id: docId,
-                    metadata: {
-                        ...doc.metadata,
-                        indexed: Date.now(),
-                        lastModified: Date.now()
-                    },
-                    toObject: function (): IndexedDocument {
-                        throw new Error("Function not implemented.");
-                    }
-                });
+                 const indexedDoc = {
+
+                    ...IndexedDocument.fromObject({
+
+                        ...doc,
+
+                        id: docId,
+
+                        metadata: {
+
+                            ...doc.metadata,
+
+                            indexed: Date.now(),
+
+                            lastModified: Date.now()
+
+                        },
+
+                        toObject: function (): IndexedDocument {
+
+                            throw new Error("Function not implemented.");
+
+                        }
+
+                    }),
+
+                    fields: doc.fields
+
+                };
+
+
+
+                this.documents.set(docId, indexedDoc);
+
 
                 this.documents.set(docId, indexedDoc);
 
@@ -138,8 +160,7 @@ export class SearchEngine {
             });
             throw new Error(`Failed to add documents: ${error}`);
         }
-    }
-    public async search(
+    }public async search(
         query: string,
         options: SearchOptions = {}
     ): Promise<SearchResult<IndexedDocument>[]> {
@@ -164,19 +185,71 @@ export class SearchEngine {
 
         try {
             const processedQuery = this.queryProcessor.process(query);
-            const results = await this.indexManager.search<IndexedDocument>(processedQuery, options);
+            const searchTerms = processedQuery.toLowerCase().split(/\s+/).filter(Boolean);
+            const searchFields = options.fields || this.config.fields;
+            
+            // Get all matching documents from trie
+            const matchingDocIds = new Set<string>();
+            for (const term of searchTerms) {
+                const matches = this.trie.search(term);
+                matches.forEach(id => matchingDocIds.add(id));
+            }
 
-            // Enhance results with metadata
-            const enhancedResults = results.map(result => ({
-                ...result,
-                document: this.documents.get(result.id as unknown as string)?.toObject() || result.document,
-                metadata: {
-                    ...result.metadata,
-                    lastAccessed: Date.now()
+            // Score and rank the matching documents
+            const results: SearchResult<IndexedDocument>[] = [];
+            for (const docId of matchingDocIds) {
+                const doc = this.documents.get(docId);
+                if (!doc) continue;
+
+                let score = 0;
+                const matches: string[] = [];
+
+                for (const field of searchFields) {
+                    const fieldContent = String(doc.fields[field] || '').toLowerCase();
+                    const fieldBoost = (options.boost?.[field] || 1);
+
+                    for (const term of searchTerms) {
+                        if (fieldContent.includes(term)) {
+                            // Basic scoring: term frequency * field boost
+                            const termFrequency = (fieldContent.match(new RegExp(term, 'gi')) || []).length;
+                            score += termFrequency * fieldBoost;
+                            matches.push(term);
+                        }
+
+                        // Fuzzy matching if enabled
+                        if (options.fuzzy && this.calculateLevenshteinDistance(term, fieldContent) <= 2) {
+                            score += 0.5 * fieldBoost;
+                            matches.push(term);
+                        }
+                    }
                 }
-            }));
 
-            this.cache.set(cacheKey, enhancedResults);
+                if (score > 0) {
+                    results.push({
+                        id: docId,
+                        item: doc,
+                        document: doc,
+                        score: score / searchTerms.length, // Normalize score
+                        matches: Array.from(new Set(matches)),
+                        metadata: {
+                            ...doc.metadata,
+                            lastAccessed: Date.now()
+                        }
+                    });
+                }
+            }
+
+            // Sort results by score
+            const sortedResults = results.sort((a, b) => b.score - a.score);
+
+            // Apply pagination if specified
+            const page = options.page || 1;
+            const pageSize = options.pageSize || 10;
+            const start = (page - 1) * pageSize;
+            const paginatedResults = sortedResults.slice(start, start + pageSize);
+
+            // Cache the results
+            this.cache.set(cacheKey, paginatedResults);
 
             this.emitEvent({
                 type: 'search:complete',
@@ -184,12 +257,12 @@ export class SearchEngine {
                 data: {
                     query,
                     options,
-                    resultCount: enhancedResults.length,
+                    resultCount: paginatedResults.length,
                     searchTime: Date.now() - searchStartTime
                 }
             });
 
-            return enhancedResults;
+            return paginatedResults;
         } catch (error) {
             this.emitEvent({
                 type: 'search:error',
@@ -198,6 +271,29 @@ export class SearchEngine {
             });
             throw new Error(`Search failed: ${error}`);
         }
+    }
+
+    private calculateLevenshteinDistance(a: string, b: string): number {
+        if (a.length === 0) return b.length;
+        if (b.length === 0) return a.length;
+
+        const matrix = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(null));
+
+        for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+        for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+
+        for (let i = 1; i <= a.length; i++) {
+            for (let j = 1; j <= b.length; j++) {
+                const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j] + 1,
+                    matrix[i][j - 1] + 1,
+                    matrix[i - 1][j - 1] + cost
+                );
+            }
+        }
+
+        return matrix[a.length][b.length];
     }
 
     public async updateDocument(document: IndexedDocument): Promise<void> {

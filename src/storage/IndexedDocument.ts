@@ -25,16 +25,59 @@ export class IndexedDocument implements IIndexedDocument {
         this.metadata = metadata;
     }
 
-    static fromObject(obj: IIndexedDocument): IndexedDocument {
-        return new IndexedDocument(obj.id, obj.fields, obj.metadata);
+    static fromObject(obj: Partial<IIndexedDocument> & { id: string; fields: any }): IndexedDocument {
+        // Ensure fields have the correct structure
+        const fields = {
+            title: obj.fields.title || '',
+            content: obj.fields.content || '',
+            author: obj.fields.author || '',
+            tags: Array.isArray(obj.fields.tags) ? obj.fields.tags : []
+        };
+
+        // Create new instance with proper structure
+        const doc = new IndexedDocument(
+            obj.id,
+            fields,
+            obj.metadata || {
+                indexed: Date.now(),
+                lastModified: Date.now()
+            }
+        );
+
+        // Ensure toObject is properly bound
+        doc.toObject = doc.toObject.bind(doc);
+
+        return doc;
     }
 
     toObject(): IIndexedDocument {
         return {
             id: this.id,
-            fields: this.fields,
-            metadata: this.metadata,
+            fields: {
+                ...this.fields,
+                tags: [...this.fields.tags] // Create new array to avoid references
+            },
+            metadata: this.metadata ? { ...this.metadata } : undefined,
             toObject: this.toObject.bind(this)
         };
+    }
+
+    clone(): IndexedDocument {
+        return IndexedDocument.fromObject(this.toObject());
+    }
+
+    update(updates: Partial<IIndexedDocument>): IndexedDocument {
+        return IndexedDocument.fromObject({
+            id: this.id,
+            fields: {
+                ...this.fields,
+                ...updates.fields
+            },
+            metadata: {
+                ...this.metadata,
+                ...updates.metadata,
+                lastModified: Date.now()
+            }
+        });
     }
 }
