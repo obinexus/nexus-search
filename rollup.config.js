@@ -119,7 +119,7 @@ export default [
 
   // Types build
   {
-    input: 'dist/index.d.ts',
+    input: 'dist/index.ts',
     output: {
       file: 'dist/index.d.ts',
       format: 'es'
