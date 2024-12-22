@@ -5,17 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document Search</title>
     <link rel="stylesheet" type=text/css href="main.css"/>
+    <script src="../../dist/index.umd.js"></script>
 </head>
 <body>
     <div class="search-container">
         <input type="text" class="search-input" placeholder="Search documents...">
         <div class="results"></div>
     </div>
-    <script src="../nexus-search.umd.js" defer></script>
 
     <script defer>
         // Initialize search engine
         const searchEngine = new NexusSearch.SearchEngine({
+            fuzzy: true,
             name: 'document-search',
             version: 1,
             fields: ['title', 'content', 'type'],
@@ -95,7 +96,7 @@
             resultsContainer.innerHTML = results.map(result => `
                 <div class="result-item">
                     <h3 class="result-title">${highlightText(result.item.title, document.querySelector('.search-input').value)}</h3>
-                    <p class="result-content">${highlightText(result.item.content.slice(0, 200))}...</p>
+                    <p class="result-content">${highlightText(result.item.content.slice(0, 200), document.querySelector('.search-input').value)}...</p>
                     <div class="meta">
                         Type: ${result.item.type} | Score: ${result.score.toFixed(2)}
                     </div>
