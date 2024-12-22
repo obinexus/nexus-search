@@ -26,4 +26,32 @@ export declare function getNestedValue(obj: DocumentContent, path: string): Docu
  * @returns {OptimizationResult<T>} Optimized data and optimization statistics.
  */
 export declare function optimizeIndex<T extends IndexableDocument>(data: T[]): OptimizationResult<T>;
+/**
+ * Helper function to sort object keys recursively for consistent serialization.
+ */
+export declare function sortObjectKeys<T extends object>(obj: T): T;
+/**
+ * Helper function to generate consistent sort keys for documents.
+ */
+export declare function generateSortKey(doc: IndexableDocument): string;
+/**
+ * Create a document that can be indexed
+ * @param {Object} params Document parameters
+ * @param {string} params.id Document ID
+ * @param {Object} params.fields Document fields
+ * @param {Object} [params.metadata] Optional metadata
+ * @returns {Object} Indexed document
+ */
+export declare function createDocument({ id, fields, metadata }: {
+    id: string;
+    fields: Record<string, any>;
+    metadata?: Record<string, any>;
+}): {
+    id: string;
+    fields: Record<string, any>;
+    metadata: {
+        indexed: number;
+        lastModified: number;
+    };
+};
 export {};
