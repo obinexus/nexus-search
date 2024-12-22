@@ -1,5 +1,6 @@
-import '@testing-library/jest-dom';
-import { TextEncoder, TextDecoder } from 'util';
+const { TextEncoder, TextDecoder } = require('util');
+require('@testing-library/jest-dom')
+
 
 // Handle Node.js TextEncoder/TextDecoder with proper typing
 const textEncodingPolyfill = () => {
