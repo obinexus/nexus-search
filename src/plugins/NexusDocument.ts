@@ -159,7 +159,8 @@ export class NexusDocumentPlugin {
     private validateDocument(options: CreateDocumentOptions): void {
         const { validation } = this.defaultConfig;
         
-        // Check required fields
+        if (validation.required) {
+            for (const field of validation.required) {
         for (const field of validation.required) {
             if (!options[field as keyof CreateDocumentOptions]) {
                 throw new Error(`Field '${field}' is required`);
@@ -201,6 +202,9 @@ export class NexusDocumentPlugin {
                 status: options.status || 'draft',
                 version: 1,
                 locale: options.locale
+                status: options.status || 'draft',
+                version: 1,
+                locale: options.locale
             },
             versions: [],
             relations: [],
@@ -216,8 +220,6 @@ export class NexusDocumentPlugin {
                     fields: { ...this.fields },
                     versions: [...(this.versions || [])],
                     relations: [...(this.relations || [])],
-                    metadata: { ...this.metadata }
-                };
             },
             update(fields: Partial<NexusDocument['fields']>): IndexedDocument {
                 const now = new Date();
