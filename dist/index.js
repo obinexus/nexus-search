@@ -409,6 +409,20 @@ function getNestedValue(obj, path) {
     }
     return current;
 }
+/**
+ * Optimizes an array of indexable documents by removing duplicates and sorting them.
+ *
+ * @template T - The type of the indexable document.
+ * @param {T[]} data - The array of indexable documents to be optimized.
+ * @returns {OptimizationResult<T>} An object containing the optimized data and statistics about the optimization process.
+ *
+ * @typedef {Object} OptimizationResult
+ * @property {T[]} data - The optimized array of indexable documents.
+ * @property {Object} stats - Statistics about the optimization process.
+ * @property {number} stats.originalSize - The original size of the data array.
+ * @property {number} stats.optimizedSize - The size of the optimized data array.
+ * @property {number} stats.compressionRatio - The ratio of the optimized size to the original size.
+ */
 function optimizeIndex(data) {
     const uniqueData = Array.from(new Set(data.map(item => JSON.stringify(item)))).map(item => JSON.parse(item));
     const sorted = uniqueData.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));

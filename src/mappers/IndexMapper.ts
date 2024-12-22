@@ -2,6 +2,16 @@ import { TrieSearch } from "@/algorithms/trie";
 import {  SearchableDocument, SearchResult, SerializedState } from "@/types";
 import { DataMapper } from "./DataMapper";
 
+
+/**
+ * IndexMapper class
+ * @description IndexMapper class that indexes documents and performs search operations
+ * @class IndexMapper
+ * @implements {IndexMapper}
+ * @method indexDocument
+ * @method search
+ * 
+ */
 export class IndexMapper {
   private dataMapper: DataMapper;
   private trieSearch: TrieSearch;
