@@ -1,6 +1,6 @@
 {
   "name": "@obinexuscomputing/nexus-search",
-  "version": "0.1.55-rc",
+  "version": "0.1.56",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
