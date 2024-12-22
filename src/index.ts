@@ -12,7 +12,9 @@ import type {
     DocumentRank,
 } from './types/index';
 
-export { DocumentLink,DocumentRank,SearchEvent, SearchEventType,SearchStats, SearchContext }
+// Export type declarations
+export { DocumentLink, DocumentRank, SearchEvent, SearchEventType, SearchStats, SearchContext };
+
 // Core imports
 import { SearchEngine } from '@core/SearchEngine';
 import { IndexManager } from '@storage/IndexManager';
@@ -45,7 +47,7 @@ import {
 // Export all types
 export * from './types/';
 
-// Constants
+// Constants with proper type definitions
 export const DEFAULT_INDEX_OPTIONS: Required<IndexOptions> = {
     caseSensitive: false,
     stemming: true,
@@ -69,9 +71,10 @@ export const DEFAULT_SEARCH_OPTIONS: Required<SearchOptions> = {
     includeMatches: false,
     includeScore: false,
     includeStats: false,
+    boost: {} // Changed from undefined to empty object to satisfy Required type
 };
 
-// Error classes
+// Custom error classes
 export class SearchError extends Error {
     constructor(message: string) {
         super(message);
@@ -86,14 +89,22 @@ export class IndexError extends Error {
     }
 }
 
-// Type guards
+// Type guards with improved type checking
 export function isSearchOptions(obj: unknown): obj is SearchOptions {
     if (!obj || typeof obj !== 'object') return false;
     const options = obj as Partial<SearchOptions>;
     
     return (
         (typeof options.fuzzy === 'undefined' || typeof options.fuzzy === 'boolean') &&
-        (typeof options.maxResults === 'undefined' || typeof options.maxResults === 'number')
+        (typeof options.maxResults === 'undefined' || typeof options.maxResults === 'number') &&
+        (typeof options.threshold === 'undefined' || typeof options.threshold === 'number') &&
+        (typeof options.fields === 'undefined' || Array.isArray(options.fields)) &&
+        (typeof options.sortBy === 'undefined' || typeof options.sortBy === 'string') &&
+        (typeof options.sortOrder === 'undefined' || ['asc', 'desc'].includes(options.sortOrder)) &&
+        (typeof options.page === 'undefined' || typeof options.page === 'number') &&
+        (typeof options.pageSize === 'undefined' || typeof options.pageSize === 'number') &&
+        (typeof options.regex === 'undefined' || typeof options.regex === 'string' || options.regex instanceof RegExp) &&
+        (typeof options.boost === 'undefined' || (typeof options.boost === 'object' && options.boost !== null))
     );
 }
 
@@ -113,20 +124,22 @@ export function isSearchResult<T>(obj: unknown): obj is SearchResult<T> {
     const result = obj as Partial<SearchResult<T>>;
     
     return Boolean(
+        'id' in result &&
         'item' in result &&
+        'document' in result &&
         typeof result.score === 'number' &&
         Array.isArray(result.matches)
     );
 }
 
-// Global window type declaration
+// Global type declaration
 declare global {
     interface Window {
         NexusSearch: typeof NexusSearchNamespace;
     }
 }
 
-// Create namespace
+// Create namespace with proper type definition
 const NexusSearchNamespace = {
     DEFAULT_INDEX_OPTIONS,
     DEFAULT_SEARCH_OPTIONS,
@@ -163,7 +176,7 @@ export {
     validateDocument
 };
 
-// Initialize global namespace if in browser environment
+// Browser environment check and global initialization
 if (typeof window !== 'undefined') {
     window.NexusSearch = NexusSearchNamespace;
 }
