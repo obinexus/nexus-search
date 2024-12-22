@@ -179,7 +179,7 @@ export class NexusDocumentPlugin {
         const { validation } = this.defaultConfig;
         
         // Check required fields
-        for (const field of validation.required) {
+        for (const field of validation.required || []) {
             if (!options[field as keyof CreateDocumentOptions]) {
                 throw new Error(`Field '${field}' is required`);
             }
