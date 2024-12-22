@@ -1,3 +1,9 @@
+/**
+ * NexusDocument Plugin for search and document management
+ * 
+ * @module NexusDocument
+ */
+
 import { SearchEngine } from "@/core";
 import { 
     SearchOptions, 
@@ -6,8 +12,8 @@ import {
     SearchResult 
 } from "@/types";
 
-// Document versioning
-interface DocumentVersion {
+/** Document version information */
+export interface DocumentVersion {
     version: number;
     content: string;
     modified: Date;
@@ -15,34 +21,40 @@ interface DocumentVersion {
     changelog?: string;
 }
 
-// Document relations
-interface DocumentRelation {
+/** Document relationship definition */
+export interface DocumentRelation {
     sourceId: string;
     targetId: string;
     type: 'reference' | 'parent' | 'child' | 'related';
     metadata?: Record<string, any>;
 }
 
-// Enhanced plugin configuration
-interface NexusDocumentPluginConfig {
+/** Plugin configuration options */
+export interface NexusDocumentPluginConfig {
+    /** Plugin instance name */
     name?: string;
+    /** Plugin version */
     version?: number;
+    /** Searchable document fields */
     fields?: string[];
+    /** Storage configuration */
     storage?: {
         type: 'memory' | 'indexeddb';
         options?: Record<string, any>;
     };
+    /** Version control settings */
     versioning?: {
         enabled: boolean;
         maxVersions?: number;
     };
+    /** Document validation rules */
     validation?: {
         required?: string[];
         customValidators?: Record<string, (value: any) => boolean>;
     };
 }
 
-// Enhanced document interface
+/** Extended document interface */
 export interface NexusDocument extends IndexedDocument {
     fields: {
         title: string;
@@ -70,12 +82,10 @@ export interface NexusDocument extends IndexedDocument {
             dueDate?: string;
         };
     };
-    clone(): IndexedDocument;
-    update(fields: Partial<NexusDocument['fields']>): IndexedDocument;
 }
 
-// Document creation options
-interface CreateDocumentOptions {
+/** Document creation parameters */
+export interface CreateDocumentOptions {
     title: string;
     content: string;
     type: string;
@@ -87,8 +97,8 @@ interface CreateDocumentOptions {
     metadata?: Partial<NexusDocument['metadata']>;
 }
 
-// Search enhancements
-interface AdvancedSearchOptions extends SearchOptions {
+/** Enhanced search options */
+export interface AdvancedSearchOptions extends SearchOptions {
     filters?: {
         status?: ('draft' | 'published' | 'archived')[];
         dateRange?: {
@@ -105,6 +115,10 @@ interface AdvancedSearchOptions extends SearchOptions {
     };
 }
 
+/**
+ * NexusDocument Plugin
+ * Provides document management and search capabilities with versioning and relations
+ */
 export class NexusDocumentPlugin {
     private searchEngine: SearchEngine;
     private readonly defaultConfig: Required<NexusDocumentPluginConfig> = {
@@ -127,6 +141,10 @@ export class NexusDocumentPlugin {
         }
     };
 
+    /**
+     * Creates a new NexusDocument plugin instance
+     * @param config Plugin configuration options
+     */
     constructor(config: NexusDocumentPluginConfig = {}) {
         const mergedConfig = this.mergeConfig(config);
         this.searchEngine = new SearchEngine({
@@ -152,6 +170,7 @@ export class NexusDocumentPlugin {
         };
     }
 
+    /** Initialize the plugin and storage */
     async initialize(): Promise<void> {
         await this.searchEngine.initialize();
     }
@@ -159,8 +178,7 @@ export class NexusDocumentPlugin {
     private validateDocument(options: CreateDocumentOptions): void {
         const { validation } = this.defaultConfig;
         
-        if (validation.required) {
-            for (const field of validation.required) {
+        // Check required fields
         for (const field of validation.required) {
             if (!options[field as keyof CreateDocumentOptions]) {
                 throw new Error(`Field '${field}' is required`);
@@ -177,7 +195,6 @@ export class NexusDocumentPlugin {
     }
 
     private generateChecksum(content: string): string {
-        // Simple checksum implementation - replace with more robust version if needed
         return Array.from(content)
             .reduce((sum, char) => sum + char.charCodeAt(0), 0)
             .toString(16);
@@ -188,7 +205,7 @@ export class NexusDocumentPlugin {
         const now = new Date();
         const checksum = this.generateChecksum(options.content);
         
-        return {
+        const doc: NexusDocument = {
             id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             fields: {
                 title: options.title,
@@ -202,9 +219,6 @@ export class NexusDocumentPlugin {
                 status: options.status || 'draft',
                 version: 1,
                 locale: options.locale
-                status: options.status || 'draft',
-                version: 1,
-                locale: options.locale
             },
             versions: [],
             relations: [],
@@ -214,25 +228,25 @@ export class NexusDocumentPlugin {
                 lastModified: now.getTime(),
                 checksum
             },
-            clone(): IndexedDocument {
+            clone() {
                 return {
                     ...this,
                     fields: { ...this.fields },
                     versions: [...(this.versions || [])],
-                    relations: [...(this.relations || [])],
+                    relations: [...(this.relations || [])]
+                };
             },
-            update(fields: Partial<NexusDocument['fields']>): IndexedDocument {
+            update(fields: Partial<NexusDocument['fields']>) {
                 const now = new Date();
                 const currentVersion = this.fields.version;
-                
-                // Create new version if content changes
+
                 if (fields.content && fields.content !== this.fields.content) {
                     this.versions = this.versions || [];
                     this.versions.push({
                         version: currentVersion,
                         content: this.fields.content,
                         modified: new Date(this.fields.modified),
-                        author: this.fields.author
+                        author: this.fields.author,
                     });
                 }
 
@@ -253,28 +267,35 @@ export class NexusDocumentPlugin {
                     }
                 };
             },
-            toObject(): IndexedDocument {
-                return {
-                    ...this,
-                    clone: this.clone,
-                    update: this.update,
-                    toObject: this.toObject
-                };
+            toObject() {
+                return this;
             }
         };
+
+        return doc;
     }
 
+    /**
+     * Create and index a new document
+     * @param options Document creation options
+     * @returns Created document
+     */
     async createAndAddDocument(options: CreateDocumentOptions): Promise<NexusDocument> {
         const document = this.createDocument(options);
         await this.searchEngine.addDocuments([document]);
         return document;
     }
 
+    /**
+     * Search documents with advanced filtering
+     * @param query Search query string
+     * @param options Advanced search options
+     * @returns Search results
+     */
     async search(query: string, options?: AdvancedSearchOptions): Promise<SearchResult<NexusDocument>[]> {
         let finalQuery = query;
         const searchOptions: SearchOptions = { ...options };
 
-        // Apply filters if provided
         if (options?.filters) {
             const filterQueries: string[] = [];
             
@@ -321,15 +342,32 @@ export class NexusDocumentPlugin {
         return this.search(tagQuery);
     }
 
+    /**
+     * Get document by ID
+     * @param id Document ID
+     * @returns Document if found
+     */
     async getDocument(id: string): Promise<NexusDocument | undefined> {
         return this.searchEngine.getDocumentById(id) as NexusDocument | undefined;
     }
 
+    /**
+     * Get specific version of a document
+     * @param id Document ID
+     * @param version Version number
+     * @returns Document version if found
+     */
     async getDocumentVersion(id: string, version: number): Promise<DocumentVersion | undefined> {
         const document = await this.getDocument(id);
         return document?.versions?.find(v => v.version === version);
     }
 
+    /**
+     * Update document fields
+     * @param id Document ID
+     * @param updates Field updates
+     * @returns Updated document
+     */
     async updateDocument(id: string, updates: Partial<NexusDocument['fields']>): Promise<NexusDocument> {
         const document = await this.getDocument(id);
         if (!document) {
@@ -341,6 +379,10 @@ export class NexusDocumentPlugin {
         return updatedDocument;
     }
 
+    /**
+     * Add a relationship between documents
+     * @param relation Relationship definition
+     */
     async addDocumentRelation(relation: DocumentRelation): Promise<void> {
         const sourceDoc = await this.getDocument(relation.sourceId);
         if (!sourceDoc) {
@@ -357,6 +399,12 @@ export class NexusDocumentPlugin {
         await this.searchEngine.updateDocument(sourceDoc);
     }
 
+    /**
+     * Get related documents
+     * @param id Document ID
+     * @param type Optional relationship type filter
+     * @returns Related documents
+     */
     async getRelatedDocuments(id: string, type?: DocumentRelation['type']): Promise<NexusDocument[]> {
         const document = await this.getDocument(id);
         if (!document) {
@@ -374,28 +422,47 @@ export class NexusDocumentPlugin {
         return relatedDocs.filter((doc): doc is NexusDocument => !!doc);
     }
 
+    /**
+     * Delete a document
+     * @param id Document ID
+     */
     async deleteDocument(id: string): Promise<void> {
         await this.searchEngine.removeDocument(id);
     }
 
+    /**
+     * Add multiple documents
+     * @param documents Documents to add
+     * @returns Created documents
+     */
     async bulkAddDocuments(documents: CreateDocumentOptions[]): Promise<NexusDocument[]> {
         const createdDocuments = documents.map(doc => this.createDocument(doc));
         await this.searchEngine.addDocuments(createdDocuments);
         return createdDocuments;
     }
 
+    /** Clear all documents */
     async clear(): Promise<void> {
         await this.searchEngine.clearIndex();
     }
 
+    /** Export all documents */
     async exportDocuments(): Promise<NexusDocument[]> {
         return this.searchEngine.getAllDocuments() as NexusDocument[];
     }
 
+    /**
+     * Import documents
+     * @param documents Documents to import
+     */
     async importDocuments(documents: NexusDocument[]): Promise<void> {
         await this.searchEngine.addDocuments(documents);
     }
 
+    /**
+     * Get document statistics
+     * @returns Document statistics
+     */
     async getStats(): Promise<{
         totalDocuments: number;
         documentsByType: Record<string, number>;
@@ -407,43 +474,232 @@ export class NexusDocumentPlugin {
         const documents = await this.exportDocuments();
         
         const stats = documents.reduce((acc, doc) => {
-            // Count by type
             acc.documentsByType[doc.fields.type] = (acc.documentsByType[doc.fields.type] || 0) + 1;
             
-            // Count by category
             if (doc.fields.category) {
                 acc.documentsByCategory[doc.fields.category] = 
                     (acc.documentsByCategory[doc.fields.category] || 0) + 1;
             }
             
-            // Count by status
             acc.documentsByStatus[doc.fields.status] = 
-                (acc.documentsByStatus[doc.fields.status] || 0) + 1;
-            
-            // Count by author
-            acc.documentsByAuthor[doc.fields.author] = 
-                (acc.documentsByAuthor[doc.fields.author] || 0) + 1;
-            
-            // Sum versions
-            acc.totalVersions += (doc.versions?.length || 0);
-            
-            return acc;
-        }, {
-            documentsByType: {},
-            documentsByCategory: {},
-            documentsByStatus: {},
-            documentsByAuthor: {},
-            totalVersions: 0
-        } as Record<string, any>);
+            (acc.documentsByStatus[doc.fields.status] || 0) + 1;
+        
+        acc.documentsByAuthor[doc.fields.author] = 
+            (acc.documentsByAuthor[doc.fields.author] || 0) + 1;
+        
+        acc.totalVersions += (doc.versions?.length || 0);
+        
+        return acc;
+    }, {
+        documentsByType: {},
+        documentsByCategory: {},
+        documentsByStatus: {},
+        documentsByAuthor: {},
+        totalVersions: 0
+    } as {
+        documentsByType: Record<string, number>;
+        documentsByCategory: Record<string, number>;
+        documentsByStatus: Record<string, number>;
+        documentsByAuthor: Record<string, number>;
+        totalVersions: number;
+    });
 
-        return {
-            totalDocuments: documents.length,
-            documentsByType: stats.documentsByType,
-            documentsByCategory: stats.documentsByCategory,
-            documentsByStatus: stats.documentsByStatus,
-            documentsByAuthor: stats.documentsByAuthor,
-            averageVersionsPerDocument: documents.length ? 
-                stats.totalVersions / documents.length : 0
-        };
+    return {
+        totalDocuments: documents.length,
+        documentsByType: stats.documentsByType,
+        documentsByCategory: stats.documentsByCategory,
+        documentsByStatus: stats.documentsByStatus,
+        documentsByAuthor: stats.documentsByAuthor,
+        averageVersionsPerDocument: documents.length ? 
+            stats.totalVersions / documents.length : 0
+    };
+}
+
+/**
+ * Get workflow statistics
+ * @returns Workflow statistics
+ */
+async getWorkflowStats(): Promise<{
+    documentsByWorkflowStatus: Record<string, number>;
+    documentsByAssignee: Record<string, number>;
+    overdueTasks: number;
+}> {
+    const documents = await this.exportDocuments();
+    const now = new Date();
+    
+    return documents.reduce((acc, doc) => {
+        if (doc.metadata.workflow) {
+            // Count by workflow status
+            const status = doc.metadata.workflow.status;
+            acc.documentsByWorkflowStatus[status] = 
+                (acc.documentsByWorkflowStatus[status] || 0) + 1;
+
+            // Count by assignee
+            if (doc.metadata.workflow.assignee) {
+                const assignee = doc.metadata.workflow.assignee;
+                acc.documentsByAssignee[assignee] = 
+                    (acc.documentsByAssignee[assignee] || 0) + 1;
+            }
+
+            // Check for overdue tasks
+            if (doc.metadata.workflow.dueDate) {
+                const dueDate = new Date(doc.metadata.workflow.dueDate);
+                if (dueDate < now) {
+                    acc.overdueTasks++;
+                }
+            }
+        }
+        return acc;
+    }, {
+        documentsByWorkflowStatus: {},
+        documentsByAssignee: {},
+        overdueTasks: 0
+    });
+}
+
+/**
+ * Batch update documents
+ * @param updates Map of document IDs to their updates
+ * @returns Updated documents
+ */
+async bulkUpdateDocuments(
+    updates: Map<string, Partial<NexusDocument['fields']>>
+): Promise<NexusDocument[]> {
+    const updatedDocs: NexusDocument[] = [];
+    
+    for (const [id, fields] of updates) {
+        try {
+            const updated = await this.updateDocument(id, fields);
+            updatedDocs.push(updated);
+        } catch (error) {
+            console.error(`Failed to update document ${id}:`, error);
+        }
     }
+    
+    return updatedDocs;
+}
+
+/**
+ * Archive multiple documents
+ * @param ids Document IDs to archive
+ */
+async bulkArchiveDocuments(ids: string[]): Promise<void> {
+    const updates = new Map(
+        ids.map(id => [id, { status: 'archived' as const }])
+    );
+    await this.bulkUpdateDocuments(updates);
+}
+
+/**
+ * Clone a document
+ * @param id Source document ID
+ * @param options Optional field overrides
+ * @returns New document
+ */
+async cloneDocument(
+    id: string, 
+    options?: Partial<CreateDocumentOptions>
+): Promise<NexusDocument> {
+    const sourceDoc = await this.getDocument(id);
+    if (!sourceDoc) {
+        throw new Error(`Source document ${id} not found`);
+    }
+
+    const createOptions: CreateDocumentOptions = {
+        title: `Copy of ${sourceDoc.fields.title}`,
+        content: sourceDoc.fields.content,
+        type: sourceDoc.fields.type,
+        tags: [...sourceDoc.fields.tags],
+        category: sourceDoc.fields.category,
+        author: sourceDoc.fields.author,
+        status: 'draft',
+        locale: sourceDoc.fields.locale,
+        ...options
+    };
+
+    const newDoc = await this.createAndAddDocument(createOptions);
+
+    // Create reference relation
+    await this.addDocumentRelation({
+        sourceId: newDoc.id,
+        targetId: id,
+        type: 'reference',
+        metadata: {
+            clonedAt: new Date().toISOString()
+        }
+    });
+
+    return newDoc;
+}
+
+/**
+ * Get document history
+ * @param id Document ID
+ * @returns Document history entries
+ */
+async getDocumentHistory(id: string): Promise<{
+    version: number;
+    content: string;
+    modified: Date;
+    author: string;
+    changelog?: string;
+}[]> {
+    const document = await this.getDocument(id);
+    if (!document) {
+        throw new Error(`Document ${id} not found`);
+    }
+
+    return document.versions || [];
+}
+
+/**
+ * Restore document to a previous version
+ * @param id Document ID
+ * @param version Version number to restore
+ * @returns Updated document
+ */
+async restoreVersion(id: string, version: number): Promise<NexusDocument> {
+    const document = await this.getDocument(id);
+    if (!document) {
+        throw new Error(`Document ${id} not found`);
+    }
+
+    const targetVersion = await this.getDocumentVersion(id, version);
+    if (!targetVersion) {
+        throw new Error(`Version ${version} not found for document ${id}`);
+    }
+
+    return this.updateDocument(id, {
+        content: targetVersion.content,
+        modified: new Date().toISOString(),
+        version: document.fields.version + 1
+    });
+}
+
+/**
+ * Set document workflow status
+ * @param id Document ID
+ * @param status Workflow status
+ * @param assignee Optional assignee
+ * @param dueDate Optional due date
+ */
+async setWorkflowStatus(
+    id: string,
+    status: string,
+    assignee?: string,
+    dueDate?: Date
+): Promise<void> {
+    const document = await this.getDocument(id);
+    if (!document) {
+        throw new Error(`Document ${id} not found`);
+    }
+
+    document.metadata.workflow = {
+        status,
+        assignee,
+        dueDate: dueDate?.toISOString()
+    };
+
+    await this.searchEngine.updateDocument(document);
+}
 }
