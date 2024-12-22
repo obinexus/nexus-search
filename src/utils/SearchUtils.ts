@@ -168,7 +168,7 @@ export function optimizeIndex<T extends IndexableDocument>(
 /**
  * Helper function to sort object keys recursively for consistent serialization.
  */
-function sortObjectKeys<T extends object>(obj: T): T {
+export function sortObjectKeys<T extends object>(obj: T): T {
     if (Array.isArray(obj)) {
         return obj.map(sortObjectKeys) as unknown as T;
     }
@@ -188,7 +188,7 @@ function sortObjectKeys<T extends object>(obj: T): T {
 /**
  * Helper function to generate consistent sort keys for documents.
  */
-function generateSortKey(doc: IndexableDocument): string {
+export function generateSortKey(doc: IndexableDocument): string {
     if (!doc.id || !doc.content) {
         return '';
     }
@@ -198,4 +198,24 @@ function generateSortKey(doc: IndexableDocument): string {
     } catch {
         return doc.id;
     }
+}
+
+/**
+ * Create a document that can be indexed
+ * @param {Object} params Document parameters
+ * @param {string} params.id Document ID
+ * @param {Object} params.fields Document fields
+ * @param {Object} [params.metadata] Optional metadata
+ * @returns {Object} Indexed document
+ */
+export function createDocument({ id, fields, metadata = {} }: { id: string; fields: Record<string, any>; metadata?: Record<string, any> }) {
+    return {
+        id,
+        fields,
+        metadata: {
+            indexed: Date.now(),
+            lastModified: Date.now(),
+            ...metadata
+        }
+    };
 }

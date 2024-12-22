@@ -1,4 +1,5 @@
-const { SearchEngine, IndexedDocument } = require('../../dist/index.cjs').default;
+// basic-usage.cjs
+const { SearchEngine } = require('../../dist/index.cjs');
 
 // Initialize search engine
 const searchEngine = new SearchEngine({
@@ -8,67 +9,78 @@ const searchEngine = new SearchEngine({
 });
 
 async function main() {
-    // Initialize the search engine
-    await searchEngine.initialize();
-    console.log('Search engine initialized.');
+    try {
+        // Initialize the search engine
+        await searchEngine.initialize();
+        console.log('Search engine initialized.');
 
-// Initialize with proper config
+        // Create properly structured documents
+        const documents = [
+            {
+                id: 'doc1',
+                fields: {
+                    title: 'Getting Started with Node.js',
+                    content: 'Node.js is a JavaScript runtime built on Chrome\'s V8 JavaScript engine.',
+                    tags: ['nodejs', 'javascript', 'runtime']
+                },
+                metadata: {
+                    indexed: Date.now(),
+                    lastModified: Date.now()
+                }
+            }
+        ];
 
-// Create properly structured documents
-const documents = [
-    new IndexedDocument({
-        id: 'doc1',
-        fields: {
-            title: 'Getting Started with Node.js',
-            content: 'Node.js is a JavaScript runtime...',
-            tags: ['nodejs', 'javascript']
-        }
-    })
-];
+        // Add documents
+        await searchEngine.addDocuments(documents);
+        console.log('Documents added successfully');
 
-// Add documents
-await searchEngine.addDocuments(documents);
+        // Search with proper options
+        const results = await searchEngine.search('nodejs', {
+            fuzzy: true,
+            maxResults: 5,
+            fields: ['title', 'content']
+        });
 
-// Search with proper options
-const results = await searchEngine.search('nodejs', {
-    fuzzy: true,
-    maxResults: 5,
-    fields: ['title', 'content']
-});
-
-    console.log('Search results:', results); // is an array of search results(currently empty)Search results: []
-
+        console.log('Search results:', results);
+    } catch (error) {
+        console.error('Error in main:', error);
+    }
 }
 
-main().catch(console.error);
 async function additionalSearch() {
-    // Create a document
-    const doc = new IndexedDocument({
-        id: 'test-1',
-        fields: {
-            title: 'Test Document',
-            content: 'Test content',
-            author: 'Test Author',
-            tags: ['test']
-        },
-        metadata: {
-            indexed: Date.now(),
-            lastModified: Date.now()
-        }
-    });
+    try {
+        // Create a document directly as an object
+        const doc = {
+            id: 'test-1',
+            fields: {
+                title: 'Test Document',
+                content: 'Test content',
+                tags: ['test']
+            },
+            metadata: {
+                indexed: Date.now(),
+                lastModified: Date.now()
+            }
+        };
 
-    // Use in search engine
-    await searchEngine.addDocuments([doc]);
+        // Add document
+        await searchEngine.addDocuments([doc]);
+        console.log('Additional document added');
 
-    // Perform search
-    const results = await searchEngine.search('test', {
-        fuzzy: true,
-        fields: ['title', 'content']
-    });
+        // Perform search
+        const results = await searchEngine.search('test', {
+            fuzzy: true,
+            fields: ['title', 'content']
+        });
 
-    console.log('Search results:', results);
+        console.log('Additional search results:', results);
+    } catch (error) {
+        console.error('Error in additionalSearch:', error);
+    }
 }
 
+// Execute both functions
 (async () => {
-    await additionalSearch().catch(console.error);
-})();
+    await main();
+    await additionalSearch();
+})().catch(console.error);
