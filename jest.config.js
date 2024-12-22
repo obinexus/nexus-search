@@ -1,7 +1,7 @@
 export default {
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'jsdom', // Simulates browser-like environment
-  roots: ['<rootDir>/src'], // Restrict tests to the 'src' folder
+  roots: ['<rootDir>/__tests__'], // Restrict tests to the '__tests__' folder
   extensionsToTreatAsEsm: ['.ts', '.tsx'], // Treat TS/TSX as ES modules
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1', // Resolve relative imports without '.js'
@@ -23,7 +23,8 @@ export default {
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'], // Include setup file
   testMatch: [
-    '<rootDir>/src/**/__tests__/**/*.{ts,tsx}', // Match files in '__tests__' folders
+    '<rootDir>/__tests__/**/*.{ts,tsx}', // Match files in '__tests__' folders
+    '<rootDir>/src/**/__tests__/**/*.{ts,tsx}', // Match files in '__tests__' folders within 'src'
     '<rootDir>/src/**/*.{spec,test}.{ts,tsx}', // Match 'spec' and 'test' files
   ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'], // Supported file extensions
