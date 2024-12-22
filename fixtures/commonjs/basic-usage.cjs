@@ -79,8 +79,18 @@ async function additionalSearch() {
     }
 }
 
-// Execute both functions
+async function getAllDocuments() {
+    try {
+        const allDocuments = await searchEngine.getAllDocuments();
+        console.log('All documents:', allDocuments);
+    } catch (error) {
+        console.error('Error in getAllDocuments:', error);
+    }
+}
+
+// Execute functions
 (async () => {
     await main();
     await additionalSearch();
+    await getAllDocuments();
 })().catch(console.error);
