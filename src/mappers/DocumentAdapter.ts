@@ -107,12 +107,7 @@ export class DocumentAdapter implements IndexedDocument {
     }
 
     toObject(): IndexedDocument {
-        return {
-            ...this,
-            clone: this.clone.bind(this),
-            update: this.update.bind(this),
-            toObject: this.toObject.bind(this)
-        };
+        return this.toNexusDocument();
     }
 
     toNexusDocument(): NexusDocument {
@@ -134,9 +129,9 @@ export class DocumentAdapter implements IndexedDocument {
             metadata: this.metadata,
             versions: this.versions,
             relations: this.relations,
-            clone: () => this.clone() as NexusDocument,
-            update: (fields) => this.update(fields) as NexusDocument,
-            toObject: () => this.toObject() as NexusDocument
+            clone: () => this.clone().toNexusDocument(),
+            update: (fields) => this.update(fields) as unknown as NexusDocument,
+            toObject: () => this.toObject() as unknown as NexusDocument
         };
     }
 
@@ -239,5 +234,4 @@ export class NexusDocumentPlugin {
         await this.searchEngine.addDocuments(indexedDocs);
     }
 
-    // Update other methods that work with documents similarly...
 }
