@@ -1,4 +1,5 @@
-import { SearchEngine } from "../../core/SearchEngine";
+import { SearchEngine } from "@/index";
+
 
 describe('Performance Integration', () => {
     let searchEngine: SearchEngine;

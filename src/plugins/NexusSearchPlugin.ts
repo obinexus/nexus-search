@@ -35,7 +35,7 @@ export class NexusSearchPlugin {
         return "NexusSearchPlugin";
     }
 
-    async initialize() {
+    async initialize(): Promise<void> {
         const indexedDocuments = this.options.documents.map(doc => ({
             ...doc,
             id: doc.id || this.generateDocumentId(),

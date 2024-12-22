@@ -1,5 +1,5 @@
-import { validateSearchOptions, validateIndexConfig, validateDocument } from '../../utils/ValidationUtils';
-import { SearchOptions, IndexConfig } from '../../types';
+import { SearchOptions, IndexConfig } from "@/types";
+import { validateSearchOptions, validateIndexConfig, validateDocument } from "@/utils";
 
 describe('ValidationUtils', () => {
   describe('validateSearchOptions', () => {

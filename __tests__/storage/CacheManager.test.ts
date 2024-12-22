@@ -1,5 +1,5 @@
-import { CacheManager } from '../../storage/CacheManager';
-import { SearchResult } from '../../types';
+import { CacheManager } from "@/storage";
+import { SearchResult } from "@/types";
 
 describe('CacheManager', () => {
   let cache: CacheManager;

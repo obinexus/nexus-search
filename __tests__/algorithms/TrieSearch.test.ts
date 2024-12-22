@@ -1,4 +1,4 @@
-import { TrieSearch } from "../../algorithms/trie/TrieSearch";
+import { TrieSearch } from "@/index";
 
 describe('TrieSearch', () => {
   let trieSearch: TrieSearch;

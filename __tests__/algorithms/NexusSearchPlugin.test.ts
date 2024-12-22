@@ -1,7 +1,5 @@
-
-
-import { IndexedDocument } from '../../types';
-import { NexusSearchPlugin } from '../../plugins/'; 
+import { NexusSearchPlugin } from "@/plugins";
+import { IndexedDocument } from "@/types";
 
 describe("NexusSearchPlugin", () => {
     let plugin: NexusSearchPlugin;

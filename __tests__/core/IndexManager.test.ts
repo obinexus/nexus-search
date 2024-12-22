@@ -1,5 +1,3 @@
-import { IndexManager } from '../../../src/core/IndexManager';
-import { IndexConfig } from '../../../src/types';
 
 describe('IndexManager', () => {
   let indexManager: IndexManager;
@@ -34,6 +32,8 @@ describe('IndexManager', () => {
   });
 });
 
+import { IndexManager } from '@/index';
+import { IndexConfig } from '@/types';
 // src/tests/unit/algorithms/TrieSearch.test.ts
 import { TrieSearch } from '../../../src/algorithms/trie/TrieSearch';
 

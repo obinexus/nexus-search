@@ -1,5 +1,4 @@
-import { IndexMapper } from '../../mappers/IndexMapper';
-import { SearchResult } from '../../types';
+import { IndexMapper } from "@/index";
 
 describe('IndexMapper', () => {
   let indexMapper: IndexMapper;

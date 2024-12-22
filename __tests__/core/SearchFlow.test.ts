@@ -1,5 +1,6 @@
-import { SearchEngine } from '../../../src/core/SearchEngine';
-import { SearchOptions, IndexConfig } from '../../../src/types';
+import { SearchEngine } from "@/index";
+import { IndexConfig, SearchOptions } from "@/types";
+
 
 describe('Search Flow Integration', () => {
   let searchEngine: SearchEngine;

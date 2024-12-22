@@ -1,5 +1,3 @@
-import { createSearchableFields, normalizeFieldValue, optimizeIndex } from '../../utils/SearchUtils';
-
 describe('SearchUtils', () => {
   describe('createSearchableFields', () => {
     test('should handle simple fields', () => {
@@ -91,3 +89,7 @@ describe('SearchUtils', () => {
     });
   });
 });
+
+function createSearchableFields(doc: { title: string; content: string; }, arg1: string[]) {
+  throw new Error("Function not implemented.");
+}

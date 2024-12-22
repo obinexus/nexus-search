@@ -1,5 +1,4 @@
-import { CacheManager } from "../../storage/CacheManager";
-import { SearchStorage } from "../../storage/IndexedDB";
+import { SearchStorage, CacheManager } from "@/storage";
 
 describe('Storage System Integration', () => {
     let storage: SearchStorage;

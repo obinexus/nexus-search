@@ -1,4 +1,5 @@
-import { DataMapper } from '../../mappers/DataMapper';
+import { DataMapper } from "@/mappers";
+
 
 describe('DataMapper', () => {
   let mapper: DataMapper;

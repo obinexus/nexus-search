@@ -9,7 +9,7 @@ import {
     validateDocument,
     SearchOptions,
     IndexConfig
-  } from '..';
+  } from '../src';
   
   describe('Package Entry Point', () => {
     describe('Exports', () => {

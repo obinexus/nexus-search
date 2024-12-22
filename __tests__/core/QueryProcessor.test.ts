@@ -1,4 +1,5 @@
-import { QueryProcessor } from '../../core/QueryProcessor';
+import { QueryProcessor } from "@/core";
+
 
 describe('QueryProcessor', () => {
   let queryProcessor: QueryProcessor;

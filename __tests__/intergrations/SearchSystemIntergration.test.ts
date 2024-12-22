@@ -1,8 +1,7 @@
-import { SearchEngine } from '../../../core/SearchEngine';
-import { IndexManager } from '../../../core/IndexManager';
-import { SearchStorage } from '../../../storage/IndexedDB';
-import { CacheManager } from '../../../storage/CacheManager';
-import { IndexConfig, SearchOptions } from '../../../types';
+import { SearchEngine, IndexManager } from "@/index";
+import { SearchStorage, CacheManager } from "@/storage";
+import { IndexConfig, SearchOptions } from "@/types";
+
 
 describe('Search System Integration', () => {
   let searchEngine: SearchEngine;

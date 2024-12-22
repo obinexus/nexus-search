@@ -1,4 +1,4 @@
-import { SearchStorage } from '../../../src/storage/IndexedDB';
+import { SearchStorage } from "@/storage";
 
 describe('SearchStorage', () => {
   let storage: SearchStorage;

@@ -1,9 +1,7 @@
-// src/__tests__/core/IndexManager.test.ts
-import { IndexManager } from '../../core/IndexManager';
-import { IndexConfig, SearchOptions, SearchResult } from '../../types';
-import { IndexMapper } from '../../algorithms/mappers/IndexMapper';
+import { IndexManager } from "@/index";
+import { IndexMapper } from "@/mappers";
+import { IndexConfig, SearchResult, SearchOptions } from "@/types";
 
-// Mock IndexMapper
 jest.mock('../../algorithms/mappers/IndexMapper');
 
 describe('IndexManager', () => {

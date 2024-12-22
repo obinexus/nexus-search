@@ -1,3 +1,4 @@
+import { IndexMapper } from "@/mappers";
 
 describe('IndexMapper', () => {
   let indexMapper: IndexMapper;

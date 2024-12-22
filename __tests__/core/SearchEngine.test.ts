@@ -1,9 +1,6 @@
-import { SearchEngine } from '../../core/SearchEngine';
-import { IndexConfig, SearchOptions, SearchResult } from '../../types';
-import { IndexManager } from '../../core/IndexManager';
-import { QueryProcessor } from '../../core/QueryProcessor';
-import { SearchStorage } from '../../storage/IndexedDB';
-import { CacheManager } from '../../storage/CacheManager';
+import { SearchEngine, IndexManager, QueryProcessor } from "@/index";
+import { SearchStorage, CacheManager } from "@/storage";
+import { IndexConfig, SearchOptions, SearchResult } from "@/types";
 
 // Mock dependencies
 jest.mock('../../core/IndexManager');
