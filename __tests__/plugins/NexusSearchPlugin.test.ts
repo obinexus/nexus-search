@@ -3,25 +3,40 @@ import { IndexedDocument } from "@/types";
 
 describe("NexusSearchPlugin", () => {
     let plugin: NexusSearchPlugin;
-    const documents: IndexedDocument[] = [
-        {
-            id: "1",
-            fields: {
-                title: "Document 1",
-                content: "This is the content of document 1",
-                author: "Author 1",
-                tags: ["tag1", "tag2"]
-            }
+    
+    // Create properly structured test documents with toObject implementation
+    const createTestDoc = (id: string, title: string, content: string, author: string, tags: string[]): IndexedDocument => ({
+        id,
+        fields: {
+            title,
+            content,
+            author,
+            tags
         },
-        {
-            id: "2",
-            fields: {
-                title: "Document 2",
-                content: "This is the content of document 2",
-                author: "Author 2",
-                tags: ["tag2", "tag3"]
-            }
+        metadata: {
+            indexed: Date.now(),
+            lastModified: Date.now()
+        },
+        toObject(): IndexedDocument {
+            return this;
         }
+    });
+
+    const documents: IndexedDocument[] = [
+        createTestDoc(
+            "1",
+            "Document 1",
+            "This is the content of document 1",
+            "Author 1",
+            ["tag1", "tag2"]
+        ),
+        createTestDoc(
+            "2",
+            "Document 2",
+            "This is the content of document 2",
+            "Author 2",
+            ["tag2", "tag3"]
+        )
     ];
 
     beforeEach(async () => {
@@ -45,15 +60,14 @@ describe("NexusSearchPlugin", () => {
     });
 
     it("should add a new document", async () => {
-        const newDocument: IndexedDocument = {
-            id: "3",
-            fields: {
-                title: "Document 3",
-                content: "This is the content of document 3",
-                author: "Author 3",
-                tags: ["tag3", "tag4"]
-            }
-        };
+        const newDocument = createTestDoc(
+            "3",
+            "Document 3",
+            "This is the content of document 3",
+            "Author 3",
+            ["tag3", "tag4"]
+        );
+        
         await plugin.addDocument(newDocument);
         const results = await plugin.search("content of document 3");
         expect(results.length).toBe(1);
@@ -67,15 +81,14 @@ describe("NexusSearchPlugin", () => {
     });
 
     it("should update a document", async () => {
-        const updatedDocument: IndexedDocument = {
-            id: "1",
-            fields: {
-                title: "Updated Document 1",
-                content: "This is the updated content of document 1",
-                author: "Author 1",
-                tags: ["tag1", "tag2"]
-            }
-        };
+        const updatedDocument = createTestDoc(
+            "1",
+            "Updated Document 1",
+            "This is the updated content of document 1",
+            "Author 1",
+            ["tag1", "tag2"]
+        );
+        
         await plugin.updateDocument(updatedDocument);
         const results = await plugin.search("updated content of document 1");
         expect(results.length).toBe(1);
@@ -101,5 +114,40 @@ describe("NexusSearchPlugin", () => {
     it("should search with regex", async () => {
         const results = await plugin.searchWithRegex("content", /document \d/);
         expect(results.length).toBe(2);
+    });
+
+    // Additional test cases for error handling
+    it("should handle invalid document structure", async () => {
+        const invalidDocument = {
+            id: "invalid",
+            fields: {
+                title: "Invalid Doc"
+                // Missing required fields
+            }
+        };
+        
+        await expect(plugin.addDocument(invalidDocument as IndexedDocument))
+            .rejects
+            .toThrow();
+    });
+
+    it("should handle document updates with missing ID", async () => {
+        const docWithoutId = createTestDoc(
+            "", // Empty ID
+            "No ID Doc",
+            "Content",
+            "Author",
+            ["tag"]
+        );
+        
+        await expect(plugin.updateDocument(docWithoutId))
+            .rejects
+            .toThrow();
+    });
+
+    it("should handle removal of non-existent document", async () => {
+        await expect(plugin.removeDocument("non-existent-id"))
+            .rejects
+            .toThrow();
     });
 });
