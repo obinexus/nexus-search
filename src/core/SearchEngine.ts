@@ -5,7 +5,6 @@ import {
     SearchEngineConfig,
     SearchEventListener,
     SearchEvent,
-    IndexedDocument
 } from "@/types";
 import { validateSearchOptions, createSearchableFields } from "@/utils";
 import { IndexManager } from "../storage/IndexManager";

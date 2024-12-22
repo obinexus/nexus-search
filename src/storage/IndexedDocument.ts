@@ -24,7 +24,8 @@ export class IndexedDocument implements IIndexedDocument {
         return {
             id: this.id,
             fields: this.fields,
-            metadata: this.metadata
+            metadata: this.metadata,
+            toObject: this.toObject.bind(this)
         };
     }
 }
