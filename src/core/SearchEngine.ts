@@ -4,7 +4,8 @@ import {
     SearchResult, 
     SearchEngineConfig,
     SearchEventListener,
-    SearchEvent
+    SearchEvent,
+    IndexedDocument
 } from "@/types";
 import { validateSearchOptions, createSearchableFields } from "@/utils";
 import { IndexManager } from "../storage/IndexManager";
@@ -83,6 +84,9 @@ export class SearchEngine {
                         ...doc.metadata,
                         indexed: Date.now(),
                         lastModified: Date.now()
+                    },
+                    toObject: function (): IndexedDocument {
+                        throw new Error("Function not implemented.");
                     }
                 });
 
@@ -214,6 +218,9 @@ export class SearchEngine {
                 metadata: {
                     ...document.metadata,
                     lastModified: Date.now()
+                },
+                toObject: function (): IndexedDocument {
+                    throw new Error("Function not implemented.");
                 }
             });
 
@@ -303,7 +310,7 @@ export class SearchEngine {
                 // Reconstruct documents from stored index
                 const indexedDocs = this.indexManager.getAllDocuments();
                 for (const doc of indexedDocs) {
-                    this.documents.set(doc.id, IndexedDocument.fromObject(doc));
+                    this.documents.set(doc[1].id, IndexedDocument.fromObject(doc[1]));
                 }
             }
         } catch (error) {

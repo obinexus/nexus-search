@@ -13,7 +13,8 @@ import { createSearchableFields } from "@/utils";
 
 export class IndexManager {
     getAllDocuments() {
-        throw new Error("Method not implemented.");
+        return this.documents;
+        
     }
     private indexMapper: IndexMapper;
     private config: IndexConfig;
