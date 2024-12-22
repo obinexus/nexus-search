@@ -1,7 +1,6 @@
 /// <reference types="node"/>
 import type {
     IndexConfig,
-    IndexOptions,
     SearchContext,
     SearchOptions,
     SearchResult,
@@ -11,7 +10,7 @@ import type {
     DocumentLink,
     DocumentRank,
 } from './types/index';
-
+import { DEFAULT_SEARCH_OPTIONS , DEFAULT_INDEX_OPTIONS} from './types/defaults';
 // Export type declarations
 export { DocumentLink, DocumentRank, SearchEvent, SearchEventType, SearchStats, SearchContext };
 
@@ -47,32 +46,6 @@ import {
 // Export all types
 export * from './types/';
 
-// Constants with proper type definitions
-export const DEFAULT_INDEX_OPTIONS: Required<IndexOptions> = {
-    caseSensitive: false,
-    stemming: true,
-    stopWords: ['the', 'a', 'an', 'and', 'or', 'but'],
-    minWordLength: 2,
-    maxWordLength: 50,
-    fuzzyThreshold: 0.8
-};
-
-export const DEFAULT_SEARCH_OPTIONS: Required<SearchOptions> = {
-    fuzzy: false,
-    maxResults: 10,
-    threshold: 0.5,
-    fields: [],
-    sortBy: 'score',
-    sortOrder: 'desc',
-    page: 1,
-    pageSize: 10,
-    regex: '',
-    highlight: false,
-    includeMatches: false,
-    includeScore: false,
-    includeStats: false,
-    boost: {} // Changed from undefined to empty object to satisfy Required type
-};
 
 // Custom error classes
 export class SearchError extends Error {
@@ -138,6 +111,7 @@ declare global {
         NexusSearch: typeof NexusSearchNamespace;
     }
 }
+
 
 // Create namespace with proper type definition
 const NexusSearchNamespace = {
