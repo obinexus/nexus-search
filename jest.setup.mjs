@@ -143,9 +143,7 @@ global.sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // Types
 global.jest = global.jest || {};
 global.jest.Matchers = global.jest.Matchers || {};
-global.jest.Matchers.toBeWithinRange = function (floor, ceiling) {
-  return this;
-};
+// Removed unused function
 
 global.sleep = global.sleep || function (ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
