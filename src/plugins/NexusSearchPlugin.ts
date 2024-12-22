@@ -54,7 +54,7 @@ export class NexusSearchPlugin {
     }
 
     async search(query: string, options?: SearchOptions): Promise<IndexedDocument[]> {
-        const results = await this.searchEngine.search(query, options);
+        const results = await this.searchEngine.search(query, { ...options, fields: ["title", "content", "author", "tags"] });
     
         if (options && isSearchOptions(options) && options.regex instanceof RegExp) {
             return results
@@ -66,7 +66,7 @@ export class NexusSearchPlugin {
     }
     
     async searchByTag(tag: string): Promise<IndexedDocument[]> {
-        const results = await this.searchEngine.search(tag);
+        const results = await this.searchEngine.search(tag, { fields: ["tags"] });
         return results.map(result => result.item);
     }
 
