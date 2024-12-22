@@ -3,6 +3,8 @@
 
 // Indexed Document Interface
 export interface IndexedDocument {
+    document(): import("../storage").IndexedDocument;
+    [x: string]: any;
     id: string;
     fields: {
         title: string;

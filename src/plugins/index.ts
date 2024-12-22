@@ -1,1 +1,1 @@
-export {NexusSearchPlugin} from './NexusSearchPlugin';
+export {}
