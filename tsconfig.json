@@ -19,24 +19,12 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "src/*"
-      ],
-      "@core/*": [
-        "src/core/*"
-      ],
-      "@algorithms/*": [
-        "src/algorithms/*"
-      ],
-      "@storage/*": [
-        "src/storage/*"
-      ],
-      "@utils/*": [
-        "src/utils/*"
-      ],
-      "@types/*": [
-        "src/types/*"
-      ]
+      "@/*": ["src/*"],
+      "@core/*": ["src/core/*"],
+      "@algorithms/*": ["src/algorithms/*"],
+      "@storage/*": ["src/storage/*"],
+      "@utils/*": ["src/utils/*"],
+      "@types/*": ["src/types/*"]
     },
     "plugins": [
       {
@@ -47,9 +35,11 @@
         "afterDeclarations": true
       }
     ],
-    "rootDir": "src",
+    "rootDir": ".",
     "types": [
-      "node"
+      "node",
+      "jest",
+      "@testing-library/jest-dom"
     ],
     "typeRoots": [
       "node_modules/@types",
@@ -61,14 +51,16 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "jsx": "react-jsx"
   },
   "include": [
-    "src"
+    "src",
+    "__tests__",
+    "jest.setup.ts"
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "**/__tests__/**"
+    "dist"
   ]
 }
