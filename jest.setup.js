@@ -1,49 +1,17 @@
 import '@testing-library/jest-dom';
 import { TextEncoder, TextDecoder } from 'util';
 
-// Define proper types for IDB interfaces
-interface IDBEventTarget {
-  result: any;
-}
-
-interface IDBEvent {
-  target: IDBEventTarget;
-  type: string;
-}
-
-type IDBEventHandler = (event: IDBEvent) => void;
-
-interface IDBRequest {
-  result: any;
-  onerror: IDBEventHandler | null;
-  onsuccess: IDBEventHandler | null;
-  onupgradeneeded: IDBEventHandler | null;
-}
-
-interface IDBObjectStoreIndex {
-  // Add necessary index properties
-}
-
-interface IDBObjectStore {
-  createIndex(name: string, keyPath: string, options?: { unique?: boolean }): IDBObjectStoreIndex;
-  put(value: any, key?: any): IDBRequest;
-  get(key: any): IDBRequest;
-  delete(key: any): IDBRequest;
-  clear(): IDBRequest;
-}
-
 // Handle Node.js TextEncoder/TextDecoder with proper typing
 const textEncodingPolyfill = () => {
   global.TextEncoder = TextEncoder;
-  // Use type assertion to handle the compatibility issue
-  global.TextDecoder = TextDecoder as typeof global.TextDecoder;
+  global.TextDecoder = TextDecoder;
 };
 
 textEncodingPolyfill();
 
 // Performance monitoring
 const TEST_TIMEOUT_THRESHOLD = 5000;
-let testStartTime: number;
+let testStartTime;
 
 beforeAll(() => {
   testStartTime = Date.now();
@@ -60,7 +28,7 @@ afterEach(() => {
 });
 
 // Mock IndexedDB with proper parameter usage
-const createMockIDBRequest = (): IDBRequest => ({
+const createMockIDBRequest = () => ({
   result: {
     objectStoreNames: {
       contains: jest.fn().mockReturnValue(false)
@@ -70,11 +38,11 @@ const createMockIDBRequest = (): IDBRequest => ({
     }),
     transaction: jest.fn().mockReturnValue({
       objectStore: jest.fn().mockReturnValue({
-        put: jest.fn().mockImplementation((_value: any) => ({
+        put: jest.fn().mockImplementation((_value) => ({
           onsuccess: null,
           onerror: null
         })),
-        get: jest.fn().mockImplementation((_key: string) => ({
+        get: jest.fn().mockImplementation((_key) => ({
           onsuccess: null,
           onerror: null,
           result: null
@@ -92,7 +60,7 @@ const createMockIDBRequest = (): IDBRequest => ({
 const indexedDBMock = {
   databases: new Map(),
 
-  open: jest.fn().mockImplementation((_name: string) => {
+  open: jest.fn().mockImplementation((_name) => {
     const request = createMockIDBRequest();
 
     setTimeout(() => {
@@ -113,7 +81,7 @@ const indexedDBMock = {
     return request;
   }),
 
-  deleteDatabase: jest.fn().mockImplementation((_name: string) => {
+  deleteDatabase: jest.fn().mockImplementation((_name) => {
     const request = createMockIDBRequest();
 
     setTimeout(() => {
@@ -152,7 +120,7 @@ beforeEach(() => {
 
 // Custom matchers
 expect.extend({
-  toBeWithinRange(received: number, floor: number, ceiling: number) {
+  toBeWithinRange(received, floor, ceiling) {
     const pass = received >= floor && received <= ceiling;
     if (pass) {
       return {
@@ -170,17 +138,17 @@ expect.extend({
   },
 });
 
-global.sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+global.sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Types
-declare global {
-  namespace jest {
-    interface Matchers<R> {
-      toBeWithinRange(floor: number, ceiling: number): R;
-    }
-  }
+global.jest = global.jest || {};
+global.jest.Matchers = global.jest.Matchers || {};
+global.jest.Matchers.toBeWithinRange = function (floor, ceiling) {
+  return this;
+};
 
-  function sleep(ms: number): Promise<void>;
-}
+global.sleep = global.sleep || function (ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+};
 
 export {};
