@@ -11,6 +11,7 @@ export interface IndexedDocument {
         tags: string[]; // Ensure this is a string array
     };
     metadata?: DocumentMetadata;
+    toObject(): IndexedDocument;
 }
 
 // Types for primitive and complex values
