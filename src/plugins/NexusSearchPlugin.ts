@@ -151,6 +151,9 @@ export class NexusSearchPlugin {
                     content: markdownContent,
                     author: "Unknown",
                     tags: ["markdown"]
+                },
+                toObject: function (): IndexedDocument {
+                    return this;
                 }
             }
         ];
@@ -163,10 +166,15 @@ export class NexusSearchPlugin {
                 fields: {
                     title: "HTML Title",
                     content: htmlContent,
-                    author: "Unknown",
-                    tags: ["html"]
+                    author: "",
+                    tags: []
+                },
+                toObject: function (): IndexedDocument {
+                    return this;
                 }
+
             }
         ];
+
     }
 }
