@@ -7,6 +7,7 @@ export class IndexedDocument implements IIndexedDocument {
         content: string;
         author: string;
         tags: string[];
+        [key: string]: string | string[];
     };
     metadata?: DocumentMetadata;
 

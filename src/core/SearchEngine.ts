@@ -60,92 +60,76 @@ export class SearchEngine {
         } catch (error) {
             throw new Error(`Failed to initialize search engine: ${String(error)}`);
         }
-    }
-
-    public async addDocuments(documents: IndexedDocument[]): Promise<void> {
+    }public async addDocuments(documents: IndexedDocument[]): Promise<void> {
         if (!this.isInitialized) {
             await this.initialize();
         }
-
+    
+        this.emitEvent({
+            type: 'index:start',
+            timestamp: Date.now(),
+            data: { documentCount: documents.length }
+        });
+    
         try {
-            this.emitEvent({
-                type: 'index:start',
-                timestamp: Date.now(),
-                data: { documentCount: documents.length }
-            });
-
             for (const doc of documents) {
                 const docId = doc.id || this.generateDocumentId();
-                 const indexedDoc = {
-
-                    ...IndexedDocument.fromObject({
-
-                        ...doc,
-
-                        id: docId,
-
-                        metadata: {
-
-                            ...doc.metadata,
-
-                            indexed: Date.now(),
-
-                            lastModified: Date.now()
-
-                        },
-
-                        toObject: function (): IndexedDocument {
-
-                            throw new Error("Function not implemented.");
-
-                        }
-
-                    }),
-
-                    fields: doc.fields
-
-                };
-
-
-
-                this.documents.set(docId, indexedDoc);
-
-
-                this.documents.set(docId, indexedDoc);
-
+    
+                // Create proper IndexedDocument instance
+                const indexedDoc = new IndexedDocument(
+                    docId,
+                    {
+                        title: doc.fields.title,
+                        content: doc.fields.content,
+                        author: doc.fields.author,
+                        tags: [...doc.fields.tags]
+                    },
+                    {
+                        ...doc.metadata,
+                        indexed: Date.now(),
+                        lastModified: Date.now()
+                    }
+                );
+    
+                // Store the document
+                this.documents.set(docId, {
+                    ...indexedDoc,
+                    fields: {
+                        title: indexedDoc.fields.title,
+                        content: indexedDoc.fields.content,
+                        author: indexedDoc.fields.author,
+                        tags: indexedDoc.fields.tags
+                    }
+                });
+    
+                // Index the content
                 const searchableContent = createSearchableFields(
-                    { content: doc.fields, id: docId },
+                    { content: indexedDoc.fields, id: docId },
                     this.config.fields
                 );
-
+    
                 for (const field of this.config.fields) {
                     if (searchableContent[field]) {
                         const words = searchableContent[field]
                             .toLowerCase()
                             .split(/\s+/)
                             .filter(Boolean);
-
+    
                         for (const word of words) {
                             this.trie.insert(word, docId);
                         }
                     }
                 }
             }
-
+    
+            // Update index
             await this.indexManager.addDocuments(
-                Array.from(this.documents.values()).map(doc => doc.toObject())
+                Array.from(this.documents.values())
             );
-
-            try {
-                await this.storage.storeIndex(this.config.name, this.indexManager.exportIndex());
-            } catch (storageError) {
-                this.emitEvent({
-                    type: 'storage:error',
-                    timestamp: Date.now(),
-                    error: storageError instanceof Error ? storageError : new Error(String(storageError))
-                });
-            }
-
+    
+            // Store index
+            await this.storage.storeIndex(this.config.name, this.indexManager.exportIndex());
+    
             this.cache.clear();
             this.emitEvent({
                 type: 'index:complete',
@@ -160,7 +144,8 @@ export class SearchEngine {
             });
             throw new Error(`Failed to add documents: ${error}`);
         }
-    }public async search(
+    }
+    public async search(
         query: string,
         options: SearchOptions = {}
     ): Promise<SearchResult<IndexedDocument>[]> {
