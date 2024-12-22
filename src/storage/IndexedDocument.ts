@@ -1,14 +1,12 @@
+import { DocumentMetadata, DocumentValue } from "@/types";
 
-// Importing necessary types
-
-// Indexed Document Interface
 export interface IndexedDocument {
     id: string;
     fields: {
         title: string;
         content: string;
         author: string;
-        tags: string[]; // Ensure this is a string array
+        tags: string[];
     };
     metadata?: DocumentMetadata;
 }
