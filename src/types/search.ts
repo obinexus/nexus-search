@@ -54,6 +54,7 @@ export interface SearchStats {
 
 // Document interface for indexing
 export interface SearchableDocument {
+    [key: string]: any;          // Document fields
     id: string;                   // Document ID
     content: Record<string, DocumentValue>; // Document fields
     metadata?: DocumentMetadata;  // Document metadata
