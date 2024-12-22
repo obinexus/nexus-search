@@ -20,7 +20,7 @@ export class SearchEngine {
     private readonly eventListeners: Set<SearchEventListener>;
     private trie: TrieSearch;
     private isInitialized: boolean = false;
-    private documents: Map<string, IndexedDocument & { fields: { [key: string]: string } }>;
+    private documents: Map<string, IndexedDocument & { fields: { [key: string]: string | string[] } }>;
 
     constructor(config: SearchEngineConfig) {
         this.config = config;
@@ -92,16 +92,35 @@ export class SearchEngine {
                 );
     
                 // Store the document
-                this.documents.set(docId, {
-                    ...indexedDoc,
-                    fields: {
-                        title: indexedDoc.fields.title,
-                        content: indexedDoc.fields.content,
-                        author: indexedDoc.fields.author,
-                        tags: indexedDoc.fields.tags
-                    }
-                });
-    
+            
+this.documents.set(docId, new IndexedDocument(
+
+    docId,
+
+    {
+
+        title: indexedDoc.fields.title,
+
+        content: indexedDoc.fields.content,
+
+        author: indexedDoc.fields.author,
+
+        tags: indexedDoc.fields.tags
+
+    },
+
+    {
+
+        ...indexedDoc.metadata,
+
+        indexed: Date.now(),
+
+        lastModified: Date.now()
+
+    }
+
+));
+
                 // Index the content
                 const searchableContent = createSearchableFields(
                     { content: indexedDoc.fields, id: docId },
