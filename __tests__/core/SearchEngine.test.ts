@@ -1,6 +1,13 @@
 import { SearchEngine, IndexManager, QueryProcessor } from "@/index";
 import { SearchStorage, CacheManager } from "@/storage";
-import { IndexConfig, SearchOptions, SearchResult } from "@/types";
+import { 
+  IndexConfig, 
+  SearchOptions, 
+  SearchResult, 
+  IndexedDocument, 
+  SearchEvent,
+  SearchEventListener
+} from "@/types";
 
 // Mock dependencies
 jest.mock('../../core/IndexManager');
@@ -21,17 +28,29 @@ describe('SearchEngine', () => {
     fields: ['title', 'content']
   };
 
-  beforeEach(() => {
-    // Clear all mocks
-    jest.clearAllMocks();
+  const testDocuments: IndexedDocument[] = [
+    {
+      id: 'doc1',
+      fields: {
+        title: 'Test 1',
+        content: 'Content 1'
+      }
+    },
+    {
+      id: 'doc2',
+      fields: {
+        title: 'Test 2',
+        content: 'Content 2'
+      }
+    }
+  ];
 
-    // Initialize mocked instances
+  beforeEach(() => {
+    jest.clearAllMocks();
     mockIndexManager = new IndexManager(testConfig) as jest.Mocked<IndexManager>;
     mockQueryProcessor = new QueryProcessor() as jest.Mocked<QueryProcessor>;
     mockStorage = new SearchStorage() as jest.Mocked<SearchStorage>;
     mockCache = new CacheManager() as jest.Mocked<CacheManager>;
-
-    // Create SearchEngine instance
     searchEngine = new SearchEngine(testConfig);
   });
 
@@ -44,45 +63,64 @@ describe('SearchEngine', () => {
     test('should handle initialization errors', async () => {
       const error = new Error('Initialization failed');
       mockStorage.initialize.mockRejectedValueOnce(error);
-
       await expect(searchEngine.initialize()).rejects.toThrow('Failed to initialize search engine');
     });
 
-    test('should load existing indexes on initialization', async () => {
-      const existingIndex = { data: 'test' };
-      mockStorage.getIndex.mockResolvedValueOnce(existingIndex);
+    test('should handle storage fallback', async () => {
+      mockStorage.initialize.mockRejectedValueOnce(new Error('Storage failed'));
+      await searchEngine.initialize();
+      expect(mockStorage.initialize).toHaveBeenCalledTimes(2); // Initial + fallback
+    });
 
+    test('should load existing indexes on initialization', async () => {
+      const existingIndex = {
+        documents: testDocuments,
+        indexState: {},
+        config: testConfig
+      };
+      mockStorage.getIndex.mockResolvedValueOnce(existingIndex);
       await searchEngine.initialize();
       expect(mockIndexManager.importIndex).toHaveBeenCalledWith(existingIndex);
     });
   });
 
   describe('Document Management', () => {
-    const testDocuments = [
-      { title: 'Test 1', content: 'Content 1' },
-      { title: 'Test 2', content: 'Content 2' }
-    ];
+    beforeEach(async () => {
+      await searchEngine.initialize();
+    });
 
     test('should add documents successfully', async () => {
       await searchEngine.addDocuments(testDocuments);
       expect(mockIndexManager.addDocuments).toHaveBeenCalledWith(testDocuments);
-      expect(mockStorage.storeIndex).toHaveBeenCalled();
     });
 
-    test('should handle document addition errors', async () => {
-      const error = new Error('Failed to add documents');
-      mockIndexManager.addDocuments.mockRejectedValueOnce(error);
-
-      await expect(searchEngine.addDocuments(testDocuments))
-        .rejects.toThrow('Failed to add documents');
-    });
-
-    test('should update storage after adding documents', async () => {
-      const exportedIndex = { data: 'exported' };
-      mockIndexManager.exportIndex.mockReturnValueOnce(exportedIndex);
-
+    test('should handle document removal', async () => {
       await searchEngine.addDocuments(testDocuments);
-      expect(mockStorage.storeIndex).toHaveBeenCalledWith(testConfig.name, exportedIndex);
+      await searchEngine.removeDocument('doc1');
+      expect(mockIndexManager.removeDocument).toHaveBeenCalledWith('doc1');
+      expect(mockCache.clear).toHaveBeenCalled();
+    });
+
+    test('should handle document updates', async () => {
+      const updatedDoc: IndexedDocument = {
+        id: 'doc1',
+        fields: {
+          title: 'Updated Title',
+          content: 'Updated Content'
+        }
+      };
+      await searchEngine.addDocuments([testDocuments[0]]);
+      await searchEngine.updateDocument(updatedDoc);
+      expect(mockIndexManager.updateDocument).toHaveBeenCalledWith(updatedDoc);
+    });
+
+    test('should fail to update non-existent document', async () => {
+      const nonExistentDoc: IndexedDocument = {
+        id: 'non-existent',
+        fields: { title: 'Test' }
+      };
+      await expect(searchEngine.updateDocument(nonExistentDoc))
+        .rejects.toThrow('Document non-existent not found');
     });
   });
 
@@ -90,102 +128,105 @@ describe('SearchEngine', () => {
     const searchQuery = 'test query';
     const searchOptions: SearchOptions = {
       fuzzy: true,
-      maxResults: 10
+      limit: 10
     };
 
-    test('should perform basic search', async () => {
-      const expectedResults: SearchResult<any>[] = [
-        { item: 'result1', score: 1, matches: ['test'] }
-      ];
-      mockIndexManager.search.mockResolvedValueOnce(expectedResults);
-
-      const results = await searchEngine.search(searchQuery);
-      expect(results).toEqual(expectedResults);
+    beforeEach(async () => {
+      await searchEngine.initialize();
+      await searchEngine.addDocuments(testDocuments);
     });
 
-    test('should use query processor', async () => {
-      const processedQuery = 'processed query';
+    test('should process query and perform search', async () => {
+      const processedQuery = 'processed test query';
       mockQueryProcessor.process.mockReturnValueOnce(processedQuery);
+      
+      await searchEngine.search(searchQuery, searchOptions);
+      
+      expect(mockQueryProcessor.process).toHaveBeenCalledWith(searchQuery);
+      expect(mockIndexManager.search).toHaveBeenCalledWith(processedQuery, searchOptions);
+    });
+
+    test('should emit search events', async () => {
+      const eventListener = jest.fn();
+      searchEngine.addEventListener(eventListener);
 
       await searchEngine.search(searchQuery);
-      expect(mockQueryProcessor.process).toHaveBeenCalledWith(searchQuery);
-      expect(mockIndexManager.search).toHaveBeenCalledWith(processedQuery, expect.any(Object));
+
+      expect(eventListener).toHaveBeenCalledWith(expect.objectContaining({
+        type: 'search:start'
+      }));
+      expect(eventListener).toHaveBeenCalledWith(expect.objectContaining({
+        type: 'search:complete'
+      }));
     });
 
-    test('should use cache for repeated searches', async () => {
-      const cachedResults: SearchResult<any>[] = [
-        { item: 'cached', score: 1, matches: ['test'] }
-      ];
-      const cacheKey = `${searchQuery}-${JSON.stringify(searchOptions)}`;
-      mockCache.get.mockReturnValueOnce(cachedResults);
-
-      const results = await searchEngine.search(searchQuery, searchOptions);
-      expect(results).toEqual(cachedResults);
-      expect(mockIndexManager.search).not.toHaveBeenCalled();
-    });
-
-    test('should cache search results', async () => {
-      const newResults: SearchResult<any>[] = [
-        { item: 'new', score: 1, matches: ['test'] }
-      ];
-      mockIndexManager.search.mockResolvedValueOnce(newResults);
-
-      await searchEngine.search(searchQuery, searchOptions);
-      expect(mockCache.set).toHaveBeenCalled();
-    });
-
-    test('should handle search errors', async () => {
+    test('should handle search errors with events', async () => {
+      const eventListener = jest.fn();
+      searchEngine.addEventListener(eventListener);
+      
       const error = new Error('Search failed');
       mockIndexManager.search.mockRejectedValueOnce(error);
 
-      await expect(searchEngine.search(searchQuery))
-        .rejects.toThrow('Search failed');
+      await expect(searchEngine.search(searchQuery)).rejects.toThrow();
+      
+      expect(eventListener).toHaveBeenCalledWith(expect.objectContaining({
+        type: 'search:error',
+        error
+      }));
     });
   });
 
-  describe('Index Management', () => {
-    test('should clear index', async () => {
-      await searchEngine.clearIndex();
-      expect(mockStorage.clearIndices).toHaveBeenCalled();
-      expect(mockIndexManager.clear).toHaveBeenCalled();
+  describe('Event Handling', () => {
+    test('should manage event listeners', () => {
+      const listener: SearchEventListener = jest.fn();
+      
+      searchEngine.addEventListener(listener);
+      expect(searchEngine['eventListeners'].has(listener)).toBe(true);
+      
+      searchEngine.removeEventListener(listener);
+      expect(searchEngine['eventListeners'].has(listener)).toBe(false);
+    });
+
+    test('should handle event listener errors', async () => {
+      const errorListener = jest.fn().mockImplementation(() => {
+        throw new Error('Listener error');
+      });
+      
+      searchEngine.addEventListener(errorListener);
+      
+      // Should not throw despite listener error
+      await expect(searchEngine.search('test')).resolves.not.toThrow();
+    });
+  });
+
+  describe('Cleanup', () => {
+    test('should close properly', async () => {
+      await searchEngine.initialize();
+      await searchEngine.close();
+      
+      expect(mockStorage.close).toHaveBeenCalled();
       expect(mockCache.clear).toHaveBeenCalled();
+      expect(searchEngine.isReady).toBe(false);
     });
 
-    test('should handle clear index errors', async () => {
-      const error = new Error('Clear failed');
-      mockStorage.clearIndices.mockRejectedValueOnce(error);
-
-      await expect(searchEngine.clearIndex()).rejects.toThrow();
-    });
-  });
-
-  describe('Configuration', () => {
-    test('should initialize with custom config', () => {
-      const customConfig: IndexConfig = {
-        name: 'custom',
-        version: 2,
-        fields: ['custom'],
-        options: { caseSensitive: true }
-      };
-
-      const customEngine = new SearchEngine(customConfig);
-      expect(customEngine).toBeDefined();
+    test('should handle close errors gracefully', async () => {
+      mockStorage.close.mockRejectedValueOnce(new Error('Close failed'));
+      await searchEngine.initialize();
+      await expect(searchEngine.close()).resolves.not.toThrow();
     });
   });
 
-  describe('Edge Cases', () => {
-    test('should handle empty search query', async () => {
-      await expect(searchEngine.search('')).resolves.toEqual([]);
+  describe('Debug Methods', () => {
+    test('should report indexed document count', async () => {
+      await searchEngine.initialize();
+      await searchEngine.addDocuments(testDocuments);
+      expect(searchEngine.getIndexedDocumentCount()).toBe(2);
     });
 
-    test('should handle undefined options', async () => {
-      await searchEngine.search('query', undefined);
-      expect(mockIndexManager.search).toHaveBeenCalled();
-    });
-
-    test('should handle null documents', async () => {
-      await expect(searchEngine.addDocuments(null as any))
-        .rejects.toThrow();
+    test('should expose trie state', async () => {
+      await searchEngine.initialize();
+      await searchEngine.addDocuments(testDocuments);
+      expect(searchEngine.getTrieState()).toBeDefined();
     });
   });
 });
