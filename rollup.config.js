@@ -31,7 +31,8 @@ const aliasEntries = [
   { find: '@algorithms', replacement: path.resolve(__dirname, 'src/algorithms') },
   { find: '@storage', replacement: path.resolve(__dirname, 'src/storage') },
   { find: '@utils', replacement: path.resolve(__dirname, 'src/utils') },
-  { find: '@types', replacement: path.resolve(__dirname, 'src/types') }
+  { find: '@types', replacement: path.resolve(__dirname, 'src/types') },
+  {find :'@plugins',replacement :path.resolve(__dirname,'src/plugins')}
 ];
 
 const basePlugins = [
