@@ -23,7 +23,7 @@ export class DocumentAdapter implements IndexedDocument {
     };
     metadata: DocumentMetadata;
     versions: DocumentVersion[];
-    relations?: DocumentRelation[];
+    relations: DocumentRelation[];
 
     constructor(doc: Partial<NexusDocument>) {
         this.id = doc.id || '';
@@ -46,7 +46,7 @@ export class DocumentAdapter implements IndexedDocument {
             lastModified: doc.metadata?.lastModified || Date.now()
         };
         this.versions = doc.versions || [];
-        this.relations = doc.relations;
+        this.relations = doc.relations || [];
     }
     [x: string]: any;
 
@@ -125,100 +125,4 @@ export class DocumentAdapter implements IndexedDocument {
     static fromNexusDocument(doc: NexusDocument): DocumentAdapter {
         return new DocumentAdapter(doc);
     }
-}
-
-// Update the necessary methods in NexusDocumentPlugin to use the adapter
-export class NexusDocumentPlugin {
-    searchEngine: any;
-    // ... other code remains the same ...
-
-    private createDocument(options: CreateDocumentOptions): IndexedDocument {
-        this.validateDocument(options);
-        const now = new Date();
-        
-        return new DocumentAdapter({
-            id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            fields: {
-                title: options.title,
-                content: options.content,
-                type: options.type,
-                tags: options.tags || [],
-                category: options.category || '',
-                author: options.author,
-                created: now.toISOString(),
-                modified: now.toISOString(),
-                status: options.status || 'draft',
-                version: 1,
-                locale: options.locale || ''
-            },
-            metadata: {
-                ...options.metadata,
-                indexed: now.getTime(),
-                lastModified: now.getTime(),
-                checksum: this.generateChecksum(options.content)
-            }
-        });
-    }
-    validateDocument(options: CreateDocumentOptions) {
-        throw new Error("Method not implemented.");
-    }
-    generateChecksum(content: string): string | undefined {
-        throw new Error("Method not implemented.");
-    }
-
-    async createAndAddDocument(options: CreateDocumentOptions): Promise<NexusDocument> {
-        const document = this.createDocument(options);
-        await this.searchEngine.addDocuments([document]);
-        return (document as DocumentAdapter).toNexusDocument();
-    }
-
-   
-    async updateDocument(id: string, updates: Partial<NexusDocument['fields']>): Promise<NexusDocument> {
-
-        const document = await this.getDocument(id);
-
-        if (!document) {
-
-            throw new Error(`Document with id ${id} not found`);
-
-        }
-
-
-
-        const adapter = DocumentAdapter.fromNexusDocument(document);
-
-        const processedUpdates = {
-
-            ...updates,
-
-            version: updates.version ? String(updates.version) : undefined
-
-        };
-
-        const updated = adapter.update(processedUpdates);
-
-        await this.searchEngine.updateDocument(updated);
-
-        
-
-        return (updated as DocumentAdapter).toNexusDocument();
-
-    }
-
-    getDocument(id: string) {
-        throw new Error("Method not implemented.");
-    }
-
-    async exportDocuments(): Promise<NexusDocument[]> {
-        const docs = await this.searchEngine.getAllDocuments();
-        return docs.map(doc => new DocumentAdapter(doc).toNexusDocument());
-    }
-
-    async importDocuments(documents: NexusDocument[]): Promise<void> {
-        const indexedDocs = documents.map(doc => 
-            DocumentAdapter.fromNexusDocument(doc).toObject()
-        );
-        await this.searchEngine.addDocuments(indexedDocs);
-    }
-
 }
