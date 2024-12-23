@@ -531,8 +531,8 @@ async exportDocuments(): Promise<NexusDocument[]> {
  * Fixed import with proper interface handling
  */
 async importDocuments(documents: NexusDocument[]): Promise<void> {
-    const indexedDocs = documents.map(doc => 
-        new BaseDocument({
+    const indexedDocs = documents.map(doc => {
+        const baseDoc = new BaseDocument({
             id: doc.id,
             fields: {
                 title: doc.fields.title,
@@ -544,13 +544,14 @@ async importDocuments(documents: NexusDocument[]): Promise<void> {
                 created: doc.fields.created,
                 modified: doc.fields.modified,
                 status: doc.fields.status,
-                version: String(doc.fields.version), // Convert version to string
+                version: String(doc.fields.version),
                 locale: doc.fields.locale || ''
             },
             metadata: doc.metadata
-        })
-    );
-    await this.searchEngine.addDocuments(indexedDocs.map(doc => doc.toObject()));
+        });
+        return baseDoc.toObject();
+    });
+    await this.searchEngine.addDocuments(indexedDocs);
 }
     /**
      * Get document statistics
@@ -784,23 +785,59 @@ async restoreVersion(id: string, version: number): Promise<NexusDocument> {
  * @param assignee Optional assignee
  * @param dueDate Optional due date
  */
+
 async setWorkflowStatus(
+
     id: string,
+
     status: string,
+
     assignee?: string,
+
     dueDate?: Date
+
 ): Promise<void> {
+
     const document = await this.getDocument(id);
+
     if (!document) {
+
         throw new Error(`Document ${id} not found`);
+
     }
 
+
+
     document.metadata.workflow = {
+
         status,
+
         assignee,
+
         dueDate: dueDate?.toISOString()
+
     };
 
-    await this.searchEngine.updateDocument(document);
-}
+
+
+    const indexedDoc = new IndexedDocument(
+
+        document.id,
+
+        {
+
+            ...document.fields,
+
+            version: String(document.fields.version)
+
+        },
+
+        document.metadata
+
+    );
+
+
+
+    await this.searchEngine.updateDocument(indexedDoc);
+
 }
