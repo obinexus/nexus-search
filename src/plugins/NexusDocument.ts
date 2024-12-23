@@ -298,7 +298,7 @@ export class NexusDocumentPlugin {
                 created: Array.isArray(document.fields.created) ? document.fields.created[0] : document.fields.created,
                 modified: Array.isArray(document.fields.modified) ? document.fields.modified[0] : document.fields.modified,
                 status: document.fields.status as 'draft' | 'published' | 'archived',
-                version: Number(document.fields.version),
+                version: String(document.fields.version),
                 locale: document.fields.locale
             },
             versions: [],
@@ -351,7 +351,55 @@ export class NexusDocumentPlugin {
             }
         }
 
-        return this.searchEngine.search(finalQuery, searchOptions);
+        const results = await this.searchEngine.search(finalQuery, searchOptions);
+        return results.map(result => {
+            const doc: NexusDocument = {
+                id: result.document.id,
+                fields: {
+                    title: result.document.fields.title || '',
+                    content: result.document.fields.content || '',
+                    type: result.document.fields.type || '',
+                    tags: Array.isArray(result.document.fields.tags) ? result.document.fields.tags : [],
+                    category: result.document.fields.category,
+                    author: result.document.fields.author || '',
+                    created: result.document.fields.created || new Date().toISOString(),
+                    modified: result.document.fields.modified || new Date().toISOString(),
+                    status: (result.document.fields.status || 'draft') as 'draft' | 'published' | 'archived',
+                    version: result.document.fields.version || '1',
+                    locale: result.document.fields.locale
+                },
+                item: {
+                    ...result.item,
+                    fields: {
+                        title: result.item.fields.title || '',
+                        content: result.item.fields.content || '',
+                        type: result.item.fields.type || '',
+                        tags: Array.isArray(result.item.fields.tags) ? result.item.fields.tags : [],
+                        category: result.item.fields.category,
+                        author: result.item.fields.author || '',
+                        created: result.item.fields.created || new Date().toISOString(),
+                        modified: result.item.fields.modified || new Date().toISOString(),
+                        status: (result.item.fields.status || 'draft') as 'draft' | 'published' | 'archived',
+                        version: result.item.fields.version || '1',
+                        locale: result.item.fields.locale
+                    }
+                },
+                metadata: result.document.metadata,
+                versions: [],
+                relations: [],
+                clone: function() { return this; },
+                update: function(fields) { return Object.assign(this, { fields: { ...this.fields, ...fields } }); },
+                toObject: function() { return this; }
+            };
+            return {
+                id: result.id,
+                score: result.score,
+                matches: result.matches,
+                document: doc,
+                item: result.item,
+                metadata: result.metadata
+            };
+        });
     }
 
     async searchByType(type: string): Promise<SearchResult<NexusDocument>[]> {

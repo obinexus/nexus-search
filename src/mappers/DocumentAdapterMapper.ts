@@ -110,14 +110,14 @@ export class DocumentAdapter implements IndexedDocument {
                 created: this.fields.created,
                 modified: this.fields.modified,
                 status: this.fields.status as 'draft' | 'published' | 'archived',
-                version: parseInt(this.fields.version, 10),
+                version: String(this.fields.version),
                 locale: this.fields.locale
             },
             metadata: this.metadata,
             versions: this.versions,
             relations: this.relations,
             clone: () => this.clone().toNexusDocument(),
-            update: (fields) => this.update(fields) as unknown as NexusDocument,
+            update: (fields) => this.update({ ...fields, version: fields.version ? Number(fields.version) : undefined }) as unknown as NexusDocument,
             toObject: () => this.toObject() as unknown as NexusDocument
         };
     }
