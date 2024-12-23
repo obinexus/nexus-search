@@ -6,7 +6,7 @@
 
 import { SearchEngine } from "@/core";
 import { DocumentAdapter } from "@/mappers/DocumentAdapterMapper";
-import { BaseDocument, IndexedDocument } from "@/storage";
+import { BaseDocument,  } from "@/storage";
 import { 
     SearchOptions, 
     IndexedDocument, 
@@ -128,7 +128,7 @@ export class NexusDocumentPlugin {
     private searchEngine: SearchEngine;
     private readonly defaultConfig: Required<NexusDocumentPluginConfig> = {
         name: 'nexus-document-plugin',
-        version: 1,
+        version: '1',
         fields: [
             'title', 'content', 'type', 'tags', 'category', 
             'author', 'created', 'modified', 'status', 'version'
@@ -227,7 +227,7 @@ export class NexusDocumentPlugin {
     
                 tags: options.tags || [],
     
-                category: options.category,
+                category: options.category || '',
     
                 author: options.author,
     
