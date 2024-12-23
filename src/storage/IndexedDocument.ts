@@ -13,12 +13,16 @@ export class IndexedDocument implements IIndexedDocument {
 
     constructor(
         id: string,
-        fields: {
-            title: string;
-            content: string;
-            author: string;
-            tags: string[];
-        },
+       
+    fields: {
+        title: string;
+        content: string;
+        author: string;
+        tags: string[];
+        version?: string;
+        [key: string]: string | string[];
+    }
+,
         metadata?: DocumentMetadata
     ) {
         this.id = id;
@@ -36,7 +40,9 @@ export class IndexedDocument implements IIndexedDocument {
             title: obj.fields.title || '',
             content: obj.fields.content || '',
             author: obj.fields.author || '',
-            tags: Array.isArray(obj.fields.tags) ? obj.fields.tags : []
+            tags: Array.isArray(obj.fields.tags) ? obj.fields.tags : [],
+            ...obj.fields
+            
         };
 
         // Create new instance with proper structure

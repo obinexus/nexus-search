@@ -4,13 +4,14 @@
 // Indexed Document Interface
 export interface IndexedDocument {
     document(): import("../storage").IndexedDocument;
-    [x: string]: any;
     id: string;
     fields: {
+        [key: string]: string | string[];
+        version: string;
         title: string;
         content: string;
         author: string;
-        tags: string[]; // Ensure this is a string array
+        tags: string[];
     };
     metadata?: DocumentMetadata;
     toObject(): IndexedDocument;
