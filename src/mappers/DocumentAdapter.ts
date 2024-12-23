@@ -8,7 +8,7 @@ import { DocumentMetadata } from "@/types";
 export class DocumentAdapter implements IndexedDocument {
     id: string;
     fields: {
-        [key: string]: string | string[];
+        [key: string]: string | string[] | number;
         title: string;
         content: string;
         type: string;
@@ -18,7 +18,7 @@ export class DocumentAdapter implements IndexedDocument {
         created: string;
         modified: string;
         status: 'draft' | 'published' | 'archived';
-        version: string;
+        version: number;
         locale: string;
     };
     metadata: DocumentMetadata;
@@ -37,7 +37,7 @@ export class DocumentAdapter implements IndexedDocument {
             created: doc.fields?.created || new Date().toISOString(),
             modified: doc.fields?.modified || new Date().toISOString(),
             status: doc.fields?.status || 'draft',
-            version: String(doc.fields?.version || 1),
+            version: Number(doc.fields?.version || 1),
             locale: doc.fields?.locale || ''
         };
         this.metadata = {
@@ -64,31 +64,18 @@ export class DocumentAdapter implements IndexedDocument {
 
   
     clone(): IndexedDocument {
-
         return new DocumentAdapter({
-
             ...this,
-
             fields: {
-
                 ...this.fields,
-
-                version: parseInt(this.fields.version, 10)
-
+                version: Number(this.fields.version)
             },
-
             metadata: {
-
                 ...this.metadata,
-
-                indexed: this.metadata.indexed,
-
-                lastModified: this.metadata.lastModified
-
+                indexed: this.metadata.indexed || Date.now(),
+                lastModified: this.metadata.lastModified || Date.now()
             }
-
         });
-
     }
 
     update(fields: Partial<typeof this.fields>): IndexedDocument {
