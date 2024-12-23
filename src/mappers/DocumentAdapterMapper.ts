@@ -101,23 +101,27 @@ export class DocumentAdapter implements IndexedDocument {
         return {
             id: this.id,
             fields: {
-                title: this.fields.title,
-                content: this.fields.content,
-                type: this.fields.type,
-                tags: this.fields.tags,
-                category: this.fields.category,
-                author: this.fields.author,
-                created: this.fields.created,
-                modified: this.fields.modified,
-                status: this.fields.status as 'draft' | 'published' | 'archived',
-                version: String(this.fields.version),
-                locale: this.fields.locale
+            title: this.fields.title,
+            content: this.fields.content,
+            type: this.fields.type,
+            tags: this.fields.tags,
+            category: this.fields.category,
+            author: this.fields.author,
+            created: this.fields.created,
+            modified: this.fields.modified,
+            status: this.fields.status as 'draft' | 'published' | 'archived',
+            version: String(this.fields.version),
+            locale: this.fields.locale
             },
-            metadata: this.metadata,
+            metadata: {
+            ...this.metadata,
+            indexed: Number(this.metadata.indexed) || Date.now(),
+            lastModified: Number(this.metadata.lastModified) || Date.now()
+            },
             versions: this.versions,
             relations: this.relations,
             clone: () => this.clone().toNexusDocument(),
-            update: (fields) => this.update({ ...fields, version: fields.version ? Number(fields.version) : undefined }) as unknown as NexusDocument,
+            update: (fields) => this.update({ ...fields, version: fields.version ? String(Number(fields.version)) : undefined }) as unknown as NexusDocument,
             toObject: () => this.toObject() as unknown as NexusDocument
         };
     }
