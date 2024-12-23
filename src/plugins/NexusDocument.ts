@@ -286,7 +286,7 @@ private createDocument(options: CreateDocumentOptions): IndexedDocument {
             }
         }
 
-        return this.searchEngine.search<NexusDocument>(finalQuery, searchOptions);
+        return this.searchEngine.search(finalQuery, searchOptions);
     }
 
     async searchByType(type: string): Promise<SearchResult<NexusDocument>[]> {
@@ -336,7 +336,7 @@ async updateDocument(id: string, updates: Partial<NexusDocument['fields']>): Pro
     const updatedDocument = baseDocument.update(updates);
     await this.searchEngine.updateDocument(updatedDocument.toObject());
     
-    return updatedDocument as NexusDocument;
+    return updatedDocument as unknown as NexusDocument;
 }
 
 
@@ -395,14 +395,48 @@ async updateDocument(id: string, updates: Partial<NexusDocument['fields']>): Pro
  * Fixed bulk operations with proper type handling
  */
 async bulkAddDocuments(documents: CreateDocumentOptions[]): Promise<NexusDocument[]> {
-    const createdDocuments = documents.map(doc => 
-        this.createDocument(doc).toObject()
-    ) as NexusDocument[];
+    const createdDocuments = documents.map(doc => {
+
+        const document = this.createDocument(doc);
+
+        return document;
+
+    }) as NexusDocument[];
+
     
-    await this.searchEngine.addDocuments(
-        createdDocuments.map(doc => doc.toObject())
-    );
+
+    const indexableDocuments = createdDocuments.map(doc => ({
+
+        ...doc,
+
+        fields: {
+
+            ...doc.fields,
+
+            version: doc.fields.version.toString(), // Convert number to string
+
+            type: doc.fields.type,
+
+            status: doc.fields.status,
+
+            category: doc.fields.category || '',
+
+            locale: doc.fields.locale || '',
+
+            created: doc.fields.created,
+
+            modified: doc.fields.modified
+
+        }
+
+    }));
+
     
+
+    await this.searchEngine.addDocuments(indexableDocuments);
+
+    
+
     return createdDocuments;
 }
 
@@ -417,14 +451,20 @@ async bulkAddDocuments(documents: CreateDocumentOptions[]): Promise<NexusDocumen
  */
 async exportDocuments(): Promise<NexusDocument[]> {
     const docs = await this.searchEngine.getAllDocuments();
-    return docs.map(doc => new BaseDocument(doc).toObject() as NexusDocument);
+    return docs.map(doc => new BaseDocument(doc).toObject() as unknown as NexusDocument);
 }
 /**
  * Fixed import with proper interface handling
  */
 async importDocuments(documents: NexusDocument[]): Promise<void> {
     const indexedDocs = documents.map(doc => 
-        new BaseDocument(doc).toObject()
+        new BaseDocument({
+            ...doc,
+            fields: {
+                ...doc.fields,
+                category: doc.fields.category || ''  // Provide default empty string
+            }
+        }).toObject()
     );
     await this.searchEngine.addDocuments(indexedDocs);
 }
