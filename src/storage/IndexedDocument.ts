@@ -26,6 +26,8 @@ export class IndexedDocument implements IIndexedDocument {
 
             tags: string[];
 
+            version: string;
+
             [key: string]: string | string[];
 
         }
