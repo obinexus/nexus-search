@@ -352,52 +352,64 @@ export class NexusDocumentPlugin {
         }
 
         const results = await this.searchEngine.search(finalQuery, searchOptions);
+        
         return results.map(result => {
+            const getStringValue = (value: string | string[] | undefined): string => 
+                Array.isArray(value) ? value[0] || '' : value || '';
+
+            const baseMetadata = result.document.metadata || {};
             const doc: NexusDocument = {
                 id: result.document.id,
                 fields: {
-                    title: result.document.fields.title || '',
-                    content: result.document.fields.content || '',
-                    type: result.document.fields.type || '',
+                    title: getStringValue(result.document.fields.title),
+                    content: getStringValue(result.document.fields.content),
+                    type: getStringValue(result.document.fields.type),
                     tags: Array.isArray(result.document.fields.tags) ? result.document.fields.tags : [],
-                    category: result.document.fields.category,
-                    author: result.document.fields.author || '',
-                    created: result.document.fields.created || new Date().toISOString(),
-                    modified: result.document.fields.modified || new Date().toISOString(),
-                    status: (result.document.fields.status || 'draft') as 'draft' | 'published' | 'archived',
-                    version: result.document.fields.version || '1',
-                    locale: result.document.fields.locale
+                    category: getStringValue(result.document.fields.category),
+                    author: getStringValue(result.document.fields.author),
+                    created: getStringValue(result.document.fields.created) || new Date().toISOString(),
+                    modified: getStringValue(result.document.fields.modified) || new Date().toISOString(),
+                    status: (getStringValue(result.document.fields.status) || 'draft') as 'draft' | 'published' | 'archived',
+                    version: getStringValue(result.document.fields.version) || '1',
+                    locale: getStringValue(result.document.fields.locale)
                 },
-                item: {
-                    ...result.item,
-                    fields: {
-                        title: result.item.fields.title || '',
-                        content: result.item.fields.content || '',
-                        type: result.item.fields.type || '',
-                        tags: Array.isArray(result.item.fields.tags) ? result.item.fields.tags : [],
-                        category: result.item.fields.category,
-                        author: result.item.fields.author || '',
-                        created: result.item.fields.created || new Date().toISOString(),
-                        modified: result.item.fields.modified || new Date().toISOString(),
-                        status: (result.item.fields.status || 'draft') as 'draft' | 'published' | 'archived',
-                        version: result.item.fields.version || '1',
-                        locale: result.item.fields.locale
-                    }
+                metadata: {
+                    ...baseMetadata,
+                    indexed: baseMetadata.indexed || Date.now(),
+                    lastModified: baseMetadata.lastModified || Date.now(),
+                    checksum: baseMetadata.checksum,
+                    permissions: baseMetadata.permissions,
+                    workflow: baseMetadata.workflow
                 },
-                metadata: result.document.metadata,
                 versions: [],
                 relations: [],
                 clone: function() { return this; },
                 update: function(fields) { return Object.assign(this, { fields: { ...this.fields, ...fields } }); },
                 toObject: function() { return this; }
             };
+
             return {
                 id: result.id,
                 score: result.score,
                 matches: result.matches,
                 document: doc,
-                item: result.item,
-                metadata: result.metadata
+                item: {
+                    ...result.document,
+                    fields: {
+                        title: doc.fields.title,
+                        content: doc.fields.content,
+                        type: doc.fields.type,
+                        tags: doc.fields.tags,
+                        category: doc.fields.category,
+                        author: doc.fields.author,
+                        created: doc.fields.created,
+                        modified: doc.fields.modified,
+                        status: doc.fields.status,
+                        version: doc.fields.version,
+                        locale: doc.fields.locale
+                    }
+                },
+                metadata: doc.metadata
             };
         });
     }
@@ -912,5 +924,5 @@ async setWorkflowStatus(
 
 
 
-    await this.searchEngine.updateDocument(indexedDoc);
+  return   await this.searchEngine.updateDocument(indexedDoc);
 }
