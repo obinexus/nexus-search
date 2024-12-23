@@ -54,17 +54,18 @@ export class BaseDocument implements IndexedDocument {
             update: (updates: Partial<IndexedDocument>) => IndexedDocument;
         }
 
-                return {
+                const obj: DocumentObject = {
                     id: this.id,
                     fields: this.fields,
                     metadata: this.metadata,
                     versions: this.versions,
                     relations: this.relations,
-                    document: (): IndexedDocument => this,
-                    toObject: (): DocumentObject => this,
+                    document: function(): IndexedDocument { return obj; },
+                    toObject: function(): DocumentObject { return obj; },
                     clone: (): IndexedDocument => this.clone(),
                     update: (updates: Partial<IndexedDocument>): IndexedDocument => this.update(updates)
-                } as DocumentObject;
+                };
+                return obj;
     }
 
     update(updates: Partial<IndexedDocument>): IndexedDocument {

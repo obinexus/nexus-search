@@ -11,11 +11,14 @@ export interface IndexableDocumentFields {
 
 // Indexed Document Interface
 export interface IndexedDocument {
-    document(): import("../storage").IndexedDocument;
     id: string;
-    fields:IndexableDocumentFields;
+    document(): IndexedDocument;
+    fields: IndexableDocumentFields;
     metadata?: DocumentMetadata;
-    toObject(): IndexedDocument;
+    versions: any[];
+    relations: any[];
+    clone(): IndexedDocument;
+    update(updates: Partial<IndexedDocument>): IndexedDocument;
 }
 
 // Types for primitive and complex values
