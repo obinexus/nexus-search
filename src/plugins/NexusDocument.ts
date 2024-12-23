@@ -6,7 +6,7 @@
 
 import { SearchEngine } from "@/core";
 import { DocumentAdapter } from "@/mappers/DocumentAdapterMapper";
-import { BaseDocument,  } from "@/storage";
+import { BaseDocument, IndexedDocument,  } from "@/storage";
 import { 
     SearchOptions, 
     IndexedDocument, 
@@ -191,7 +191,7 @@ export class NexusDocumentPlugin {
         }
 
         // Run custom validators
-        Object.entries(validation.customValidators).forEach(([field, validator]) => {
+        Object.entries(validation.customValidators || {}).forEach(([field, validator]) => {
             const value = options[field as keyof CreateDocumentOptions];
             if (value && !validator(value)) {
                 throw new Error(`Validation failed for field '${field}'`);
@@ -278,8 +278,37 @@ export class NexusDocumentPlugin {
      */
     async createAndAddDocument(options: CreateDocumentOptions): Promise<NexusDocument> {
         const document = this.createDocument(options);
-        await this.searchEngine.addDocuments([document]);
-        return document;
+        const indexedDoc = new IndexedDocument(
+            document.id,
+            {
+                ...document.fields,
+                version: String(document.fields.version)
+            },
+            document.metadata
+        );
+        const nexusDoc: NexusDocument = {
+            ...document,
+            fields: {
+                title: document.fields.title,
+                content: document.fields.content,
+                type: document.fields.type,
+                tags: document.fields.tags || [],
+                category: typeof document.fields.category === 'string' ? document.fields.category : undefined,
+                author: document.fields.author,
+                created: document.fields.created,
+                modified: document.fields.modified,
+                status: document.fields.status as 'draft' | 'published' | 'archived',
+                version: Number(document.fields.version),
+                locale: document.fields.locale
+            },
+            versions: [],
+            relations: [],
+            clone: function() { return this; },
+            update: function(fields) { return Object.assign(this, { fields: { ...this.fields, ...fields } }); },
+            toObject: function() { return this; }
+        };
+        await this.searchEngine.addDocuments([indexedDoc]);
+        return nexusDoc;
     }
 
     /**
