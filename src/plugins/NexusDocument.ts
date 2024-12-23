@@ -5,7 +5,7 @@
  */
 
 import { SearchEngine } from "@/core";
-import { BaseDocument } from "@/storage";
+import { BaseDocument, IndexedDocument } from "@/storage";
 import { 
     SearchOptions, 
     IndexedDocument, 
@@ -204,36 +204,71 @@ export class NexusDocumentPlugin {
             .toString(16);
     }
 
-/**
- * Fixed document creation with proper interface implementation
- */
-private createDocument(options: CreateDocumentOptions): IndexedDocument {
-    this.validateDocument(options);
-    const now = new Date();
+    private createDocument(options: CreateDocumentOptions): IndexedDocument {
+
+        this.validateDocument(options);
     
-    return new BaseDocument({
-        id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        fields: {
-            title: options.title,
-            content: options.content,
-            type: options.type,
-            tags: options.tags || [],
-            category: options.category,
-            author: options.author,
-            created: now.toISOString(),
-            modified: now.toISOString(),
-            status: options.status || 'draft',
-            version: 1,
-            locale: options.locale
-        },
-        metadata: {
-            ...options.metadata,
-            indexed: now.getTime(),
-            lastModified: now.getTime(),
-            checksum: this.generateChecksum(options.content)
-        }
-    });
-}
+        const now = new Date();
+    
+        
+    
+        const doc = new BaseDocument({
+    
+            id: `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    
+            fields: {
+    
+                title: options.title,
+    
+                content: options.content,
+    
+                type: options.type,
+    
+                tags: options.tags || [],
+    
+                category: options.category,
+    
+                author: options.author,
+    
+                created: now.toISOString(),
+    
+                modified: now.toISOString(),
+    
+                status: options.status || 'draft',
+    
+                version: 1,
+    
+                locale: options.locale
+    
+            },
+    
+            metadata: {
+    
+                ...options.metadata,
+    
+                indexed: now.getTime(),
+    
+                lastModified: now.getTime(),
+    
+                checksum: this.generateChecksum(options.content)
+    
+            }
+    
+        });
+    
+    
+    
+        return Object.assign(doc, {
+    
+            clone: function() { return this; },
+    
+            update: function(fields: any) {
+                Object.assign(this.fields, fields);
+                return this;
+            }
+    
+        });
+    }    
 
     /**
      * Create and index a new document
@@ -344,20 +379,53 @@ async updateDocument(id: string, updates: Partial<NexusDocument['fields']>): Pro
      * Add a relationship between documents
      * @param relation Relationship definition
      */
+    
     async addDocumentRelation(relation: DocumentRelation): Promise<void> {
+
         const sourceDoc = await this.getDocument(relation.sourceId);
+
         if (!sourceDoc) {
+
             throw new Error(`Source document ${relation.sourceId} not found`);
+
         }
+
+
 
         const targetDoc = await this.getDocument(relation.targetId);
+
         if (!targetDoc) {
+
             throw new Error(`Target document ${relation.targetId} not found`);
+
         }
 
+
+
         sourceDoc.relations = sourceDoc.relations || [];
+
         sourceDoc.relations.push(relation);
-        await this.searchEngine.updateDocument(sourceDoc);
+
+        
+
+        const indexedDoc = new IndexedDocument(
+
+            sourceDoc.id,
+
+            {
+
+                ...sourceDoc.fields,
+
+                version: String(sourceDoc.fields.version)
+
+            },
+
+            sourceDoc.metadata
+
+        );
+
+        await this.searchEngine.updateDocument(indexedDoc);
+
     }
 
     /**
@@ -391,41 +459,62 @@ async updateDocument(id: string, updates: Partial<NexusDocument['fields']>): Pro
         await this.searchEngine.removeDocument(id);
     }
 
+
 /**
+
  * Fixed bulk operations with proper type handling
+
  */
+
 async bulkAddDocuments(documents: CreateDocumentOptions[]): Promise<NexusDocument[]> {
-    const createdDocuments = documents.map(doc => this.createDocument(doc)) as NexusDocument[];
+
+    const createdDocuments = documents.map(doc => this.createDocument(doc)) as unknown as NexusDocument[];
+
     
-    const indexableDocuments = createdDocuments.map(doc => ({
-        id: doc.id,
-        fields: {
+
+    const indexableDocuments = createdDocuments.map(doc => new IndexedDocument(
+
+        doc.id,
+
+        {
+
             title: doc.fields.title,
+
             content: doc.fields.content,
+
             type: doc.fields.type,
+
             tags: doc.fields.tags,
+
             category: doc.fields.category || '',
+
             author: doc.fields.author,
+
             created: doc.fields.created,
+
             modified: doc.fields.modified,
+
             status: doc.fields.status,
+
             version: String(doc.fields.version),
+
             locale: doc.fields.locale || ''
+
         },
-        metadata: doc.metadata
-    }));
+
+        doc.metadata
+
+    ));
+
     
+
     await this.searchEngine.addDocuments(indexableDocuments);
+
     
+
     return createdDocuments;
+
 }
-
-    /** Clear all documents */
-    async clear(): Promise<void> {
-        await this.searchEngine.clearIndex();
-    }
-
- 
 /**
  * Fixed export with proper type casting
  */
