@@ -78,23 +78,25 @@ export class DocumentAdapter implements IndexedDocument {
         });
     }
 
-    update(fields: Partial<typeof this.fields>): IndexedDocument {
+    update(updates: Partial<IndexedDocument>): IndexedDocument {
         return new DocumentAdapter({
             ...this,
             fields: {
                 ...this.fields,
-                ...fields,
+                ...updates.fields,
                 modified: new Date().toISOString()
             },
             metadata: {
                 ...this.metadata,
+                ...updates.metadata,
+                indexed: Number(this.metadata.indexed) || Date.now(),
                 lastModified: Date.now()
             }
         });
     }
 
     toObject(): IndexedDocument {
-        return this.toNexusDocument();
+        return this;
     }
 
     toNexusDocument(): NexusDocument {
@@ -122,7 +124,8 @@ export class DocumentAdapter implements IndexedDocument {
             relations: this.relations,
             clone: () => this.clone().toNexusDocument(),
             update: (fields) => this.update({ ...fields, version: fields.version ? String(Number(fields.version)) : undefined }) as unknown as NexusDocument,
-            toObject: () => this.toObject() as unknown as NexusDocument
+            toObject: () => this.toObject() as unknown as NexusDocument,
+            document: () => this.document()
         };
     }
 
