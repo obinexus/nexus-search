@@ -1,4 +1,4 @@
-import { DocumentVersion, DocumentRelation, NexusDocument, CreateDocumentOptions } from "@/plugins/NexusDocument";
+import { DocumentVersion, DocumentRelation, NexusDocument } from "@/plugins/NexusDocument";
 import { IndexedDocument } from "@/storage";
 import { DocumentMetadata } from "@/types";
 
@@ -65,33 +65,54 @@ export class DocumentAdapter implements IndexedDocument {
   
     clone(): IndexedDocument {
         return new DocumentAdapter({
-            ...this,
+            id: this.id,
             fields: {
-                ...this.fields,
-                version: Number(this.fields.version)
+                title: this.fields.title,
+                content: this.fields.content,
+                type: this.fields.type || '',
+                tags: [...this.fields.tags],
+                category: this.fields.category || '',
+                author: this.fields.author || '',
+                created: this.fields.created || new Date().toISOString(),
+                modified: this.fields.modified || new Date().toISOString(),
+                status: this.fields.status || 'draft',
+                version: String(Number(this.fields.version)) || '1',
+                locale: this.fields.locale || ''
             },
             metadata: {
                 ...this.metadata,
-                indexed: this.metadata.indexed || Date.now(),
-                lastModified: this.metadata.lastModified || Date.now()
-            }
+                indexed: Number(this.metadata.indexed) || Date.now(),
+                lastModified: Number(this.metadata.lastModified) || Date.now()
+            },
+            versions: [...(this.versions || [])],
+            relations: [...(this.relations || [])]
         });
     }
 
     update(updates: Partial<IndexedDocument>): IndexedDocument {
         return new DocumentAdapter({
-            ...this,
+            id: this.id,
             fields: {
-                ...this.fields,
-                ...updates.fields,
-                modified: new Date().toISOString()
+                title: updates.fields?.title || this.fields.title,
+                content: updates.fields?.content || this.fields.content,
+                type: (typeof updates.fields?.type === 'string' ? updates.fields.type : undefined) || this.fields.type,
+                tags: updates.fields?.tags || this.fields.tags,
+                category: typeof updates.fields?.category === 'string' ? updates.fields.category : this.fields.category,
+                author: updates.fields?.author || this.fields.author,
+                created: typeof updates.fields?.created === 'string' ? updates.fields.created : this.fields.created,
+                modified: new Date().toISOString(),
+                status: (updates.fields?.status || this.fields.status) as 'draft' | 'published' | 'archived',
+                version: updates.fields?.version || this.fields.version,
+                locale: (typeof updates.fields?.locale === 'string' ? updates.fields.locale : undefined) || this.fields.locale
             },
             metadata: {
                 ...this.metadata,
                 ...updates.metadata,
                 indexed: Number(this.metadata.indexed) || Date.now(),
                 lastModified: Date.now()
-            }
+            },
+            versions: this.versions,
+            relations: this.relations
         });
     }
 
