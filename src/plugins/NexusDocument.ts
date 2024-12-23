@@ -6,7 +6,7 @@
 
 import { SearchEngine } from "@/core";
 import { DocumentAdapter } from "@/mappers/DocumentAdapterMapper";
-import { BaseDocument, IndexedDocument,  } from "@/storage";
+import { BaseDocument, IndexedDocument } from "@/storage";
 import { 
     SearchOptions, 
     IndexedDocument, 
@@ -68,11 +68,11 @@ export interface NexusDocument extends IndexedDocument {
         created: string;  // ISO date string
         modified: string; // ISO date string
         status: 'draft' | 'published' | 'archived';
-        version: number;
+        version: string;
         locale?: string;
     };
-    versions?: DocumentVersion[];
-    relations?: DocumentRelation[];
+    versions: DocumentVersion[];
+    relations: DocumentRelation[];
     metadata: DocumentMetadata & {
         indexed: number;
         lastModified: number;
@@ -295,8 +295,8 @@ export class NexusDocumentPlugin {
                 tags: document.fields.tags || [],
                 category: typeof document.fields.category === 'string' ? document.fields.category : undefined,
                 author: document.fields.author,
-                created: document.fields.created,
-                modified: document.fields.modified,
+                created: Array.isArray(document.fields.created) ? document.fields.created[0] : document.fields.created,
+                modified: Array.isArray(document.fields.modified) ? document.fields.modified[0] : document.fields.modified,
                 status: document.fields.status as 'draft' | 'published' | 'archived',
                 version: Number(document.fields.version),
                 locale: document.fields.locale
