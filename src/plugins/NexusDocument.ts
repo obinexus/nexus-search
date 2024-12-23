@@ -531,26 +531,23 @@ async exportDocuments(): Promise<NexusDocument[]> {
  * Fixed import with proper interface handling
  */
 async importDocuments(documents: NexusDocument[]): Promise<void> {
-    const indexedDocs = documents.map(doc => {
-        const baseDoc = new BaseDocument({
-            id: doc.id,
-            fields: {
-                title: doc.fields.title,
-                content: doc.fields.content,
-                type: doc.fields.type,
-                tags: doc.fields.tags,
-                category: doc.fields.category || '',
-                author: doc.fields.author,
-                created: doc.fields.created,
-                modified: doc.fields.modified,
-                status: doc.fields.status,
-                version: String(doc.fields.version),
-                locale: doc.fields.locale || ''
-            },
-            metadata: doc.metadata
-        });
-        return baseDoc.toObject();
-    });
+    const indexedDocs = documents.map(doc => new IndexedDocument(
+        doc.id,
+        {
+            title: doc.fields.title,
+            content: doc.fields.content,
+            type: doc.fields.type,
+            tags: doc.fields.tags,
+            category: doc.fields.category || '',
+            author: doc.fields.author,
+            created: doc.fields.created,
+            modified: doc.fields.modified,
+            status: doc.fields.status,
+            version: String(doc.fields.version),
+            locale: doc.fields.locale || ''
+        },
+        doc.metadata
+    ));
     await this.searchEngine.addDocuments(indexedDocs);
 }
     /**
@@ -839,5 +836,4 @@ async setWorkflowStatus(
 
 
     await this.searchEngine.updateDocument(indexedDoc);
-
 }
