@@ -395,48 +395,28 @@ async updateDocument(id: string, updates: Partial<NexusDocument['fields']>): Pro
  * Fixed bulk operations with proper type handling
  */
 async bulkAddDocuments(documents: CreateDocumentOptions[]): Promise<NexusDocument[]> {
-    const createdDocuments = documents.map(doc => {
-
-        const document = this.createDocument(doc);
-
-        return document;
-
-    }) as NexusDocument[];
-
+    const createdDocuments = documents.map(doc => this.createDocument(doc)) as NexusDocument[];
     
-
     const indexableDocuments = createdDocuments.map(doc => ({
-
-        ...doc,
-
+        id: doc.id,
         fields: {
-
-            ...doc.fields,
-
-            version: doc.fields.version.toString(), // Convert number to string
-
+            title: doc.fields.title,
+            content: doc.fields.content,
             type: doc.fields.type,
-
-            status: doc.fields.status,
-
+            tags: doc.fields.tags,
             category: doc.fields.category || '',
-
-            locale: doc.fields.locale || '',
-
+            author: doc.fields.author,
             created: doc.fields.created,
-
-            modified: doc.fields.modified
-
-        }
-
+            modified: doc.fields.modified,
+            status: doc.fields.status,
+            version: String(doc.fields.version),
+            locale: doc.fields.locale || ''
+        },
+        metadata: doc.metadata
     }));
-
     
-
     await this.searchEngine.addDocuments(indexableDocuments);
-
     
-
     return createdDocuments;
 }
 
