@@ -69,9 +69,10 @@ export class BaseDocument implements IndexedDocument {
         });
     }
 
-    update(fields: Partial<BaseDocument['fields']>): IndexedDocument {
+    update(updates: Partial<IndexedDocument>): IndexedDocument {
         const now = new Date();
         const currentVersion = this.fields.version;
+        const fields = updates.fields || {};
 
         if (fields.content && fields.content !== this.fields.content) {
             this.versions = this.versions || [];
@@ -99,12 +100,18 @@ export class BaseDocument implements IndexedDocument {
     }
 
     toObject(): IndexedDocument {
-        return {
-            ...this,
+        const obj: IndexedDocument = {
+            id: this.id,
+            fields: { ...this.fields },
+            versions: this.versions,
+            relations: this.relations,
+            metadata: { ...this.metadata },
             clone: this.clone.bind(this),
             update: this.update.bind(this),
-            toObject: this.toObject.bind(this)
+            toObject: this.toObject.bind(this),
+            document: this.document.bind(this)
         };
+        return obj;
     }
     document(): IndexedDocument {
         return this;
