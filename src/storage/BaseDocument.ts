@@ -1,54 +1,26 @@
-import { DocumentVersion, DocumentRelation } from "@/plugins/NexusDocument";
-import { DocumentMetadata } from "@/types";
-import { IndexedDocument } from "./IndexedDocument";
+interface Fields {
+    title: string;
+    content: string;
+    author: string;
+    tags: string[];
+    version: string;
+    [key: string]: string | string[];
+}
 
-/**
- * BaseDocument class that properly implements IndexedDocument
- */
-export class BaseDocument implements IndexedDocument {
-    id: string;
-    fields: {
-        [key: string]: string | string[];
-        title: string;
-        content: string;
-        type: string;
-        tags: string[];
-        category: string;
-        author: string;
-        created: string;
-        modified: string;
-        status: string;
-        version: string;
-        locale: string;
-    };
-    versions?: DocumentVersion[];
-    relations?: DocumentRelation[];
-    metadata: DocumentMetadata & {
-        indexed: number;
-        lastModified: number;
-        checksum?: string;
-        permissions?: string[];
-        workflow?: {
-            status: string;
-            assignee?: string;
-            dueDate?: string;
-        };
-    };
+class BaseDocument {
+    fields: Fields;
+    versions: any[];
+    relations: any[];
+    metadata: any;
 
     constructor(doc: Partial<BaseDocument>) {
-        this.id = doc.id || '';
-        this.fields = doc.fields || {
+        this.fields = {
             title: '',
             content: '',
-            type: '',
-            tags: [],
-            category: '',
             author: '',
-            created: new Date().toISOString(),
-            modified: new Date().toISOString(),
-            status: '',
             version: '1',
-            locale: ''
+            tags: [],
+            ...doc.fields
         };
         this.versions = doc.versions || [];
         this.relations = doc.relations || [];
@@ -89,33 +61,12 @@ export class BaseDocument implements IndexedDocument {
             fields: {
                 ...this.fields,
                 ...fields,
-                modified: now.toISOString(),
-                version: fields.content ? currentVersion + 1 : currentVersion
+                version: fields.content ? (Number(currentVersion) + 1).toString() : currentVersion
             },
             metadata: {
                 ...this.metadata,
-                lastModified: now.getTime()
+                lastModified: now.toISOString()
             }
         });
     }
-
-    toObject(): IndexedDocument {
-        const obj: IndexedDocument = {
-            id: this.id,
-            fields: { ...this.fields },
-            versions: this.versions,
-            relations: this.relations,
-            metadata: { ...this.metadata },
-            clone: this.clone.bind(this),
-            update: this.update.bind(this),
-            toObject: this.toObject.bind(this),
-            document: this.document.bind(this)
-        };
-        return obj;
-    }
-    document(): IndexedDocument {
-        return this;
-    }
-    }
-
-
+}

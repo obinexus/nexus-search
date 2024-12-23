@@ -1,18 +1,19 @@
 
 // Importing necessary types
+export interface IndexableDocumentFields {
+    title: string;
+    content: string;
+    author: string;
+    tags: string[];
+    version: string;
+    [key: string]: string | string[];
+}
 
 // Indexed Document Interface
 export interface IndexedDocument {
     document(): import("../storage").IndexedDocument;
     id: string;
-    fields: {
-        [key: string]: string | string[];
-        version: string;
-        title: string;
-        content: string;
-        author: string;
-        tags: string[];
-    };
+    fields:IndexableDocumentFields;
     metadata?: DocumentMetadata;
     toObject(): IndexedDocument;
 }
