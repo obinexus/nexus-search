@@ -22,7 +22,7 @@ export class DocumentAdapter implements IndexedDocument {
         locale: string;
     };
     metadata: DocumentMetadata;
-    versions?: DocumentVersion[];
+    versions: DocumentVersion[];
     relations?: DocumentRelation[];
 
     constructor(doc: Partial<NexusDocument>) {
@@ -45,7 +45,7 @@ export class DocumentAdapter implements IndexedDocument {
             indexed: doc.metadata?.indexed || Date.now(),
             lastModified: doc.metadata?.lastModified || Date.now()
         };
-        this.versions = doc.versions;
+        this.versions = doc.versions || [];
         this.relations = doc.relations;
     }
     [x: string]: any;
