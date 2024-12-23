@@ -5,6 +5,7 @@
  */
 
 import { SearchEngine } from "@/core";
+import { DocumentAdapter } from "@/mappers/DocumentAdapterMapper";
 import { BaseDocument, IndexedDocument } from "@/storage";
 import { 
     SearchOptions, 
@@ -359,7 +360,7 @@ export class NexusDocumentPlugin {
 
    
 /**
- * Fixed document update with proper interface handling
+ * Update document with adapter pattern
  */
 async updateDocument(id: string, updates: Partial<NexusDocument['fields']>): Promise<NexusDocument> {
     const document = await this.getDocument(id);
@@ -367,16 +368,15 @@ async updateDocument(id: string, updates: Partial<NexusDocument['fields']>): Pro
         throw new Error(`Document with id ${id} not found`);
     }
 
-    const baseDocument = new BaseDocument(document);
-    const updatedDocument = baseDocument.update(updates);
-    const documentToUpdate = {
-        ...updatedDocument.toObject(),
-        clone: () => updatedDocument.clone(),
-        update: (fields: any) => updatedDocument.update(fields)
+    const adapter = DocumentAdapter.fromNexusDocument(document);
+    const processedUpdates = {
+        ...updates,
+        version: updates.version !== undefined ? Number(updates.version) : undefined 
     };
-    await this.searchEngine.updateDocument(documentToUpdate);
+    const updated = adapter.update(processedUpdates);
+    await this.searchEngine.updateDocument(updated);
     
-    return updatedDocument as unknown as NexusDocument;
+    return (updated as unknown as DocumentAdapter).toNexusDocument();
 }
 
 
@@ -533,14 +533,24 @@ async exportDocuments(): Promise<NexusDocument[]> {
 async importDocuments(documents: NexusDocument[]): Promise<void> {
     const indexedDocs = documents.map(doc => 
         new BaseDocument({
-            ...doc,
+            id: doc.id,
             fields: {
-                ...doc.fields,
-                category: doc.fields.category || ''  // Provide default empty string
-            }
-        }).toObject()
+                title: doc.fields.title,
+                content: doc.fields.content,
+                type: doc.fields.type,
+                tags: doc.fields.tags,
+                category: doc.fields.category || '',
+                author: doc.fields.author,
+                created: doc.fields.created,
+                modified: doc.fields.modified,
+                status: doc.fields.status,
+                version: String(doc.fields.version), // Convert version to string
+                locale: doc.fields.locale || ''
+            },
+            metadata: doc.metadata
+        })
     );
-    await this.searchEngine.addDocuments(indexedDocs);
+    await this.searchEngine.addDocuments(indexedDocs.map(doc => doc.toObject()));
 }
     /**
      * Get document statistics
