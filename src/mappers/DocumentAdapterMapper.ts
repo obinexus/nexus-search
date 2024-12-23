@@ -8,7 +8,7 @@ import { DocumentMetadata } from "@/types";
 export class DocumentAdapter implements IndexedDocument {
     id: string;
     fields: {
-        [key: string]: string | string[] | number;
+        [key: string]: string | string[];
         title: string;
         content: string;
         type: string;
@@ -18,7 +18,7 @@ export class DocumentAdapter implements IndexedDocument {
         created: string;
         modified: string;
         status: 'draft' | 'published' | 'archived';
-        version: number;
+        version: string;
         locale: string;
     };
     metadata: DocumentMetadata;
@@ -37,7 +37,7 @@ export class DocumentAdapter implements IndexedDocument {
             created: doc.fields?.created || new Date().toISOString(),
             modified: doc.fields?.modified || new Date().toISOString(),
             status: doc.fields?.status || 'draft',
-            version: Number(doc.fields?.version || 1),
+            version: String(doc.fields?.version || 1),
             locale: doc.fields?.locale || ''
         };
         this.metadata = {
