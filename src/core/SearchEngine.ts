@@ -312,16 +312,18 @@ this.documents.set(docId, new IndexedDocument(
         }
 
         try {
-            const updatedDoc = IndexedDocument.fromObject({
+           const updatedDoc = IndexedDocument.fromObject({
+
                 ...document,
+
                 metadata: {
+
                     ...document.metadata,
+
                     lastModified: Date.now()
-                },
-                toObject: function (): IndexedDocument {
-                    throw new Error("Function not implemented.");
-                }
-            });
+
+                })
+
 
             await this.removeDocument(documentId);
             await this.addDocuments([updatedDoc]);
