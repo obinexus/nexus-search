@@ -82,7 +82,8 @@ export class SearchEngine {
                         title: doc.fields.title,
                         content: doc.fields.content,
                         author: doc.fields.author,
-                        tags: [...doc.fields.tags]
+                        tags: [...doc.fields.tags],
+                        version: doc.fields.version || '1.0'
                     },
                     {
                         ...doc.metadata,
