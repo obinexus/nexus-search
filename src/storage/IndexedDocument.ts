@@ -11,6 +11,8 @@ export class IndexedDocument implements IIndexedDocument {
         [key: string]: string | string[];
     };
     metadata?: DocumentMetadata;
+    versions: any[] = [];
+    relations: any[] = [];
 
     constructor(
         id: string,
@@ -40,8 +42,8 @@ export class IndexedDocument implements IIndexedDocument {
         this.metadata = metadata;
     }
     [x: string]: any;
-    document(): import(".").IndexedDocument {
-        throw new Error("Method not implemented.");
+    document(): IIndexedDocument {
+        return this;
     }
 
     static fromObject(obj: Partial<IIndexedDocument> & { id: string; fields: any }): IndexedDocument {
@@ -77,12 +79,13 @@ export class IndexedDocument implements IIndexedDocument {
             fields: {
                 ...this.fields,
                 tags: [...this.fields.tags] // Create new array to avoid references
-                ,
-                version: ""
             },
             metadata: this.metadata ? { ...this.metadata } : undefined,
-            toObject: this.toObject.bind(this),
-            document: () => this // Add the document property
+            versions: [...this.versions],
+            relations: [...this.relations],
+            document: () => this,
+            clone: () => this.clone(),
+            update: (updates) => this.update(updates)
         };
     }
 
