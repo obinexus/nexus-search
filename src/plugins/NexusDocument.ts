@@ -369,7 +369,12 @@ async updateDocument(id: string, updates: Partial<NexusDocument['fields']>): Pro
 
     const baseDocument = new BaseDocument(document);
     const updatedDocument = baseDocument.update(updates);
-    await this.searchEngine.updateDocument(updatedDocument.toObject());
+    const documentToUpdate = {
+        ...updatedDocument.toObject(),
+        clone: () => updatedDocument.clone(),
+        update: (fields: any) => updatedDocument.update(fields)
+    };
+    await this.searchEngine.updateDocument(documentToUpdate);
     
     return updatedDocument as unknown as NexusDocument;
 }
