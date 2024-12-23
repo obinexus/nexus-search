@@ -97,7 +97,6 @@ export class SearchEngine {
 this.documents.set(docId, new IndexedDocument(
 
     docId,
-
     {
 
         title: indexedDoc.fields.title,
@@ -106,9 +105,12 @@ this.documents.set(docId, new IndexedDocument(
 
         author: indexedDoc.fields.author,
 
-        tags: indexedDoc.fields.tags
+        tags: indexedDoc.fields.tags,
+
+        version: indexedDoc.fields.version || '1.0'
 
     },
+
 
     {
 
@@ -322,7 +324,7 @@ this.documents.set(docId, new IndexedDocument(
 
                     lastModified: Date.now()
 
-                })
+                }         });   
 
 
             await this.removeDocument(documentId);
