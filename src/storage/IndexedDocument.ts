@@ -7,22 +7,30 @@ export class IndexedDocument implements IIndexedDocument {
         content: string;
         author: string;
         tags: string[];
+        version: string;
         [key: string]: string | string[];
     };
     metadata?: DocumentMetadata;
 
     constructor(
         id: string,
-       
-    fields: {
-        title: string;
-        content: string;
-        author: string;
-        tags: string[];
-        version?: string;
-        [key: string]: string | string[];
-    }
-,
+
+
+        fields: {
+
+            title: string;
+
+            content: string;
+
+            author: string;
+
+            tags: string[];
+
+            [key: string]: string | string[];
+
+        }
+
+        ,
         metadata?: DocumentMetadata
     ) {
         this.id = id;
@@ -42,7 +50,7 @@ export class IndexedDocument implements IIndexedDocument {
             author: obj.fields.author || '',
             tags: Array.isArray(obj.fields.tags) ? obj.fields.tags : [],
             ...obj.fields
-            
+
         };
 
         // Create new instance with proper structure
@@ -67,6 +75,8 @@ export class IndexedDocument implements IIndexedDocument {
             fields: {
                 ...this.fields,
                 tags: [...this.fields.tags] // Create new array to avoid references
+                ,
+                version: ""
             },
             metadata: this.metadata ? { ...this.metadata } : undefined,
             toObject: this.toObject.bind(this),
@@ -78,18 +88,51 @@ export class IndexedDocument implements IIndexedDocument {
         return IndexedDocument.fromObject(this.toObject());
     }
 
+
     update(updates: Partial<IIndexedDocument>): IndexedDocument {
+
+        const fields = {
+
+            ...this.fields
+
+        };
+
+
+
+        if (updates.fields) {
+
+            Object.entries(updates.fields).forEach(([key, value]) => {
+
+                if (value !== undefined) {
+
+                    fields[key] = value;
+
+                }
+
+            });
+
+        }
+
+
+
         return IndexedDocument.fromObject({
+
             id: this.id,
-            fields: {
-                ...this.fields,
-                ...updates.fields
-            },
+
+            fields,
+
             metadata: {
+
                 ...this.metadata,
+
                 ...updates.metadata,
+
                 lastModified: Date.now()
+
             }
+
         });
+
     }
+
 }
