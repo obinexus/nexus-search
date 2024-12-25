@@ -1,4 +1,4 @@
-import { CacheManager, IndexedDocument, SearchStorage } from "@/storage";
+import {  CacheManager, IndexedDocument, SearchStorage } from "@/storage";
 import { 
     SearchOptions, 
     SearchResult, 
@@ -32,7 +32,7 @@ export class SearchEngine {
         this.eventListeners = new Set();
         this.trie = new TrieSearch();
         this.documents = new Map();
-        this.trieRoot = { score: 0, children: new Map() };
+        this.trieRoot = { id: '', value: '', score: 0, children: new Map() };
     }
 
     public async initialize(): Promise<void> {
@@ -111,7 +111,7 @@ export class SearchEngine {
             this.emitEvent({
                 type: 'index:complete',
                 timestamp: Date.now(),
-                data: { documentCount: documents.length }
+                data: { documentCount: documents.size }
             });
         } catch (error) {
             this.emitEvent({
@@ -329,13 +329,14 @@ export class SearchEngine {
             const searchResult: SearchResult<IndexedDocument> = {
                 id,
                 item: doc,
-                document: doc,
+
                 score: this.normalizeScore(score),
                 matches: [],
                 metadata: {
                     ...doc.metadata,
                     lastAccessed: Date.now()
-                }
+                },
+                document: doc
             };
 
             if (options.includeMatches) {

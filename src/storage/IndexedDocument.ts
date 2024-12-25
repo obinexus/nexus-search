@@ -1,5 +1,5 @@
 
-import { IndexedDocument as IIndexedDocument, DocumentMetadata, IndexableDocumentFields } from "@/types";
+import { IndexedDocument as IIndexedDocument, DocumentData, IndexableDocumentFields } from "@/types/document";
 
 
 
@@ -7,7 +7,12 @@ export class IndexedDocument implements IIndexedDocument {
 
     id: string;
 
-    fields: IndexableDocumentFields;
+    fields: {
+        title: string;
+        content: string;
+        author: string;
+        tags: string[];
+    };
 
     metadata?: DocumentMetadata;
 
@@ -30,7 +35,16 @@ export class IndexedDocument implements IIndexedDocument {
 
 
     [x: string]: any;
-
+        return {
+            id: this.id,
+            fields: this.fields,
+            metadata: this.metadata,
+            versions: this.versions,
+            relations: this.relations,
+            document: () => this.document(),
+            clone: () => this.clone(),
+            update: (updates: Partial<IIndexedDocument>) => this.update(updates)
+        };
 
 
     document(): IIndexedDocument {
@@ -89,7 +103,7 @@ export class IndexedDocument implements IIndexedDocument {
 
         return doc;
 
-    }
+                tags: Array.isArray(this.fields.tags) ? [...this.fields.tags] : [] // Create new array to avoid references
 
 
 
