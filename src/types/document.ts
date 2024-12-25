@@ -6,9 +6,23 @@ export interface IndexableDocumentFields {
     author: string;
     tags: string[];
     version: string;
-    [key: string]: string | string[];
-}
+    type?: string;
+    category?: string;
+    created?: string;
+    modified?: string;
+    status?: 'draft' | 'published' | 'archived';
+    locale?: string;
+    [key: string]: string | string[] | undefined;
+    fields: IndexableDocumentFields & {
+        type?: string;
+        category?: string;
+        created?: string;
+        modified?: string;
+        status?: 'draft' | 'published' | 'archived';
+        locale?: string;
+    };
 
+}
 // Indexed Document Interface
 export interface IndexedDocument {
     id: string;

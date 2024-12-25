@@ -398,7 +398,7 @@ export class NexusDocumentPlugin {
                 matches: result.matches,
                 document: doc,
                 item: {
-                    ...result.document,
+                    ...doc,
                     fields: {
                         title: doc.fields.title,
                         content: doc.fields.content,
