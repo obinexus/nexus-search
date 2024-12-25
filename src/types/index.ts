@@ -1,8 +1,8 @@
 // Core types
 export * from './search';
 export * from './core';
-export * from './document';
-export * from './database';
+
+export type * from './database';
 export * from './errors';
 export * from './events';
 export * from './mapper';

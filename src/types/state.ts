@@ -1,4 +1,4 @@
-import { DocumentLink, IndexableDocument } from ".";
+import { DocumentLink, IndexableDocument } from "./document";
 
 export interface SerializedTrieNode {
     weight: number;
