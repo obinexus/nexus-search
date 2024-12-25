@@ -111,7 +111,7 @@ export class SearchEngine {
             this.emitEvent({
                 type: 'index:complete',
                 timestamp: Date.now(),
-                data: { documentCount: documents.size }
+                data: { documentCount: documents.length }
             });
         } catch (error) {
             this.emitEvent({
@@ -523,12 +523,12 @@ public async importIndex(indexData: unknown): Promise<void> {
         await this.clearIndex();
         this.indexManager.importIndex(indexData);
         const documents = this.indexManager.getAllDocuments();
-        await this.addDocuments(documents.map(doc => doc[1]));
+        await this.addDocuments(Array.from(documents.values()));
 
         this.emitEvent({
             type: 'import:complete',
             timestamp: Date.now(),
-            data: { documentCount: documents.length }
+            data: { documentCount: documents.size }
         });
     } catch (error) {
         this.emitEvent({
