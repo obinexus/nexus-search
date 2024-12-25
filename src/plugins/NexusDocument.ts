@@ -85,7 +85,7 @@ export interface NexusDocument extends IndexedDocument {
         };
     };
     clone(): this;
-    update(fields: Partial<this['fields']>): this;
+    update(updates: Partial<IndexedDocument>): IndexedDocument;
     toObject(): this;
 }
 
@@ -128,7 +128,7 @@ export class NexusDocumentPlugin {
     private searchEngine: SearchEngine;
     private readonly defaultConfig: Required<NexusDocumentPluginConfig> = {
         name: 'nexus-document-plugin',
-        version: '1',
+        version: 1,
         fields: [
             'title', 'content', 'type', 'tags', 'category', 
             'author', 'created', 'modified', 'status', 'version'
@@ -237,9 +237,9 @@ export class NexusDocumentPlugin {
     
                 status: options.status || 'draft',
     
-                version: 1,
+                version: '1',
     
-                locale: options.locale
+                locale: options.locale || ''
     
             },
     
@@ -251,7 +251,7 @@ export class NexusDocumentPlugin {
     
                 lastModified: now.getTime(),
     
-                checksum: this.generateChecksum(options.content)
+                checksum: this.generateChecksum(options.content) || ''
     
             }
     
@@ -260,14 +260,12 @@ export class NexusDocumentPlugin {
     
     
         return Object.assign(doc, {
-    
-            clone: function() { return this; },
-    
+            toObject: function() { return this; },
+            clone: function() { return this.toObject(); },
             update: function(fields: any) {
-                Object.assign(this.fields, fields);
+                Object.assign((this as unknown as NexusDocument).fields, fields);
                 return this;
             }
-    
         });
     }    
 
@@ -291,7 +289,7 @@ export class NexusDocumentPlugin {
             fields: {
                 title: document.fields.title,
                 content: document.fields.content,
-                type: document.fields.type,
+                type: Array.isArray(document.fields.type) ? document.fields.type[0] : document.fields.type,
                 tags: document.fields.tags || [],
                 category: typeof document.fields.category === 'string' ? document.fields.category : undefined,
                 author: document.fields.author,
@@ -299,7 +297,7 @@ export class NexusDocumentPlugin {
                 modified: Array.isArray(document.fields.modified) ? document.fields.modified[0] : document.fields.modified,
                 status: document.fields.status as 'draft' | 'published' | 'archived',
                 version: String(document.fields.version),
-                locale: document.fields.locale
+                locale: document.fields.locale || ''
             },
             versions: [],
             relations: [],
@@ -375,11 +373,11 @@ export class NexusDocumentPlugin {
                 },
                 metadata: {
                     ...baseMetadata,
-                    indexed: baseMetadata.indexed || Date.now(),
-                    lastModified: baseMetadata.lastModified || Date.now(),
-                    checksum: baseMetadata.checksum,
-                    permissions: baseMetadata.permissions,
-                    workflow: baseMetadata.workflow
+                    indexed: typeof baseMetadata.indexed === 'number' ? baseMetadata.indexed : Date.now(),
+                    lastModified: typeof baseMetadata.lastModified === 'number' ? baseMetadata.lastModified : Date.now(),
+                    checksum: typeof baseMetadata.checksum === 'string' ? baseMetadata.checksum : undefined,
+                    permissions: Array.isArray(baseMetadata.permissions) && baseMetadata.permissions.every(p => typeof p === 'string') ? baseMetadata.permissions : undefined,
+                    workflow: baseMetadata.workflow && typeof baseMetadata.workflow === 'object' && baseMetadata.workflow !== null && 'status' in baseMetadata.workflow ? baseMetadata.workflow as { status: string; assignee?: string; dueDate?: string } : undefined
                 },
                 versions: [],
                 relations: [],
