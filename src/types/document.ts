@@ -26,13 +26,14 @@ export interface IndexableDocumentFields {
 // Indexed Document Interface
 export interface IndexedDocument {
     id: string;
-    document(): IndexedDocument;
-    fields: IndexableDocumentFields;
-    metadata?: DocumentMetadata;
-    versions: any[];
-    relations: any[];
-    clone(): IndexedDocument;
-    update(updates: Partial<IndexedDocument>): IndexedDocument;
+    fields: {
+        title: string;
+        content: string;
+        author: string;
+        tags: string[];
+        [key: string]: any;
+    };
+    metadata: DocumentMetadata;
 }
 
 // Types for primitive and complex values
