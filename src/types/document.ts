@@ -65,18 +65,3 @@ export interface IndexableDocument {
     author?: string;
     tags?: string[];
 }
-
-
-export interface SerializedState {
-    trie: SerializedTrieNode;
-    documents: [string, IndexableDocument][];
-    documentLinks: [string, DocumentLink[]][];
-}
-// Serialization interfaces
-export interface SerializedTrieNode {
-    isEndOfWord: boolean;
-    documentRefs: string[];
-    weight: number;
-    children: { [key: string]: SerializedTrieNode };
-}
-
