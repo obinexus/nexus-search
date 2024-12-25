@@ -6,9 +6,9 @@ import {
     IndexedDocument, 
     SearchableDocument, 
     SerializedState,
-    DocumentValue 
 } from "@/types";
 import { SerializedIndex } from "@/types/core";
+import { DocumentValue } from "@/types/document";
 import { createSearchableFields } from "@/utils";
 
 export class IndexManager {
