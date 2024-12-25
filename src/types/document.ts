@@ -41,17 +41,23 @@ export interface DocumentData {
     metadata?: DocumentMetadata;
 }
 
-export interface IndexedDocument {
-    id: string;
-    fields: {
-        title: string;
-        content: string;
-        author: string;
-        tags: string[];
-    };
-    metadata?: DocumentMetadata;
+export interface IndexableDocumentFields {
+    title: string;
+    content: string;
+    author: string;
+    tags: string[];
 }
 
+export interface IndexedDocument {
+    id: string;
+    fields: IndexableDocumentFields;
+    metadata?: DocumentMetadata;
+    versions: any[];
+    relations: any[];
+    document: () => IndexedDocument;
+    clone: () => IndexedDocument;
+    update: (updates: Partial<IndexedDocument>) => IndexedDocument;
+}
 export interface SearchableDocument {
     id: string;
     content: Record<string, DocumentValue>;
