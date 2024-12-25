@@ -10,7 +10,8 @@ import { BaseDocument, IndexedDocument } from "@/storage";
 import { 
     SearchOptions, 
     DocumentMetadata, 
-    SearchResult 
+    SearchResult, 
+    IndexableDocumentFields
 } from "@/types";
 
 /** Document version information */
@@ -57,7 +58,7 @@ export interface NexusDocumentPluginConfig {
 
 /** Extended document interface */
 export interface NexusDocument extends IndexedDocument {
-    fields: {
+    fields: { [key: string]: string | string[] } & IndexableDocumentFields & {
         title: string;
         content: string;
         type: string;
@@ -84,7 +85,7 @@ export interface NexusDocument extends IndexedDocument {
         };
     };
     clone(): this;
-    update(updates: Partial<IndexedDocument>): IndexedDocument;
+    update(updates: Partial<NexusDocument['fields']>): IndexedDocument;
     toObject(): this;
 }
 
@@ -420,7 +421,7 @@ export class NexusDocumentPlugin {
                     fields: {
                         title: doc.fields.title,
                         content: doc.fields.content,
-                        type: doc.fields.type,
+                        type: getStringValue(doc.fields.type),
                         tags: doc.fields.tags,
                         category: doc.fields.category,
                         author: doc.fields.author,
@@ -637,7 +638,7 @@ async bulkAddDocuments(documents: CreateDocumentOptions[]): Promise<NexusDocumen
 async exportDocuments(): Promise<NexusDocument[]> {
     const docs = await this.searchEngine.getAllDocuments();
    
-docs.map(doc => new BaseDocument({
+    return docs.map(doc => new BaseDocument({
 
     id: doc.id,
 
