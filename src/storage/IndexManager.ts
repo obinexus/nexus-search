@@ -12,9 +12,10 @@ import { DocumentValue } from "@/types/document";
 import { createSearchableFields } from "@/utils";
 
 export class IndexManager {
-    getSize(): number {
-        throw new Error("Method not implemented.");
+   getSize() {
+        return this.documents.size;
     }
+    
     getAllDocuments() {
         return this.documents;
         
