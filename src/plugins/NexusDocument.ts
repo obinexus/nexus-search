@@ -297,7 +297,7 @@ export class NexusDocumentPlugin {
                 modified: Array.isArray(document.fields.modified) ? document.fields.modified[0] : document.fields.modified,
                 status: document.fields.status as 'draft' | 'published' | 'archived',
                 version: String(document.fields.version),
-                locale: document.fields.locale || ''
+                locale: getStringValue(document.fields.locale)
             },
             versions: [],
             relations: [],
@@ -925,3 +925,7 @@ async setWorkflowStatus(
   return   await this.searchEngine.updateDocument(indexedDoc);
 }
 }
+function getStringValue(value: string | string[] | undefined): string {
+    return Array.isArray(value) ? value[0] || '' : value || '';
+}
+
