@@ -1,8 +1,93 @@
-import { CacheEntry, CacheStrategy, SearchResult } from "@/types";
+import { CacheEntry, CacheStatus, CacheStrategy, SearchResult } from "@/types";
 
 
 
 export class CacheManager {
+    public getSize(): number {
+        return this.cache.size;
+    }
+
+    public getStatus(): CacheStatus {
+        const timestamps = Array.from(this.cache.values()).map(entry => entry.timestamp);
+        const now = Date.now();
+        
+        // Calculate memory usage estimation
+        const memoryBytes = this.calculateMemoryUsage();
+        
+        return {
+            size: this.cache.size,
+            maxSize: this.maxSize,
+            strategy: this.strategy,
+            ttl: this.ttl,
+            utilization: this.cache.size / this.maxSize,
+            oldestEntryAge: timestamps.length ? now - Math.min(...timestamps) : null,
+            newestEntryAge: timestamps.length ? now - Math.max(...timestamps) : null,
+            memoryUsage: {
+                bytes: memoryBytes,
+                formatted: this.formatBytes(memoryBytes)
+            }
+        };
+    }
+
+    private calculateMemoryUsage(): number {
+        let totalSize = 0;
+
+        // Estimate size of cache entries
+        for (const [key, entry] of this.cache.entries()) {
+            // Key size (2 bytes per character in UTF-16)
+            totalSize += key.length * 2;
+
+            // Entry overhead (timestamp, lastAccessed, accessCount)
+            totalSize += 8 * 3; // 8 bytes per number
+
+            // Estimate size of cached data
+            totalSize += this.estimateDataSize(entry.data);
+        }
+
+        // Add overhead for Map structure and class properties
+        totalSize += 8 * (
+            1 + // maxSize
+            1 + // ttl
+            1 + // strategy string reference
+            this.accessOrder.length + // access order array
+            3   // stats object numbers
+        );
+
+        return totalSize;
+    }
+
+    private estimateDataSize(data: SearchResult<unknown>[]): number {
+        let size = 0;
+        
+        for (const result of data) {
+            // Basic properties
+            size += 8; // score (number)
+            size += result.matches.join('').length * 2; // matches array strings
+            
+            // Estimate item size (conservative estimate)
+            size += JSON.stringify(result.item).length * 2;
+            
+            // Metadata if present
+            if (result.metadata) {
+                size += JSON.stringify(result.metadata).length * 2;
+            }
+        }
+
+        return size;
+    }
+
+    private formatBytes(bytes: number): string {
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let size = bytes;
+        let unitIndex = 0;
+
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex++;
+        }
+
+        return `${size.toFixed(2)} ${units[unitIndex]}`;
+    }
     private cache: Map<string, CacheEntry>;
     private readonly maxSize: number;
     private readonly ttl: number;

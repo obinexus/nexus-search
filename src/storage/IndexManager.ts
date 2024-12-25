@@ -12,6 +12,9 @@ import { SerializedIndex } from "@/types/core";
 import { createSearchableFields } from "@/utils";
 
 export class IndexManager {
+    getSize(): number {
+        throw new Error("Method not implemented.");
+    }
     getAllDocuments() {
         return this.documents;
         

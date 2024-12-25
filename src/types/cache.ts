@@ -14,7 +14,7 @@ export interface CacheEntry {
 
 
 export interface CacheOptions {
-    strategy: CacheStrategy;
+    strategy: CacheStrategyType;
     maxSize: number;
     ttlMinutes: number;
 }
@@ -26,8 +26,16 @@ export enum CacheStrategyType {
 
   export type CacheStrategy = keyof typeof CacheStrategyType;
   
-  export interface CacheStats {
-    hits: number;
-    misses: number;
-    evictions: number;
+  export interface CacheStatus {
+    size: number;
+    maxSize: number;
+    strategy: CacheStrategy;
+    ttl: number;
+    utilization: number;
+    oldestEntryAge: number | null;
+    newestEntryAge: number | null;
+    memoryUsage: {
+        bytes: number;
+        formatted: string;
+    };
 }
