@@ -1,9 +1,9 @@
 import { DocumentLink, IndexableDocument } from "./document";
 
 export interface SerializedTrieNode {
-    weight: number;
     isEndOfWord: boolean;
     documentRefs: string[];
+    weight: number;
     children: { [key: string]: SerializedTrieNode };
 }
 

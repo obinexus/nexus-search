@@ -1,29 +1,22 @@
 
 // Importing necessary types
+export interface DocumentMetadata {
+    [key: string]: any;
+}
+
+export type DocumentValue = any;
+
+export interface DocumentLink {
+    source: string;
+    target: string;
+}
 export interface IndexableDocumentFields {
+    [key: string]: any;
     title: string;
     content: string;
     author: string;
     tags: string[];
-    version: string;
-    type?: string;
-    category?: string;
-    created?: string;
-    modified?: string;
-    status?: 'draft' | 'published' | 'archived';
-    locale?: string;
-    fields:  {
-    [key: string]: string | string[] | undefined;
-        type?: string;
-        category?: string;
-        created?: string;
-        modified?: string;
-        status?: 'draft' | 'published' | 'archived';
-        locale?: string;
-    };
-
 }
-// Indexed Document Interface
 export interface IndexedDocument {
     id: string;
     fields: {
@@ -33,23 +26,17 @@ export interface IndexedDocument {
         tags: string[];
         [key: string]: any;
     };
-    metadata: DocumentMetadata;
+    metadata?: DocumentMetadata;
 }
 
 // Types for primitive and complex values
 export type PrimitiveValue = string | number | boolean | null;
 export type ArrayValue = PrimitiveValue[];
 export type ComplexValue = Record<string, PrimitiveValue | ArrayValue>;
-export type DocumentValue = PrimitiveValue | ArrayValue | ComplexValue | undefined;
-
-// Metadata types
-export type DocumentMetadata = Record<string, DocumentValue>;
-
-// Document relationship types
-export interface DocumentLink {
-    fromId: string;
-    toId: string;
-    weight: number;
+export interface IndexedDocument {
+    id: string;
+    fields: IndexableDocumentFields;
+    metadata?: DocumentMetadata;
 }
 
 export interface DocumentRank {
@@ -57,13 +44,13 @@ export interface DocumentRank {
     rank: number;
     incomingLinks: number;
     outgoingLinks: number;
+    content: Record<string, any>;
+    metadata?: DocumentMetadata;
 }
-
 // Core document interfaces
 export interface DocumentData {
-    content: string;
+    [key: string]: any;
     metadata?: DocumentMetadata;
-    [key: string]: unknown;
 }
 
 export interface IndexableDocument {
@@ -79,6 +66,12 @@ export interface IndexableDocument {
     tags?: string[];
 }
 
+
+export interface SerializedState {
+    trie: SerializedTrieNode;
+    documents: [string, IndexableDocument][];
+    documentLinks: [string, DocumentLink[]][];
+}
 // Serialization interfaces
 export interface SerializedTrieNode {
     isEndOfWord: boolean;
@@ -87,8 +80,3 @@ export interface SerializedTrieNode {
     children: { [key: string]: SerializedTrieNode };
 }
 
-export interface SerializedState {
-    trie: SerializedTrieNode;
-    documents: [string, IndexableDocument][];
-    documentLinks: [string, DocumentLink[]][];
-}
