@@ -121,7 +121,13 @@ export class IndexedDocument implements IIndexedDocument {
 
     static create(data: {
         id: string;
-        fields: IndexableDocumentFields;
+        fields: IndexableDocumentFields & {
+            title: string;
+            content: string;
+            author: string;
+            tags: string[];
+            [key: string]: string | string[] | number | boolean | null;
+        };
         metadata?: DocumentMetadata;
     }): IndexedDocument {
         return new IndexedDocument(
@@ -137,7 +143,13 @@ export class IndexedDocument implements IIndexedDocument {
     }): IndexedDocument {
         return IndexedDocument.create({
             id: obj.id,
-            fields: obj.fields,
+            fields: {
+                ...obj.fields,
+                title: obj.fields.title,
+                content: obj.fields.content,
+                author: obj.fields.author,
+                tags: obj.fields.tags
+            },
             metadata: obj.metadata
         });
     }

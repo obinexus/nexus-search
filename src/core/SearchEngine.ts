@@ -522,13 +522,15 @@ public async importIndex(indexData: unknown): Promise<void> {
     try {
         await this.clearIndex();
         this.indexManager.importIndex(indexData);
-        const documents = this.indexManager.getAllDocuments();
-        await this.addDocuments(Array.from(documents.values()));
+       
+        const indexedDocuments = Array.from(this.documents.values()).map(doc => IndexedDocument.fromObject(doc));
+
+        await this.addDocuments(indexedDocuments);
 
         this.emitEvent({
             type: 'import:complete',
             timestamp: Date.now(),
-            data: { documentCount: documents.size }
+            data: { documentCount: this.documents.size }
         });
     } catch (error) {
         this.emitEvent({
