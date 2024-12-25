@@ -388,7 +388,8 @@ export class NexusDocumentPlugin {
                     Object.assign(this.fields, fields); 
                     return this as unknown as IndexedDocument; 
                 },
-                toObject: function() { return this; }
+                toObject: function() { return this; },
+                document: function() { return this; }
             };
 
             return {
