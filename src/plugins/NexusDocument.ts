@@ -389,7 +389,25 @@ export class NexusDocumentPlugin {
                     return this as unknown as IndexedDocument; 
                 },
                 toObject: function() { return this; },
-                document: function() { return this; }
+                document: function() { 
+                    return new IndexedDocument(
+                        this.id,
+                        {
+                            title: this.fields.title,
+                            content: this.fields.content,
+                            type: this.fields.type,
+                            tags: this.fields.tags,
+                            category: this.fields.category,
+                            author: this.fields.author,
+                            created: this.fields.created,
+                            modified: this.fields.modified,
+                            status: this.fields.status,
+                            version: this.fields.version,
+                            locale: this.fields.locale
+                        },
+                        this.metadata
+                    );
+                }
             };
 
             return {
@@ -618,7 +636,45 @@ async bulkAddDocuments(documents: CreateDocumentOptions[]): Promise<NexusDocumen
  */
 async exportDocuments(): Promise<NexusDocument[]> {
     const docs = await this.searchEngine.getAllDocuments();
-    return docs.map(doc => new BaseDocument(doc).toObject() as unknown as NexusDocument);
+   
+docs.map(doc => new BaseDocument({
+
+    id: doc.id,
+
+    fields: {
+
+        title: doc.fields.title,
+
+        content: doc.fields.content,
+
+        type: doc.fields.type,
+
+        tags: doc.fields.tags,
+
+        category: doc.fields.category || '',
+
+        author: doc.fields.author,
+
+        created: doc.fields.created,
+
+        modified: doc.fields.modified,
+
+        status: doc.fields.status,
+
+        version: doc.fields.version,
+
+        locale: doc.fields.locale || ''
+
+    },
+
+    metadata: doc.metadata,
+
+    versions: doc.versions,
+
+    relations: doc.relations
+
+}).toObject() as unknown as NexusDocument)
+
 }
 /**
  * Fixed import with proper interface handling
