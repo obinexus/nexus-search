@@ -1,4 +1,4 @@
-import { DocumentLink, IndexableDocument } from "./document";
+import { DocumentLink, IndexedDocument } from "./document";
 
 export interface SerializedTrieNode {
     isEndOfWord: boolean;
@@ -9,6 +9,6 @@ export interface SerializedTrieNode {
 
 export interface SerializedState {
     trie: SerializedTrieNode;
-    documents: [string, IndexableDocument][];
+    documents: [string, IndexedDocument][];
     documentLinks: [string, DocumentLink[]][];
 }

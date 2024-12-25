@@ -51,3 +51,9 @@ export interface IndexedDocument {
     };
     metadata?: DocumentMetadata;
 }
+
+export interface SearchableDocument {
+    id: string;
+    content: Record<string, DocumentValue>;
+    metadata?: DocumentMetadata;
+}
