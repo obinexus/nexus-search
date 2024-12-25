@@ -12,8 +12,8 @@ export interface IndexableDocumentFields {
     modified?: string;
     status?: 'draft' | 'published' | 'archived';
     locale?: string;
+    fields:  {
     [key: string]: string | string[] | undefined;
-    fields: IndexableDocumentFields & {
         type?: string;
         category?: string;
         created?: string;
