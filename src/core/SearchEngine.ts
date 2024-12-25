@@ -5,9 +5,7 @@ import {
     SearchEngineConfig,
     SearchEventListener,
     SearchEvent,
-    IndexNode,
-    StorageOptions
-} from "@/types";
+    IndexNode} from "@/types";
 import { validateSearchOptions, createSearchableFields, bfsRegexTraversal, dfsRegexTraversal } from "@/utils";
 import { IndexManager } from "../storage/IndexManager";
 import { QueryProcessor } from "./QueryProcessor";
