@@ -1,4 +1,4 @@
-import { DocumentValue, IndexableDocument, OptimizationResult, SearchableDocument } from "@/types";
+import { DocumentValue, IndexableDocument, IndexNode, OptimizationResult, SearchableDocument } from "@/types";
 
 type DocumentContent = {
     [key: string]: DocumentValue | DocumentContent;
@@ -218,4 +218,91 @@ export function createDocument({ id, fields, metadata = {} }: { id: string; fiel
             ...metadata
         }
     };
+}
+
+/**
+ * Create a document that can be searched  
+ */
+export function createSearchableDocument({ id, content, metadata = {} }: { id: string; content: Record<string, DocumentValue>; metadata?: Record<string, DocumentValue> }) {
+    return {
+        id,
+        content,
+        metadata
+    };
+}
+
+
+
+/**
+ * Performs Breadth-First Search traversal on a trie structure with regex matching.
+ * @param root Starting node of the trie
+ * @param regex Regular expression to match
+ * @param maxResults Maximum number of results to return
+ * @returns Array of matching document IDs with their scores
+ */
+export function bfsRegexTraversal(
+    root: IndexNode,
+    regex: RegExp,
+    maxResults: number = 10
+): Array<{ id: string; score: number }> {
+    const results: Array<{ id: string; score: number }> = [];
+    const queue: Array<{ node: IndexNode; matched: string }> = [];
+    const visited = new Set<string>();
+
+    // Initialize queue with root node
+    queue.push({ node: root, matched: '' });
+
+    while (queue.length > 0 && results.length < maxResults) {
+        const { node, matched } = queue.shift()!;
+
+        // Check if we've found a complete match
+        if (regex.test(matched) && node.id && !visited.has(node.id)) {
+            results.push({ id: node.id, score: node.score });
+            visited.add(node.id);
+        }
+
+        // Add children to queue
+        for (const [char, childNode] of node.children.entries()) {
+            queue.push({
+                node: childNode,
+                matched: matched + char
+            });
+        }
+    }
+
+    return results.sort((a, b) => b.score - a.score);
+}
+
+/**
+ * Performs Depth-First Search traversal on a trie structure with regex matching.
+ * @param root Starting node of the trie
+ * @param regex Regular expression to match
+ * @param maxResults Maximum number of results to return
+ * @returns Array of matching document IDs with their scores
+ */
+export function dfsRegexTraversal(
+    root: IndexNode,
+    regex: RegExp,
+    maxResults: number = 10
+): Array<{ id: string; score: number }> {
+    const results: Array<{ id: string; score: number }> = [];
+    const visited = new Set<string>();
+
+    function dfs(node: IndexNode, matched: string): void {
+        if (results.length >= maxResults) return;
+
+        // Check if we've found a complete match
+        if (regex.test(matched) && node.id && !visited.has(node.id)) {
+            results.push({ id: node.id, score: node.score });
+            visited.add(node.id);
+        }
+
+        // Explore children
+        for (const [char, childNode] of node.children.entries()) {
+            dfs(childNode, matched + char);
+        }
+    }
+
+    dfs(root, '');
+    return results.sort((a, b) => b.score - a.score);
 }
