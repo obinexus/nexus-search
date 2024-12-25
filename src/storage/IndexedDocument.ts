@@ -135,7 +135,15 @@ export class IndexedDocument implements IIndexedDocument {
 
     update(updates: Partial<IIndexedDocument>): IndexedDocument {
 
-        const fields = {
+        const fields: IndexableDocumentFields = {
+
+            title: this.fields.title || '',
+
+            content: this.fields.content || '',
+
+            author: this.fields.author || '',
+
+            tags: Array.isArray(this.fields.tags) ? this.fields.tags : [],
 
             ...this.fields
 
@@ -159,23 +167,24 @@ export class IndexedDocument implements IIndexedDocument {
 
 
 
-        return IndexedDocument.fromObject({
-
-            id: this.id,
-
-            fields,
-
-            metadata: {
-
-                ...this.metadata,
-
-                ...updates.metadata,
-
-                lastModified: Date.now()
-
-            }
-
-        });
+            return IndexedDocument.fromObject({
+    
+                id: this.id,
+    
+                fields,
+    
+                metadata: {
+    
+                    ...this.metadata,
+    
+                    ...updates.metadata,
+    
+                    lastModified: Date.now()
+    
+                }
+    
+            });
+        }
 
     }
 
