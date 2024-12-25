@@ -2,14 +2,7 @@ import { IndexedDocument as IIndexedDocument, DocumentMetadata } from "@/types";
 
 export class IndexedDocument implements IIndexedDocument {
     id: string;
-    fields: {
-        title: string;
-        content: string;
-        author: string;
-        tags: string[];
-        version: string;
-        [key: string]: string | string[];
-    };
+    fields: IndexableDocumentFields;
     metadata?: DocumentMetadata;
     versions: any[] = [];
     relations: any[] = [];
@@ -25,21 +18,7 @@ export class IndexedDocument implements IIndexedDocument {
             content: string;
 
             author: string;
-
-            tags: string[];
-
-            version: string;
-
-            [key: string]: string | string[];
-
-        }
-
-        ,
-        metadata?: DocumentMetadata
-    ) {
-        this.id = id;
-        this.fields = fields;
-        this.metadata = metadata;
+        fields: IndexableDocumentFields
     }
     [x: string]: any;
     document(): IIndexedDocument {

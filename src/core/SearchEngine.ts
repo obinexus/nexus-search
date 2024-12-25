@@ -314,18 +314,35 @@ this.documents.set(docId, new IndexedDocument(
         }
 
         try {
-           const updatedDoc = IndexedDocument.fromObject({
-
-                ...document,
-
-                metadata: {
-
-                    ...document.metadata,
-
-                    lastModified: Date.now()
-
-                }         });   
-
+           const updatedDoc = 
+           IndexedDocument.fromObject({
+           
+                           ...document,
+           
+                           fields: {
+           
+                               title: document.fields.title,
+           
+                               content: document.fields.content,
+           
+                               author: document.fields.author,
+           
+                               tags: document.fields.tags,
+           
+                               version: document.fields.version || '1.0'
+           
+                           },
+           
+                           metadata: {
+           
+                               ...document.metadata,
+           
+                               lastModified: Date.now()
+           
+                           }
+           
+                       })
+           
 
             await this.removeDocument(documentId);
             await this.addDocuments([updatedDoc]);
