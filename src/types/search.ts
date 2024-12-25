@@ -56,6 +56,7 @@ export interface SearchableDocument {
     id: string;
     content: Record<string, DocumentValue>;
     metadata?: DocumentMetadata;
+    [key: string]: any;
 }
 
 // Field interface for indexing
