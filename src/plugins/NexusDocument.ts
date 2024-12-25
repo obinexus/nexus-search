@@ -926,3 +926,4 @@ async setWorkflowStatus(
 
   return   await this.searchEngine.updateDocument(indexedDoc);
 }
+}
