@@ -9,7 +9,6 @@ import { DocumentAdapter } from "@/mappers/DocumentAdapterMapper";
 import { BaseDocument, IndexedDocument } from "@/storage";
 import { 
     SearchOptions, 
-    IndexedDocument, 
     DocumentMetadata, 
     SearchResult 
 } from "@/types";
@@ -261,10 +260,10 @@ export class NexusDocumentPlugin {
     
         return Object.assign(doc, {
             toObject: function() { return this; },
-            clone: function() { return this.toObject(); },
+            clone: function() { return Object.assign(Object.create(Object.getPrototypeOf(this)), this.toObject()); },
             update: function(fields: any) {
                 Object.assign((this as unknown as NexusDocument).fields, fields);
-                return this;
+                return this as unknown as IndexedDocument;
             }
         });
     }    
@@ -302,7 +301,10 @@ export class NexusDocumentPlugin {
             versions: [],
             relations: [],
             clone: function() { return this; },
-            update: function(fields) { return Object.assign(this, { fields: { ...this.fields, ...fields } }); },
+            update: function(fields) { 
+                Object.assign(this.fields, fields); 
+                return this as unknown as IndexedDocument; 
+            },
             toObject: function() { return this; }
         };
         await this.searchEngine.addDocuments([indexedDoc]);
