@@ -250,7 +250,7 @@ export class NexusDocumentPlugin {
     
                 lastModified: now.getTime(),
     
-                checksum: this.generateChecksum(options.content) || ''
+                checksum: this.generateChecksum(options.content) || undefined
     
             }
     
@@ -384,7 +384,10 @@ export class NexusDocumentPlugin {
                 versions: [],
                 relations: [],
                 clone: function() { return this; },
-                update: function(fields) { return Object.assign(this, { fields: { ...this.fields, ...fields } }); },
+                update: function(fields) { 
+                    Object.assign(this.fields, fields); 
+                    return this as unknown as IndexedDocument; 
+                },
                 toObject: function() { return this; }
             };
 
