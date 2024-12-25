@@ -531,9 +531,27 @@ async updateDocument(id: string, updates: Partial<NexusDocument['fields']>): Pro
 
             {
 
-                ...sourceDoc.fields,
+                title: sourceDoc.fields.title,
 
-                version: String(sourceDoc.fields.version)
+                content: sourceDoc.fields.content,
+
+                type: sourceDoc.fields.type,
+
+                tags: sourceDoc.fields.tags,
+
+                category: sourceDoc.fields.category || '',
+
+                author: sourceDoc.fields.author,
+
+                created: sourceDoc.fields.created,
+
+                modified: sourceDoc.fields.modified,
+
+                status: sourceDoc.fields.status,
+
+                version: String(sourceDoc.fields.version),
+
+                locale: sourceDoc.fields.locale || ''
 
             },
 
@@ -636,7 +654,7 @@ async bulkAddDocuments(documents: CreateDocumentOptions[]): Promise<NexusDocumen
  * Fixed export with proper type casting
  */
 async exportDocuments(): Promise<NexusDocument[]> {
-    const docs = await this.searchEngine.getAllDocuments();
+    const docs = await this.searchEngine.getAllDocuments() as NexusDocument[];
    
     return docs.map(doc => new BaseDocument({
 
@@ -644,27 +662,27 @@ async exportDocuments(): Promise<NexusDocument[]> {
 
     fields: {
 
-        title: doc.fields.title,
+        title: getStringValue(doc.fields.title),
 
-        content: doc.fields.content,
+        content: getStringValue(doc.fields.content),
 
-        type: doc.fields.type,
+        type: getStringValue(doc.fields.type),
 
-        tags: doc.fields.tags,
+        tags: Array.isArray(doc.fields.tags) ? doc.fields.tags : [],
 
-        category: doc.fields.category || '',
+        category: getStringValue(doc.fields.category),
 
-        author: doc.fields.author,
+        author: getStringValue(doc.fields.author),
 
-        created: doc.fields.created,
+        created: getStringValue(doc.fields.created),
 
-        modified: doc.fields.modified,
+        modified: getStringValue(doc.fields.modified),
 
-        status: doc.fields.status,
+        status: getStringValue(doc.fields.status) as 'draft' | 'published' | 'archived',
 
-        version: doc.fields.version,
+        version: getStringValue(doc.fields.version),
 
-        locale: doc.fields.locale || ''
+        locale: getStringValue(doc.fields.locale)
 
     },
 
