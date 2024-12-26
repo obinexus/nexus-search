@@ -1,5 +1,5 @@
 import { TrieSearch } from "@/algorithms/trie";
-import {  SearchableDocument, SearchResult, SerializedState } from "@/types";
+import {  IndexedDocument, SearchableDocument, SearchResult, SerializedState } from "@/types";
 import { DataMapper } from "./DataMapper";
 
 
@@ -56,7 +56,7 @@ export class IndexMapper {
     const results = Array.from(documentScores.entries())
       .map(([id, { score, matches }]) => ({
         id: id,
-        document: id,
+        document: this.dataMapper.getDocumentById(id) as unknown as IndexedDocument,
         item: id,
         score: score / searchTerms.length,
         matches: Array.from(matches)

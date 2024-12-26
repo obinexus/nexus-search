@@ -16,6 +16,17 @@ export class DataMapper {
     return this.dataMap.get(key) || new Set();
   }
 
+  getDocumentById(documentId: string): Set<string> {
+    const documents = new Set<string>();
+    this.dataMap.forEach(value => {
+      if (value.has(documentId)) {
+        documents.add(documentId);
+      }
+    }
+    );
+    return documents;
+  }
+
   getAllKeys(): string[] {
     return Array.from(this.dataMap.keys());
   }
@@ -25,6 +36,8 @@ export class DataMapper {
       value.delete(documentId);
     });
   }
+
+
 
   removeKey(key: string): void {
     this.dataMap.delete(key);
