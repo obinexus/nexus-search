@@ -250,7 +250,7 @@ export class NexusDocumentAdapter implements NexusDocument {
             versions: this.versions,
             relations: this.relations,
             clone: () => this.clone() as unknown as IndexedDocument,
-            update: (updates) => this.update(updates) as unknown  as IndexedDocument,
+            update: (updates: Partial<IndexedDocument>) => this.update(updates) as unknown as IndexedDocument,
             toObject: () => this.toObject() as unknown as IndexedDocument,
             document: () => this as unknown as IndexedDocument
         };
