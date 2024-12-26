@@ -1,6 +1,6 @@
 {
   "name": "@obinexuscomputing/nexus-search",
-  "version": "0.1.56",
+  "version": "0.1.56rc",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -40,7 +40,8 @@
     "TODO.md",
     "fixtures/",
     "docs/",
-    "TODO.md"
+    "TODO.md",
+    "__tests__/"
   ],
   "dependencies": {
     "@eslint/js": "^9.16.0",
