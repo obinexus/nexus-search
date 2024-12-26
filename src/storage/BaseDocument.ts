@@ -2,13 +2,19 @@ import { DocumentMetadata, IndexedDocument, IndexableDocumentFields, DocumentDat
 
 export class BaseDocument implements IndexedDocument {
     id: string;
-    document(): IndexedDocument {
-        return this;
-    }
     fields: IndexableDocumentFields & { content: string };
     metadata?: DocumentMetadata;
-    versions: any[];
-    relations: any[];
+    versions: Array<{
+        version: number;
+        content: string;
+        modified: Date;
+        author: string;
+    }>;
+    relations: Array<{
+        type: string;
+        targetId: string;
+    }>;
+    content: DocumentData;
 
     constructor(doc: Partial<BaseDocument>) {
         this.id = doc.id || '';
@@ -27,74 +33,67 @@ export class BaseDocument implements IndexedDocument {
             lastModified: Date.now(),
             ...(doc.metadata || {})
         };
-
-        this.versions = doc.versions || [];
-        this.relations = doc.relations || [];
-        this.metadata = {
-            indexed: Date.now(),
-            lastModified: Date.now(),
-            ...(doc.metadata || {})
-        };
+        this.content = { ...this.fields };
     }
-    content: DocumentData;
+
+    document(): IndexedDocument {
+        return this;
+    }
 
     clone(): IndexedDocument {
         return new BaseDocument({
             ...this,
             fields: { ...this.fields },
-            versions: [...(this.versions || [])],
-            relations: [...(this.relations || [])],
+            versions: [...this.versions],
+            relations: [...this.relations],
             metadata: { ...this.metadata }
         });
     }
 
     toObject(): IndexedDocument {
-        interface DocumentObject extends IndexedDocument {
-            toObject: () => DocumentObject;
-            clone: () => IndexedDocument;
-            update: (updates: Partial<IndexedDocument>) => IndexedDocument;
-        }
-
-                const obj: DocumentObject = {
-                    id: this.id,
-                    fields: this.fields,
-                    metadata: this.metadata,
-                    versions: this.versions,
-                    relations: this.relations,
-                    document: function (): IndexedDocument { return obj; },
-                    toObject: function (): DocumentObject { return obj; },
-                    clone: (): IndexedDocument => this.clone(),
-                    update: (updates: Partial<IndexedDocument>): IndexedDocument => this.update(updates),
-                    content: this.content
-                };
-                return obj;
+        const obj: IndexedDocument = {
+            id: this.id,
+            fields: this.fields,
+            metadata: this.metadata,
+            versions: this.versions,
+            relations: this.relations,
+            content: this.content,
+            document: () => this.document(),
+            toObject: () => this.toObject(),
+            clone: () => this.clone(),
+            update: (updates: Partial<IndexedDocument>) => this.update(updates)
+        };
+        return obj;
     }
 
     update(updates: Partial<IndexedDocument>): IndexedDocument {
-        const now = new Date();
+        const now = Date.now();
         const currentVersion = this.fields.version;
-        const fields: Partial<IndexableDocumentFields> = updates.fields || {};
+        const fields = updates.fields as Partial<IndexableDocumentFields> || {};
 
+        // Create new version if content changes
         if (fields.content && fields.content !== this.fields.content) {
-            this.versions = this.versions || [];
             this.versions.push({
                 version: Number(currentVersion),
                 content: this.fields.content,
-                modified: this.fields.modified && typeof this.fields.modified === 'string' ? new Date(this.fields.modified) : new Date(),
+                modified: new Date(this.metadata?.lastModified || now),
                 author: this.fields.author
             });
         }
 
+        // Create updated document
         return new BaseDocument({
             ...this,
             fields: {
                 ...this.fields,
                 ...fields,
-                version: fields.content ? (Number(currentVersion) + 1).toString() : currentVersion
+                version: fields.content ? 
+                    (Number(currentVersion) + 1).toString() : 
+                    currentVersion
             },
             metadata: {
                 ...this.metadata,
-                lastModified: now.toISOString()
+                lastModified: now
             }
         });
     }

@@ -27,7 +27,7 @@ export type ArrayValue = PrimitiveValue[];
 export type ComplexValue = Record<string, PrimitiveValue | ArrayValue>;
 export interface IndexedDocument {
     id: string;
-    fields: IndexableDocumentFields;
+    fields: IndexableDocumentFields & { content: string };
     metadata?: DocumentMetadata;
 }
 
@@ -48,15 +48,43 @@ export interface DocumentData {
 
 
 export interface IndexedDocument {
+
     id: string;
-    fields: IndexableDocumentFields;
-    content: DocumentData;
+
+    fields: IndexableDocumentFields & { content: string };
+
     metadata?: DocumentMetadata;
-    versions: any[];
-    relations: any[];
-    document: () => IndexedDocument;
-    clone: () => IndexedDocument;
-    update: (updates: Partial<IndexedDocument>) => IndexedDocument;
+
+    versions: Array<{
+
+        version: number;
+
+        content: string;
+
+        modified: Date;
+
+        author: string;
+
+    }>;
+
+    relations: Array<{
+
+        type: string;
+
+        targetId: string;
+
+    }>;
+
+    content: DocumentData;
+
+    document(): IndexedDocument;
+
+    clone(): IndexedDocument;
+
+    toObject(): IndexedDocument;
+
+    update(updates: Partial<IndexedDocument>): IndexedDocument;
+
 }
 export interface SearchableDocument {
     id: string;
