@@ -224,7 +224,7 @@ export class NexusDocumentAdapter implements NexusDocument {
             });
         }
 
-        return updated;
+        return updated as this;
     }
 
     toObject(): this {
@@ -239,6 +239,7 @@ export class NexusDocumentAdapter implements NexusDocument {
             relations: this.relations
         };
     }
+
     toIndexedDocument(): IndexedDocument {
         return {
             id: this.id,
@@ -248,10 +249,10 @@ export class NexusDocumentAdapter implements NexusDocument {
             toJSON: () => this.toJSON(),
             versions: this.versions,
             relations: this.relations,
-            clone: () => this.clone(),
-            update: (updates) => this.update(updates),
-            toObject: () => this.toObject(),
-            document: () => this
+            clone: () => this.clone() as unknown as IndexedDocument,
+            update: (updates) => this.update(updates) as unknown  as IndexedDocument,
+            toObject: () => this.toObject() as unknown as IndexedDocument,
+            document: () => this as unknown as IndexedDocument
         };
     }
 
