@@ -1,9 +1,9 @@
-import {  IndexableDocument, DocumentLink, SerializedState, SerializedTrieNode } from "@/types";
+import {  IndexedDocument, DocumentLink, SerializedState, SerializedTrieNode } from "@/types";
 import { TrieNode } from "./TrieNode";
 
 export class TrieSearch {
     private root: TrieNode;
-    private documents: Map<string, IndexableDocument>;
+    private documents: Map<string, IndexedDocument>;
     private documentLinks: Map<string, DocumentLink[]>;
 
     constructor() {

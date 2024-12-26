@@ -51,6 +51,7 @@ export interface IndexableDocumentFields {
 export interface IndexedDocument {
     id: string;
     fields: IndexableDocumentFields;
+    content: DocumentData;
     metadata?: DocumentMetadata;
     versions: any[];
     relations: any[];
@@ -63,3 +64,10 @@ export interface SearchableDocument {
     content: Record<string, DocumentValue>;
     metadata?: DocumentMetadata;
 }
+
+
+
+
+export type DocumentContent = {
+    [key: string]: DocumentValue | DocumentContent;
+};

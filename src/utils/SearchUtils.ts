@@ -1,8 +1,7 @@
-import { DocumentValue, IndexableDocument, IndexNode, OptimizationResult, SearchableDocument } from "@/types";
+import { IndexedDocument } from "@/storage";
+import { IndexNode, OptimizationResult, SearchableDocument } from "@/types";
+import { DocumentContent, DocumentValue } from "@/types/document";
 
-type DocumentContent = {
-    [key: string]: DocumentValue | DocumentContent;
-};
 
 /**
  * Creates searchable fields from a document based on specified field paths.
@@ -115,7 +114,7 @@ export function getNestedValue(
  * @param {T[]} data - Array of indexable documents to optimize.
  * @returns {OptimizationResult<T>} Optimized data and optimization statistics.
  */
-export function optimizeIndex<T extends IndexableDocument>(
+export function optimizeIndex<T extends IndexedDocument>(
     data: T[]
 ): OptimizationResult<T> {
     if (!Array.isArray(data)) {
@@ -188,7 +187,7 @@ export function sortObjectKeys<T extends object>(obj: T): T {
 /**
  * Helper function to generate consistent sort keys for documents.
  */
-export function generateSortKey(doc: IndexableDocument): string {
+export function generateSortKey(doc: IndexedDocument): string {
     if (!doc.id || !doc.content) {
         return '';
     }

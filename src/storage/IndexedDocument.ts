@@ -16,6 +16,7 @@ export class IndexedDocument implements IIndexedDocument {
     metadata?: DocumentMetadata;
     versions: any[] = [];
     relations: any[] = [];
+    content: any;
 
     constructor(
         id: string,
@@ -63,6 +64,7 @@ export class IndexedDocument implements IIndexedDocument {
             metadata: this.metadata ? { ...this.metadata } : undefined,
             versions: [...this.versions],
             relations: [...this.relations],
+            content: this.content,
             document: () => this,
             clone: () => this.clone(),
             update: (updates: Partial<IIndexedDocument>) => this.update(updates)
