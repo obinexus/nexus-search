@@ -18,6 +18,7 @@ export interface IndexableDocumentFields {
     author: string;
     tags: string[];
     version: string;
+    modified?: string;
 }
 
 // Types for primitive and complex values
@@ -43,13 +44,8 @@ export interface DocumentData {
     [key: string]: any;
     metadata?: DocumentMetadata;
 }
+// Removed duplicate interface definition
 
-export interface IndexableDocumentFields {
-    title: string;
-    content: string;
-    author: string;
-    tags: string[];
-}
 
 export interface IndexedDocument {
     id: string;
