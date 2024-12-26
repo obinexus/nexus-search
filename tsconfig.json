@@ -24,7 +24,9 @@
       "@algorithms/*": ["src/algorithms/*"],
       "@storage/*": ["src/storage/*"],
       "@utils/*": ["src/utils/*"],
-      "@types/*": ["src/types/*"]
+      "@types/*": ["src/types/*"],
+      "@adapters/*": ["src/adapters/*"],
+      
     },
     "plugins": [
       {
