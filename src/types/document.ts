@@ -48,43 +48,22 @@ export interface DocumentData {
 
 
 export interface IndexedDocument {
-
     id: string;
-
-    fields: IndexableDocumentFields & { content: string };
-
-    metadata?: DocumentMetadata;
-
-    versions: Array<{
-
-        version: number;
-
+    fields: IndexableDocumentFields & {
+        title: string;
         content: string;
-
-        modified: Date;
-
         author: string;
-
-    }>;
-
-    relations: Array<{
-
-        type: string;
-
-        targetId: string;
-
-    }>;
-
-    content: DocumentData;
-
-    document(): IndexedDocument;
-
-    clone(): IndexedDocument;
-
+        tags: string[];
+        [key: string]: string | string[] | number | boolean | null;
+    };
+    metadata?: DocumentMetadata;
+    versions: any[];
+    relations: any[];
+    content: any;
     toObject(): IndexedDocument;
-
+    document(): IndexedDocument;
+    clone(): IndexedDocument;
     update(updates: Partial<IndexedDocument>): IndexedDocument;
-
 }
 export interface SearchableDocument {
     id: string;

@@ -4,6 +4,8 @@ import {
     IndexableDocumentFields 
 } from "@/types/document";
 
+
+
 export class IndexedDocument implements IIndexedDocument {
     readonly id: string;
     fields: IndexableDocumentFields & {
