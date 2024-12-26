@@ -22,6 +22,7 @@
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
     "build": "rollup -c",
+    "build:watch": "rollup -c -w",
     "postbuild": "node scripts/verify-build.js",
     "demo": "node fixtures/server.js",
     "dev": "rollup -c -w",
