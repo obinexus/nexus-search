@@ -24,17 +24,23 @@ export class ScoringUtils {
                 id: docId,
                 rank: 1 / documents.size,
                 incomingLinks: 0,
-                outgoingLinks: 0
+                outgoingLinks: 0,
+                content: {}
             });
             adjacencyMap.set(docId, new Set());
         }
 
         // Build links
         for (const link of links) {
-            const fromRank = documentRanks.get(link.fromId);
-            const toRank = documentRanks.get(link.toId);
-            if (fromRank && toRank && adjacencyMap.has(link.fromId)) {
-                adjacencyMap.get(link.fromId)!.add(link.toId);
+           
+            const fromRank = documentRanks.get(link.fromId as unknown as string);
+
+            const toRank = documentRanks.get(link.toId as unknown as string);
+
+            if (fromRank && toRank && adjacencyMap.has(link.fromId as unknown as string)) {
+
+                adjacencyMap.get(link.fromId as unknown as string)!.add(link.toId as unknown as string);
+
                 fromRank.outgoingLinks++;
                 toRank.incomingLinks++;
             }

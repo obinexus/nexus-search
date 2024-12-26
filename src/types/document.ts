@@ -7,6 +7,8 @@ export interface DocumentMetadata {
 export type DocumentValue = any;
 
 export interface DocumentLink {
+    fromId(fromId: any): unknown;
+    toId(toId: any): unknown;
     source: string;
     target: string;
 }
