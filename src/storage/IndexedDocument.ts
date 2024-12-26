@@ -43,8 +43,26 @@ export class IndexedDocument implements IIndexedDocument {
         tags: string[];
         [key: string]: string | string[] | number | boolean | null;
     } {
+        const normalizedFields: IndexableDocumentFields = {
+            title: "",
+            content: "",
+            author: "",
+            tags: [],
+            version: ""
+        };
+    
+        for (const key in fields) {
+            if (fields[key] !== undefined) {
+                normalizedFields[key] = fields[key];
+            }
+        }
+    
         return {
-            ...fields
+            ...normalizedFields,
+            title: fields.title || '',
+            content: fields.content || '',
+            author: fields.author || '',
+            tags: fields.tags || []
         };
     }
 
@@ -56,7 +74,7 @@ export class IndexedDocument implements IIndexedDocument {
         };
     }
 
-    toObject(): IIndexedDocument {
+    toObject(): any {
         return {
             id: this.id,
             fields: {
