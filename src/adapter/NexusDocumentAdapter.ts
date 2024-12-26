@@ -38,17 +38,18 @@ export class NexusDocumentAdapter implements NexusDocument {
     normalizeFields(fields?: Partial<NexusDocument['fields']>): NexusDocument['fields'] {
         const now = new Date().toISOString();
         return {
-            title: fields?.title || '',
-            content: fields?.content || '',
-            type: fields?.type || '',
-            tags: fields?.tags || [],
-            category: fields?.category || '',
-            author: fields?.author || '',
-            created: fields?.created || now,
-            modified: fields?.modified || now,
-            status: fields?.status || 'draft',
-            version: fields?.version || '1',
-            locale: fields?.locale || ''
+            title: fields?.title ?? '',
+            content: fields?.content ?? '',
+            type: fields?.type ?? '',
+            tags: fields?.tags ?? [],
+            category: fields?.category ?? '',
+            author: fields?.author ?? '',
+            created: fields?.created ?? now,
+            modified: fields?.modified ?? now,
+            status: fields?.status ?? 'draft',
+            version: fields?.version ?? '1',
+            locale: fields?.locale ?? '',
+            customFields: fields?.customFields ?? ''
         };
     }
 
@@ -196,15 +197,6 @@ export class NexusDocumentAdapter implements NexusDocument {
     }
 
     // Helper methods remain the same
-    private generateId(): string {
-        return `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    }
-
-    private static generateChecksum(content: string): string {
-        return Array.from(content)
-            .reduce((sum, char) => sum + char.charCodeAt(0), 0)
-            .toString(16);
-    }
 
     // Public methods remain the same
     async save(): Promise<void> {
