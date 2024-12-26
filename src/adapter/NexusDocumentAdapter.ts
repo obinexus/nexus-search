@@ -93,10 +93,15 @@ export class NexusDocumentAdapter implements NexusDocument {
     }
 
     setField<T extends keyof IndexableDocumentFields>(field: T, value: IndexableDocumentFields[T]): void {
+   
         this._fields = this.normalizeFields({
+
             ...this._fields,
-            [field]: value
+
+            [field]: value as string | string[] | undefined
+
         });
+
         this._content = this.normalizeContent();
     }
 
