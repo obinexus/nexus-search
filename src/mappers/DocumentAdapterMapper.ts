@@ -2,8 +2,7 @@ import { SearchEngine } from "@/core";
 import { DocumentVersion, DocumentRelation, NexusDocument, AdvancedSearchOptions, CreateDocumentOptions } from "@/plugins/NexusDocument";
 import { IndexedDocument } from "@/storage";
 import { DocumentMetadata, DocumentData, IndexableDocumentFields, SearchResult, DocumentConfig } from "@/types";
-
-
+import { NormalizedFields, NormalizedFieldsMethods } from "@/types/nexusdocument";
 
 /**
  * Enhanced document adapter incorporating all NexusDocument functionality
@@ -77,7 +76,7 @@ export class DocumentAdapter extends IndexedDocument {
             }
         });
 
-        await this.searchEngine.addDocuments([adapter]);
+        await this.searchEngine.addDocuments([adapter as unknown as IndexedDocument]);
         return adapter;
     }
 
@@ -167,6 +166,8 @@ export class DocumentAdapter extends IndexedDocument {
         tags: string[];
     } {
         return {
+            normalizeFields: (fields) => this.normalizeFields(fields),
+            normalizeMetadata: (metadata) => this.normalizeMetadata(metadata),
             title: fields?.title || '',
             content: fields?.content || '',
             author: fields?.author || '',
@@ -178,13 +179,7 @@ export class DocumentAdapter extends IndexedDocument {
             status: fields?.status || 'draft',
             locale: fields?.locale || '',
             created: fields?.created || new Date().toISOString()
-        } as IndexableDocumentFields & {
-            [key: string]: string | number | boolean | string[] | null;
-            title: string;
-            content: string;
-            author: string;
-            tags: string[];
-        };
+        } as NormalizedFields & NormalizedFieldsMethods;
     }
 
     private normalizeInitialMetadata(metadata?: DocumentMetadata): DocumentMetadata {
@@ -221,7 +216,7 @@ export class DocumentAdapter extends IndexedDocument {
         };
     }
 
-    public normalizeFields(fields: IndexableDocumentFields): IndexableDocumentFields & {
+    private normalizeFields(fields: IndexableDocumentFields): IndexableDocumentFields & {
         [key: string]: string | number | boolean | string[] | null;
         title: string;
         content: string;
@@ -303,10 +298,7 @@ export class DocumentAdapter extends IndexedDocument {
             content: { ...this.content },
             document: () => this.document(),
             clone: () => this.clone(),
-            update: (updates) => this.update(updates),
             toObject: () => this.toObject(),
-            normalizeFields: (fields) => this.normalizeFields(fields),
-            normalizeMetadata: (metadata) => this.normalizeMetadata(metadata),
             getField: (key) => this.getField(key as keyof IndexableDocumentFields),
             setField: (key, value) => this.setField(key as keyof IndexableDocumentFields, value)
         };
