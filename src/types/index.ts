@@ -15,6 +15,7 @@ export * from './state';
 export * from './query';
 export * from './compactability';
 export * from './global';
+export * from './document';
 // Algorithm types
 export * from './algorithms';
 

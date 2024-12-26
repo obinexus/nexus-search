@@ -46,11 +46,6 @@ export interface SearchStats {
     queryComplexity: number;
 }
 
-// Document fields interface
-export interface IndexableDocumentFields {
-    [key: string]: string | string[] | number | boolean | null;
-}
-
 // Document interface for indexing
 export interface SearchableDocument {
     id: string;
