@@ -1,7 +1,6 @@
 // Core types
 export * from './search';
 export * from './core';
-
 export type * from './database';
 export * from './errors';
 export * from './events';

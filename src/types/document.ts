@@ -17,6 +17,7 @@ export interface IndexableDocumentFields {
     content: string;
     author: string;
     tags: string[];
+    version: string;
 }
 
 // Types for primitive and complex values
@@ -73,3 +74,4 @@ export interface SearchableDocument {
 export type DocumentContent = {
     [key: string]: DocumentValue | DocumentContent;
 };
+
