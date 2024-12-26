@@ -1,7 +1,7 @@
 import { SearchEngine } from "@/core";
 import { DocumentVersion, DocumentRelation, NexusDocument, AdvancedSearchOptions, CreateDocumentOptions, NexusDocumentPluginConfig } from "@/plugins/NexusDocument";
 import { IndexedDocument } from "@/storage";
-import { DocumentMetadata, DocumentData, IndexableDocumentFields, SearchResult } from "@/types";
+import {  DocumentData, IndexableDocumentFields, SearchResult } from "@/types";
 
 /**
  * NexusDocumentAdapter provides document management functionality with search engine integration
@@ -32,6 +32,16 @@ export class NexusDocumentAdapter implements NexusDocument {
                 required: ['title', 'content', 'type', 'author'],
                 customValidators: {},
                 ...config.validation
+            },
+        
+            toJSON(): Record<string, any> {
+                return {
+                    id: this.id,
+                    fields: this.fields,
+                    metadata: this.metadata,
+                    versions: this.versions,
+                    relations: this.relations
+                };
             }
         };
 
@@ -191,7 +201,7 @@ export class NexusDocumentAdapter implements NexusDocument {
         return new NexusDocumentAdapter(this) as this;
     }
 
-    update(updates: Partial<IndexedDocument>): IndexedDocument {
+    update(updates: Partial<Omit<IndexedDocument, 'fields'>> & { fields?: Partial<IndexableDocumentFields> }): IndexedDocument {
         const updated = new NexusDocumentAdapter({
             ...this,
             fields: {
@@ -220,19 +230,28 @@ export class NexusDocumentAdapter implements NexusDocument {
     toObject(): this {
         return this;
     }
-
+    toJSON(): Record<string, any> {
+        return {
+            id: this.id,
+            fields: this.fields,
+            metadata: this.metadata,
+            versions: this.versions,
+            relations: this.relations
+        };
+    }
     toIndexedDocument(): IndexedDocument {
         return {
             id: this.id,
             fields: this.fields,
             metadata: this.metadata,
-            content: this.content,
+            setField: (key, value) => this.setField(key, value),
+            toJSON: () => this.toJSON(),
             versions: this.versions,
             relations: this.relations,
             clone: () => this.clone(),
             update: (updates) => this.update(updates),
             toObject: () => this.toObject(),
-            document: () => this,
+            document: () => this
             normalizeFields: (fields) => this.normalizeFields(fields),
             normalizeMetadata: (metadata) => this.normalizeMetadata(metadata),
             getField: (key) => this.getField(key),
@@ -256,11 +275,13 @@ export class NexusDocumentAdapter implements NexusDocument {
             if (!doc[field as keyof typeof doc]) {
                 throw new Error(`Field '${field}' is required`);
             }
+        
+           
         }
 
         Object.entries(this.config.validation.customValidators || {}).forEach(([field, validator]) => {
             const value = doc[field as keyof typeof doc];
-            if (value && !validator(value)) {
+            if (value && !(validator as (val: any) => boolean)(value)) {
                 throw new Error(`Validation failed for field '${field}'`);
             }
         });
