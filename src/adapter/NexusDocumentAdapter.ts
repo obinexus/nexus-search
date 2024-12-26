@@ -201,7 +201,7 @@ export class NexusDocumentAdapter implements NexusDocument {
         return new NexusDocumentAdapter(this) as this;
     }
 
-    update(updates: Partial<Omit<IndexedDocument, 'fields'>> & { fields?: Partial<IndexableDocumentFields> }): IndexedDocument {
+    update(updates: Partial<Omit<IndexedDocument, 'fields'>> & { fields?: Partial<IndexableDocumentFields> }): this {
         const updated = new NexusDocumentAdapter({
             ...this,
             fields: {
@@ -252,10 +252,6 @@ export class NexusDocumentAdapter implements NexusDocument {
             update: (updates) => this.update(updates),
             toObject: () => this.toObject(),
             document: () => this
-            normalizeFields: (fields) => this.normalizeFields(fields),
-            normalizeMetadata: (metadata) => this.normalizeMetadata(metadata),
-            getField: (key) => this.getField(key),
-            setField: (key, value) => this.setField(key, value)
         };
     }
 
