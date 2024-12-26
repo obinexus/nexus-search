@@ -78,3 +78,22 @@ export interface SearchableDocument {
     content: Record<string, DocumentValue>;
     metadata?: DocumentMetadata;
 }
+
+/**
+ * Configuration for document operations
+ */
+export interface DocumentConfig {
+    fields?: string[];
+    storage?: {
+        type: 'memory' | 'indexeddb';
+        options?: Record<string, any>;
+    };
+    versioning?: {
+        enabled: boolean;
+        maxVersions?: number;
+    };
+    validation?: {
+        required?: string[];
+        customValidators?: Record<string, (value: any) => boolean>;
+    };
+}
