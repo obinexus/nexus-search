@@ -15,6 +15,8 @@ export * from './query';
 export * from './compactability';
 export * from './global';
 export * from './document';
+export * from './algorithms';
+export * from './nexusDocument';
 // Algorithm types
 export * from './algorithms';
 
