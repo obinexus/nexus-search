@@ -1,7 +1,16 @@
 import { SearchEngine } from "@/core";
-import { DocumentVersion, DocumentRelation, NexusDocument, AdvancedSearchOptions, CreateDocumentOptions, NexusDocumentPluginConfig } from "@/types/nexus-document";
+import { 
+    DocumentVersion, 
+    DocumentRelation, 
+    NexusDocument, 
+    AdvancedSearchOptions, 
+    CreateDocumentOptions, 
+    NexusDocumentPluginConfig, 
+    NexusDocumentFields, 
+    NexusDocumentMetadata 
+} from "@/types/nexus-document";
 import { IndexedDocument } from "@/storage";
-import { DocumentMetadata, DocumentData, IndexableDocumentFields, SearchResult } from "@/types";
+import { DocumentData, IndexableDocumentFields, SearchResult } from "@/types";
 
 /**
  * NexusDocumentAdapter provides document management functionality with search engine integration
@@ -10,8 +19,8 @@ export class NexusDocumentAdapter implements NexusDocument {
     private static searchEngine: SearchEngine;
     private static config: Required<NexusDocumentPluginConfig>;
     
-    private _fields: NexusDocument['fields'];
-    private _metadata: NexusDocument['metadata'];
+    private _fields: NexusDocumentFields;
+    private _metadata: NexusDocumentMetadata;
     private _content: DocumentData;
     private _versions: DocumentVersion[];
     private _relations: DocumentRelation[];
@@ -19,8 +28,8 @@ export class NexusDocumentAdapter implements NexusDocument {
 
     // Property getters
     get id(): string { return this._id; }
-    get fields(): NexusDocument['fields'] { return { ...this._fields }; }
-    get metadata(): NexusDocument['metadata'] { return { ...this._metadata }; }
+    get fields(): NexusDocumentFields { return { ...this._fields }; }
+    get metadata(): NexusDocumentMetadata { return { ...this._metadata }; }
     get versions(): DocumentVersion[] { return [...this._versions]; }
     get relations(): DocumentRelation[] { return [...this._relations]; }
     get content(): DocumentData { return { ...this._content }; }
@@ -34,10 +43,9 @@ export class NexusDocumentAdapter implements NexusDocument {
         this._content = this.normalizeContent();
     }
 
-    // Required interface method implementations
-    normalizeFields(fields?: Partial<NexusDocument['fields']>): NexusDocument['fields'] {
+    normalizeFields(fields?: Partial<NexusDocumentFields>): NexusDocumentFields {
         const now = new Date().toISOString();
-        return {
+        const normalized: NexusDocumentFields = {
             title: fields?.title ?? '',
             content: fields?.content ?? '',
             type: fields?.type ?? '',
@@ -48,18 +56,27 @@ export class NexusDocumentAdapter implements NexusDocument {
             modified: fields?.modified ?? now,
             status: fields?.status ?? 'draft',
             version: fields?.version ?? '1',
-            locale: fields?.locale ?? '',
-            customFields: fields?.customFields ?? ''
+            locale: fields?.locale ?? ''
         };
+
+        // Ensure all string values are not undefined
+        Object.keys(fields || {}).forEach(key => {
+            const value = (fields as any)?.[key];
+            if (value !== undefined) {
+                (normalized as any)[key] = value;
+            }
+        });
+
+        return normalized;
     }
 
-    normalizeMetadata(metadata?: Partial<NexusDocument['metadata']>): NexusDocument['metadata'] {
+    normalizeMetadata(metadata?: Partial<NexusDocumentMetadata>): NexusDocumentMetadata {
         const now = Date.now();
         return {
-            indexed: metadata?.indexed || now,
-            lastModified: metadata?.lastModified || now,
+            indexed: metadata?.indexed ?? now,
+            lastModified: metadata?.lastModified ?? now,
             checksum: metadata?.checksum,
-            permissions: metadata?.permissions,
+            permissions: metadata?.permissions ?? [],
             workflow: metadata?.workflow
         };
     }
@@ -78,18 +95,17 @@ export class NexusDocumentAdapter implements NexusDocument {
     setField<T extends keyof IndexableDocumentFields>(field: T, value: IndexableDocumentFields[T]): void {
         this._fields = this.normalizeFields({
             ...this._fields,
-            [field]: value as string | string[] | undefined
+            [field]: value
         });
         this._content = this.normalizeContent();
     }
 
-    // Core interface implementation
     clone(): this {
         return new NexusDocumentAdapter(this) as this;
     }
 
     update(updates: Partial<IndexedDocument>): IndexedDocument {
-        const updated = new NexusDocumentAdapter({
+        const normalized = new NexusDocumentAdapter({
             ...this,
             fields: this.normalizeFields({
                 ...this._fields,
@@ -103,20 +119,16 @@ export class NexusDocumentAdapter implements NexusDocument {
             })
         });
 
-        // Handle versioning
         if (updates.fields?.content && updates.fields.content !== this._fields.content) {
-            updated._versions = [
-                ...this._versions,
-                {
-                    version: Number(this._fields.version),
-                    content: this._fields.content,
-                    modified: new Date(),
-                    author: this._fields.author
-                }
-            ];
+            normalized.addVersion({
+                version: Number(this._fields.version),
+                content: this._fields.content,
+                modified: new Date(),
+                author: this._fields.author
+            });
         }
 
-        return updated;
+        return normalized.toIndexedDocument();
     }
 
     toObject(): this {
@@ -133,33 +145,40 @@ export class NexusDocumentAdapter implements NexusDocument {
             fields: this._fields,
             metadata: this._metadata,
             versions: this._versions,
-            relations: this._relations
+            relations: this._relations,
+            content: this._content
         };
     }
 
-   
-
     toIndexedDocument(): IndexedDocument {
+        // Create base document
         const doc = new IndexedDocument(
             this._id,
-            this._fields,
+            {
+                ...this._fields,
+                // Ensure fields match IndexedDocument requirements
+                title: this._fields.title,
+                content: this._fields.content,
+                author: this._fields.author,
+                tags: [...this._fields.tags]
+            },
             this._metadata
         );
 
-        // Add required properties and methods
-        doc.content = this._content;
+        // Add additional properties
+        doc.content = { ...this._content };
         doc.versions = [...this._versions];
         doc.relations = [...this._relations];
 
-        // Add method bindings
+        // Add bound methods
         Object.defineProperties(doc, {
             normalizeFields: { value: this.normalizeFields.bind(this) },
             normalizeMetadata: { value: this.normalizeMetadata.bind(this) },
             getField: { value: this.getField.bind(this) },
             setField: { value: this.setField.bind(this) },
-            clone: { value: () => this.clone() },
+            clone: { value: () => this.clone().toIndexedDocument() },
             update: { value: (updates: Partial<IndexedDocument>) => this.update(updates) },
-            toObject: { value: () => this.toObject() },
+            toObject: { value: () => this.toObject().toIndexedDocument() },
             document: { value: () => this.document() },
             toJSON: { value: () => this.toJSON() }
         });
@@ -167,23 +186,18 @@ export class NexusDocumentAdapter implements NexusDocument {
         return doc;
     }
 
-    // Static initialization and factory methods
+    private addVersion(version: DocumentVersion): void {
+        this._versions = [...this._versions, version];
+    }
+
+    // Static methods
     static async initialize(config: NexusDocumentPluginConfig = {}): Promise<void> {
+        const defaultConfig = this.getDefaultConfig();
         this.config = {
-            name: config.name || 'nexus-document',
-            version: config.version || 1,
-            fields: config.fields || ['title', 'content', 'type', 'tags', 'category', 'author', 'created', 'modified', 'status', 'version'],
-            storage: config.storage || { type: 'memory' },
-            versioning: {
-                enabled: true,
-                maxVersions: 10,
-                ...config.versioning
-            },
-            validation: {
-                required: ['title', 'content', 'type', 'author'],
-                customValidators: {},
-                ...config.validation
-            }
+            ...defaultConfig,
+            ...config,
+            versioning: { ...defaultConfig.versioning, ...config.versioning },
+            validation: { ...defaultConfig.validation, ...config.validation }
         };
 
         this.searchEngine = new SearchEngine({
@@ -196,9 +210,39 @@ export class NexusDocumentAdapter implements NexusDocument {
         await this.searchEngine.initialize();
     }
 
-    // Helper methods remain the same
+    private static getDefaultConfig(): Required<NexusDocumentPluginConfig> {
+        return {
+            name: 'nexus-document',
+            version: 1,
+            fields: ['title', 'content', 'type', 'tags', 'category', 'author', 'created', 'modified', 'status', 'version'],
+            storage: { type: 'memory' },
+            versioning: {
+                enabled: true,
+                maxVersions: 10
+            },
+            validation: {
+                required: ['title', 'content', 'type', 'author'],
+                customValidators: {}
+            }
+        };
+    }
 
-    // Public methods remain the same
+    static async search(query: string, options: AdvancedSearchOptions = {}): Promise<SearchResult<NexusDocumentAdapter>[]> {
+        const results = await this.searchEngine.search(query, options);
+        return results.map(result => ({
+            ...result,
+            item: new NexusDocumentAdapter(result.item as unknown as NexusDocument)
+        }));
+    }
+
+    static async get(id: string): Promise<IndexedDocument> {
+        const document = await this.searchEngine.getDocument(id);
+        if (!document) {
+            throw new Error(`Document with id '${id}' not found`);
+        }
+        return document;
+    }
+
     async save(): Promise<void> {
         NexusDocumentAdapter.validateDocument(this._fields);
         await NexusDocumentAdapter.searchEngine.updateDocument(this.toIndexedDocument());
@@ -208,40 +252,22 @@ export class NexusDocumentAdapter implements NexusDocument {
         await NexusDocumentAdapter.searchEngine.removeDocument(this._id);
     }
 
-    static async search(query: string, options: AdvancedSearchOptions = {}): Promise<SearchResult> {
-        return this.searchEngine.search(query, options);
-    }
-    // Helper Methods
     private generateId(): string {
         return `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     }
 
-    private static generateChecksum(content: string): string {
-        return Array.from(content)
-            .reduce((sum, char) => sum + char.charCodeAt(0), 0)
-            .toString(16);
-    }
-
-    private static validateDocument(doc: Partial<CreateDocumentOptions | NexusDocument['fields']>): void {
+    private static validateDocument(doc: Partial<CreateDocumentOptions | NexusDocumentFields>): void {
         for (const field of this.config.validation.required || []) {
             if (!doc[field as keyof typeof doc]) {
                 throw new Error(`Field '${field}' is required`);
             }
-        
-           
         }
 
         Object.entries(this.config.validation.customValidators || {}).forEach(([field, validator]) => {
             const value = doc[field as keyof typeof doc];
-            if (value && !(validator as (val: any) => boolean)(value)) {
+            if (value !== undefined && !(validator as (val: any) => boolean)(value)) {
                 throw new Error(`Validation failed for field '${field}'`);
             }
         });
-    }
-
- 
-
-    static async get(id: string): Promise<IndexedDocument> {
-        return this.searchEngine.getDocument(id);
     }
 }
