@@ -1401,9 +1401,24 @@ class QueryProcessor {
             return '';
         if (typeof query !== 'string')
             return String(query);
-        const tokens = this.tokenize(query);
+        // Handle quoted phrases
+        const quotes = query.match(/"[^"]+"/g) || [];
+        let processedQuery = query;
+        const placeholders = {};
+        // Replace quoted phrases with placeholders
+        quotes.forEach((quote, i) => {
+            const placeholder = `__QUOTE_${i}__`;
+            placeholders[placeholder] = quote;
+            processedQuery = processedQuery.replace(quote, placeholder);
+        });
+        const tokens = this.tokenize(processedQuery);
         const processedTokens = this.processTokens(tokens);
-        return this.optimizeQuery(processedTokens);
+        let result = this.optimizeQuery(processedTokens);
+        // Restore quoted phrases
+        Object.entries(placeholders).forEach(([placeholder, quote]) => {
+            result = result.replace(placeholder, quote);
+        });
+        return result;
     }
     tokenize(query) {
         return query
@@ -1413,22 +1428,32 @@ class QueryProcessor {
             .map(term => this.classifyToken(term));
     }
     classifyToken(term) {
+        // Handle quoted phrases
+        if (term.startsWith('"') && term.endsWith('"')) {
+            return { type: 'term', value: term };
+        }
+        // Handle operators
         if (term.startsWith('+') || term.startsWith('-')) {
             return { type: 'operator', value: term };
         }
+        // Handle modifiers
         if (term.includes(':')) {
             return { type: 'modifier', value: term };
         }
+        // Regular terms
         return { type: 'term', value: term };
     }
     processTokens(tokens) {
         return tokens
-            .filter(token => token.type !== 'term' || !this.STOP_WORDS.has(token.value))
+            .filter(token => token.type !== 'term' ||
+            !this.STOP_WORDS.has(token.value) ||
+            token.value.startsWith('"'))
             .map(token => this.normalizeToken(token));
     }
     normalizeToken(token) {
-        if (token.type === 'term') {
+        if (token.type === 'term' && !token.value.startsWith('"')) {
             let value = token.value;
+            // Handle common suffixes
             if (value.endsWith('ing'))
                 value = value.slice(0, -3);
             if (value.endsWith('ed'))
@@ -1442,7 +1467,8 @@ class QueryProcessor {
     optimizeQuery(tokens) {
         return tokens
             .map(token => token.value)
-            .join(' ');
+            .join(' ')
+            .trim();
     }
 }
 
