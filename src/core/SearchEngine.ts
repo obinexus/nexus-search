@@ -8,9 +8,8 @@ import {
     IndexNode,
     DocumentMetadata,
     IndexableDocumentFields,
-    IndexedDocument
 } from "@/types";
-import { validateSearchOptions, createSearchableFields, bfsRegexTraversal, dfsRegexTraversal } from "@/utils";
+import { validateSearchOptions, bfsRegexTraversal, dfsRegexTraversal } from "@/utils";
 import { IndexManager } from "../storage/IndexManager";
 import { QueryProcessor } from "./QueryProcessor";
 import { TrieSearch } from "@/algorithms/trie";
