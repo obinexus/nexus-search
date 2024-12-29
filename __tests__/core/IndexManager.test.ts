@@ -1,6 +1,5 @@
 import { IndexManager } from '@/index';
 import { DocumentData, IndexConfig, IndexedDocument } from '@/types';
-import { jest } from '@jest/globals';
 
 describe('IndexManager', () => {
   let indexManager: IndexManager;
