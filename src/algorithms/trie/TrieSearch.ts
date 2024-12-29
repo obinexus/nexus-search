@@ -1,163 +1,267 @@
-import {  IndexedDocument, DocumentLink, SerializedState, SerializedTrieNode } from "@/types";
+
+
+// TrieSearch.ts
+import { IndexedDocument, DocumentLink, SerializedState, SerializedTrieNode } from "@/types";
 import { TrieNode } from "./TrieNode";
+
+interface SearchOptions {
+    fuzzy?: boolean;
+    maxDistance?: number;
+    prefixMatch?: boolean;
+    maxResults?: number;
+    minScore?: number;
+    includePartial?: boolean;
+    caseSensitive?: boolean;
+}
+
+interface SearchResult {
+    docId: string;
+    score: number;
+    term: string;
+    distance?: number;
+}
 
 export class TrieSearch {
     private root: TrieNode;
     private documents: Map<string, IndexedDocument>;
     private documentLinks: Map<string, DocumentLink[]>;
+    private totalDocuments: number;
+    private maxWordLength: number;
 
-    constructor() {
+    constructor(maxWordLength: number = 50) {
         this.root = new TrieNode();
         this.documents = new Map();
         this.documentLinks = new Map();
+        this.totalDocuments = 0;
+        this.maxWordLength = maxWordLength;
     }
 
-    public addData(id: string, document: IndexedDocument): void {
+    public addDocument(document: IndexedDocument): void {
         if (!document.id) return;
 
         this.documents.set(document.id, document);
+        this.totalDocuments++;
+
+        // Index all text fields
+        Object.values(document.fields).forEach(field => {
+            if (typeof field === 'string') {
+                this.indexText(field, document.id);
+            } else if (Array.isArray(field)) {
+                field.forEach(item => {
+                    if (typeof item === 'string') {
+                        this.indexText(item, document.id);
+                    }
+                });
+            }
+        });
+    }
+
+    private indexText(text: string, documentId: string): void {
+        const words = this.tokenize(text);
+        const uniqueWords = new Set(words);
+
+        uniqueWords.forEach(word => {
+            if (word.length <= this.maxWordLength) {
+                this.insertWord(word, documentId);
+            }
+        });
+    }
+
+    private insertWord(word: string, documentId: string): void {
+        let current = this.root;
+        current.prefixCount++;
+
+        for (const char of word) {
+            if (!current.hasChild(char)) {
+                current = current.addChild(char);
+            } else {
+                current = current.getChild(char)!;
+            }
+            current.prefixCount++;
+        }
+
+        current.isEndOfWord = true;
+        current.documentRefs.add(documentId);
+        current.incrementWeight();
+    }
+
+    public search(query: string, options: SearchOptions = {}): SearchResult[] {
+        const {
+            fuzzy = false,
+            maxDistance = 2,
+            prefixMatch = false,
+            maxResults = 10,
+            minScore = 0.1,
+            includePartial = false,
+            caseSensitive = false
+        } = options;
+
+        const words = this.tokenize(query, caseSensitive);
+        const results = new Map<string, SearchResult>();
+
+        words.forEach(word => {
+            let matches: SearchResult[] = [];
+
+            if (fuzzy) {
+                matches = this.fuzzySearch(word, maxDistance);
+            } else if (prefixMatch) {
+                matches = this.prefixSearch(word);
+            } else {
+                matches = this.exactSearch(word);
+            }
+
+            matches.forEach(match => {
+                const existing = results.get(match.docId);
+                if (!existing || existing.score < match.score) {
+                    results.set(match.docId, match);
+                }
+            });
+        });
+
+        return Array.from(results.values())
+            .filter(result => result.score >= minScore)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, maxResults);
+    }
+
+    private exactSearch(word: string): SearchResult[] {
+        const results: SearchResult[] = [];
+        let current = this.root;
+
+        for (const char of word) {
+            if (!current.hasChild(char)) {
+                return results;
+            }
+            current = current.getChild(char)!;
+        }
+
+        if (current.isEndOfWord) {
+            current.documentRefs.forEach(docId => {
+                results.push({
+                    docId,
+                    score: this.calculateScore(current, word),
+                    term: word
+                });
+            });
+        }
+
+        return results;
+    }
+
+    private prefixSearch(prefix: string): SearchResult[] {
+        const results: SearchResult[] = [];
+        let current = this.root;
+
+        // Navigate to prefix node
+        for (const char of prefix) {
+            if (!current.hasChild(char)) {
+                return results;
+            }
+            current = current.getChild(char)!;
+        }
+
+        // Collect all words with this prefix
+        this.collectWords(current, prefix, results);
+        return results;
+    }
+
+    private collectWords(node: TrieNode, currentWord: string, results: SearchResult[]): void {
+        if (node.isEndOfWord) {
+            node.documentRefs.forEach(docId => {
+                results.push({
+                    docId,
+                    score: this.calculateScore(node, currentWord),
+                    term: currentWord
+                });
+            });
+        }
+
+        node.children.forEach((child, char) => {
+            this.collectWords(child, currentWord + char, results);
+        });
+    }
+
+    private fuzzySearch(word: string, maxDistance: number): SearchResult[] {
+        const results: SearchResult[] = [];
         
-        if (typeof document.content === 'string') {
+        const searchState = {
+            word,
+            maxDistance,
+            results
+        };
 
-            this.insert(document.content, document.id);
-
-        }
-
-    }
-
-    public insert(text: string, documentId: string): void {
-        if (!text || !documentId) return;
-
-        const words = text.toLowerCase().split(/\s+/).filter(Boolean);
-
-        for (const word of words) {
-            let current = this.root;
-
-            for (const char of word) {
-                if (!current.children.has(char)) {
-                    current.children.set(char, new TrieNode());
-                }
-                current = current.children.get(char)!;
-            }
-
-            current.isEndOfWord = true;
-            current.documentRefs.add(documentId);
-            current.weight += 1.0;
-        }
-    }
-
-    public search(query: string, maxResults: number = 10): Set<string> {
-        if (!query) return new Set();
-
-        const results = new Set<string>();
-        const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-
-        for (const word of words) {
-            let current = this.root;
-            let found = true;
-
-            for (const char of word) {
-                if (!current.children.has(char)) {
-                    found = false;
-                    break;
-                }
-                current = current.children.get(char)!;
-            }
-
-            if (found && current.isEndOfWord) {
-                this.collectDocumentRefs(current, results, maxResults);
-            }
-        }
-
+        this.fuzzySearchRecursive(this.root, "", 0, 0, searchState);
         return results;
     }
 
-    public remove(documentId: string): void {
-        for (const [, node] of this.root.children) {
-            this.removeHelper(documentId, node);
-        }
-
-        this.documents.delete(documentId);
-        this.documentLinks.delete(documentId);
-    }
-
-    private removeHelper(documentId: string, node: TrieNode): void {
-        if (node.documentRefs.has(documentId)) {
-            node.documentRefs.delete(documentId);
-            node.weight -= 1.0;
-        }
-
-        for (const [, child] of node.children) {
-            this.removeHelper(documentId, child);
-        }
-
-        if (node.children.size === 0 && node.documentRefs.size === 0 && node.weight === 0) {
-            node.children.clear();
-        }
-    }
-
-    public linkDocument(documentId: string, links: DocumentLink[]): void {
-        this.documentLinks.set(documentId, links);
-    }
-
-    public getDocumentLinks(documentId: string): DocumentLink[] {
-        return this.documentLinks.get(documentId) ?? [];
-    }   
-    public removeData(documentId: string): void {
-        this.remove(documentId);
-    }
-
-    public fuzzySearch(query: string, maxDistance: number = 2): Set<string> {
-        if (!query) return new Set();
-
-        const results = new Set<string>();
-        const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-
-        for (const word of words) {
-            this.fuzzySearchHelper(word, this.root, '', maxDistance, results);
-        }
-
-        return results;
-    }
-
-    private collectDocumentRefs(node: TrieNode, results: Set<string>, maxResults: number): void {
-        if (node.isEndOfWord) {
-            for (const docId of node.documentRefs) {
-                if (results.size >= maxResults) return;
-                results.add(docId);
-            }
-        }
-
-        for (const child of node.children.values()) {
-            if (results.size >= maxResults) return;
-            this.collectDocumentRefs(child, results, maxResults);
-        }
-    }
-
-    private fuzzySearchHelper(
-        word: string,
-        node: TrieNode,
-        currentWord: string,
-        maxDistance: number,
-        results: Set<string>
+    private fuzzySearchRecursive(
+        node: TrieNode, 
+        current: string,
+        currentDistance: number,
+        depth: number,
+        state: { word: string; maxDistance: number; results: SearchResult[] }
     ): void {
-        if (maxDistance < 0) return;
+        if (currentDistance > state.maxDistance) return;
 
         if (node.isEndOfWord) {
-            const distance = this.calculateLevenshteinDistance(word, currentWord);
-            if (distance <= maxDistance) {
-                node.documentRefs.forEach(id => results.add(id));
+            const distance = this.calculateLevenshteinDistance(state.word, current);
+            if (distance <= state.maxDistance) {
+                node.documentRefs.forEach(docId => {
+                    state.results.push({
+                        docId,
+                        score: this.calculateFuzzyScore(node, current, distance),
+                        term: current,
+                        distance
+                    });
+                });
             }
         }
 
-        for (const [char, childNode] of node.children) {
-            const newDistance = word[currentWord.length] !== char ? maxDistance - 1 : maxDistance;
-            this.fuzzySearchHelper(word, childNode, currentWord + char, newDistance, results);
+        node.children.forEach((child, char) => {
+            // Try substitution
+            const substitutionCost = char !== state.word[depth] ? 1 : 0;
+            this.fuzzySearchRecursive(
+                child, 
+                current + char, 
+                currentDistance + substitutionCost,
+                depth + 1,
+                state
+            );
 
-            if (maxDistance > 0) {
-                this.fuzzySearchHelper(word, childNode, currentWord, maxDistance - 1, results);
+            // Try insertion
+            this.fuzzySearchRecursive(
+                child,
+                current + char,
+                currentDistance + 1,
+                depth,
+                state
+            );
+
+            // Try deletion
+            if (depth < state.word.length) {
+                this.fuzzySearchRecursive(
+                    node,
+                    current,
+                    currentDistance + 1,
+                    depth + 1,
+                    state
+                );
             }
-        }
+        });
+    }
+
+    private calculateScore(node: TrieNode, term: string): number {
+        const tfIdf = (node.frequency / this.totalDocuments) * 
+                     Math.log(this.totalDocuments / node.documentRefs.size);
+        const positionBoost = 1 / (node.depth + 1);
+        const lengthNorm = 1 / Math.sqrt(term.length);
+
+        return node.getScore() * tfIdf * positionBoost * lengthNorm;
+    }
+
+    private calculateFuzzyScore(node: TrieNode, term: string, distance: number): number {
+        const exactScore = this.calculateScore(node, term);
+        return exactScore * Math.exp(-distance);
     }
 
     private calculateLevenshteinDistance(s1: string, s2: string): number {
@@ -169,10 +273,11 @@ export class TrieSearch {
 
         for (let i = 1; i <= s1.length; i++) {
             for (let j = 1; j <= s2.length; j++) {
+                const substitutionCost = s1[i - 1] !== s2[j - 1] ? 1 : 0;
                 dp[i][j] = Math.min(
-                    dp[i - 1][j] + 1,
-                    dp[i][j - 1] + 1,
-                    dp[i - 1][j - 1] + (s1[i - 1] !== s2[j - 1] ? 1 : 0)
+                    dp[i - 1][j] + 1,              // deletion
+                    dp[i][j - 1] + 1,              // insertion
+                    dp[i - 1][j - 1] + substitutionCost  // substitution
                 );
             }
         }
@@ -180,55 +285,87 @@ export class TrieSearch {
         return dp[s1.length][s2.length];
     }
 
-    public exportState(): SerializedState {
-        return {
-            trie: this.serializeNode(this.root),
-            documents: Array.from(this.documents.entries()),
-            documentLinks: Array.from(this.documentLinks.entries())
-        };
+    private tokenize(text: string, caseSensitive: boolean = false): string[] {
+        const normalized = caseSensitive ? text : text.toLowerCase();
+        return normalized
+            .split(/[\s,.!?;:'"()\[\]{}\/\\]+/)
+            .filter(word => word.length > 0);
     }
 
-    public importState(state: SerializedState): void {
-        this.root = this.deserializeNode(state.trie);
-        this.documents = new Map(state.documents);
-        this.documentLinks = new Map(state.documentLinks);
+    public removeDocument(documentId: string): void {
+        // Remove document references and update weights
+        this.removeDocumentRefs(this.root, documentId);
+        this.documents.delete(documentId);
+        this.documentLinks.delete(documentId);
+        this.totalDocuments = Math.max(0, this.totalDocuments - 1);
+        this.pruneEmptyNodes(this.root);
     }
 
-    private serializeNode(node: TrieNode): SerializedTrieNode {
-        const children: { [key: string]: SerializedTrieNode } = {};
+    private removeDocumentRefs(node: TrieNode, documentId: string): void {
+        if (node.documentRefs.has(documentId)) {
+            node.documentRefs.delete(documentId);
+            node.decrementWeight();
+            node.prefixCount = Math.max(0, node.prefixCount - 1);
+        }
 
-        node.children.forEach((childNode, char) => {
-            children[char] = this.serializeNode(childNode);
+        node.children.forEach(child => {
+            this.removeDocumentRefs(child, documentId);
+        });
+    }
+
+    private pruneEmptyNodes(node: TrieNode): boolean {
+        // Remove empty child nodes
+        node.children.forEach((child, char) => {
+            if (this.pruneEmptyNodes(child)) {
+                node.children.delete(char);
+            }
         });
 
-        return {
-            isEndOfWord: node.isEndOfWord,
-            documentRefs: Array.from(node.documentRefs),
-            weight: node.weight,
-            children
-        };
+        return node.shouldPrune();
     }
 
-    private deserializeNode(serialized: SerializedTrieNode): TrieNode {
-        const node = new TrieNode();
-        node.isEndOfWord = serialized.isEndOfWord;
-        node.documentRefs = new Set(serialized.documentRefs);
-        node.weight = serialized.weight ?? 0;
+    public getSuggestions(prefix: string, maxResults: number = 5): string[] {
+        let current = this.root;
+        
+        // Navigate to prefix node
+        for (const char of prefix) {
+            if (!current.hasChild(char)) {
+                return [];
+            }
+            current = current.getChild(char)!;
+        }
 
-        Object.entries(serialized.children).forEach(([char, childData]) => {
-            node.children.set(char, this.deserializeNode(childData));
+        // Collect suggestions
+        const suggestions: Array<{ word: string; score: number }> = [];
+        this.collectSuggestions(current, prefix, suggestions);
+
+        return suggestions
+            .sort((a, b) => b.score - a.score)
+            .slice(0, maxResults)
+            .map(suggestion => suggestion.word);
+    }
+
+    private collectSuggestions(
+        node: TrieNode, 
+        currentWord: string, 
+        suggestions: Array<{ word: string; score: number }>
+    ): void {
+        if (node.isEndOfWord) {
+            suggestions.push({
+                word: currentWord,
+                score: node.getScore()
+            });
+        }
+
+        node.children.forEach((child, char) => {
+            this.collectSuggestions(child, currentWord + char, suggestions);
         });
-
-        return node;
     }
 
     public clear(): void {
         this.root = new TrieNode();
         this.documents.clear();
         this.documentLinks.clear();
-    }
-
-    public getSize(): number {
-        return this.documents.size;
+        this.totalDocuments = 0;
     }
 }
