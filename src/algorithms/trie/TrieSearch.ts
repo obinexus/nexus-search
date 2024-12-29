@@ -180,7 +180,7 @@ export class TrieSearch {
         });
     }
 
-    private fuzzySearch(word: string, maxDistance: number): SearchResult[] {
+    public fuzzySearch(word: string, maxDistance: number): SearchResult[] {
         const results: SearchResult[] = [];
         
         const searchState = {
