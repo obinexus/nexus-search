@@ -2,6 +2,8 @@ import { DocumentMetadata, DocumentValue, IndexedDocument } from './document';
 
 // Core search result interface with proper generic typing
 export interface SearchResult<T = unknown> {
+    docId: string;
+
     id: string;
     document: IndexedDocument;
     item: T;

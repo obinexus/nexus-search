@@ -16,7 +16,7 @@ export class IndexMapper {
     private dataMapper: DataMapper;
     private trieSearch: TrieSearch;
     private documents: Map<string, IndexedDocument>;
-    private documentScores: Map<string, { score: number; matches: Set<string> }>;
+    private documentScores: Map<string, SearchResult> = new Map();
 
     constructor(state?: { dataMap?: Record<string, string[]> }) {
         this.dataMapper = new DataMapper();
@@ -51,7 +51,7 @@ export class IndexMapper {
                     
                     words.forEach(word => {
                         if (word) {
-                            this.trieSearch.addWord(word, id);
+                            this.trieSearch.addDocument({ id, fields: { [field]: word } });
                             this.dataMapper.mapData(word.toLowerCase(), id);
                         }
                     });
@@ -87,7 +87,7 @@ export class IndexMapper {
                     };
                     current.score += this.calculateScore(docId, term);
                     current.matches.add(term);
-                    this.documentScores.set(docId, current);
+                    this.documentScores.set(docId, { score: current.score, matches: current.matches });
                 });
             });
 
@@ -98,7 +98,8 @@ export class IndexMapper {
                     item: docId,
                     score: score / searchTerms.length,
                     matches: Array.from(matches),
-                    metadata: this.documents.get(docId)?.metadata
+                    metadata: this.documents.get(docId)?.metadata,
+                    docId: ""
                 }))
                 .sort((a, b) => b.score - a.score)
                 .slice(0, maxResults);
