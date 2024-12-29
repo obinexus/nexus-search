@@ -25,7 +25,7 @@ export interface SearchOptions {
     page?: number;
     pageSize?: number;
 enableRegex?: boolean;
-    regex?: { pattern: string; flags: string } | string | RegExp;
+    regex?:  RegExp | { pattern: string; flags: string } 
         highlight?: boolean;
     includeMatches?: boolean;
     includeScore?: boolean;

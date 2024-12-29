@@ -163,7 +163,7 @@ export class SearchEngine {
                 const regex = typeof options.regex === 'string' ?
                     new RegExp(options.regex) : options.regex;
 
-                if (this.isComplexRegex(regex)) {
+                if (this.isComplexRegex(regex instanceof RegExp ? regex : new RegExp(regex.pattern, regex.flags))) {
                     results = dfsRegexTraversal(
                         this.trieRoot,
                         regex,
@@ -306,7 +306,7 @@ export class SearchEngine {
 
         for (const term of searchTerms) {
             const matches = options.fuzzy ?
-                this.trie.fuzzySearch(term) :
+                this.trie.fuzzySearch(term, options.maxDistance || 2) :
                 this.trie.search(term);
 
             for (const docId of matches) {
