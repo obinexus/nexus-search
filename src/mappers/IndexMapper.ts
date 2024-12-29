@@ -16,6 +16,7 @@ export class IndexMapper {
     private readonly dataMapper: DataMapper;
     private trieSearch: TrieSearch;
     private documents: Map<string, IndexedDocument>;
+    private documentScores: Map<string, { score: number; matches: Set<string> }>;
 
     constructor(state: { dataMap: Record<string, string[]> }) {
         this.dataMapper = new DataMapper();
@@ -79,10 +80,10 @@ export class IndexMapper {
                     ? this.trieSearch.fuzzySearch(term, 2) // Add maxDistance parameter
                     : this.trieSearch.searchWord(term);
 
-                documentIds.forEach(docId => {
-                    const current = documentScores.get(docId) || { 
+                    const current = this.documentScores.get(docId) || { 
                         score: 0, 
                         matches: new Set<string>() 
+                    };
                     };
                     current.score += this.calculateScore(docId, term);
                     current.matches.add(term);
