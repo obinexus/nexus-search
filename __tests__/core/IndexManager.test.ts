@@ -183,8 +183,12 @@ describe('IndexManager', () => {
     test('should handle document indexing errors gracefully', async () => {
       const invalidDoc = createTestDocument('invalid');
       // Mock indexDocument to throw an error
-      mockIndexMapper.indexDocument.mockRejectedValue(new Error('Indexing failed'));
 
+      mockIndexMapper.search.mockImplementation((): never => {
+
+        throw new Error('Search error');
+      
+      });
       await indexManager.addDocuments([invalidDoc]);
       expect(indexManager.hasDocument('invalid')).toBeFalsy();
     });

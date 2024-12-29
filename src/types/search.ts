@@ -9,6 +9,9 @@ export interface SearchResult<T = unknown> {
     matches: string[];
     metadata?: DocumentMetadata;
 }
+export interface Search {
+    search(query: string, options?: SearchOptions): Promise<SearchResult[]>;
+}
 
 // Search options with complete type safety
 export interface SearchOptions {
