@@ -1,4 +1,4 @@
-import { CacheManager, IndexedDocument, SearchStorage } from "@/storage";
+import { CacheManager, SearchStorage } from "@/storage";
 import {
     SearchOptions,
     SearchResult,

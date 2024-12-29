@@ -30,6 +30,33 @@ export class IndexManager {
         this.documents = new Map();
     }
 
+    addDocument<T extends IndexedDocument>(document: T): void {
+        const id = document.id || this.generateDocumentId(this.documents.size);
+        this.documents.set(id, document);
+
+        const contentRecord: Record<string, DocumentValue> = {};
+        for (const field of this.config.fields) {
+            if (field in document.fields) {
+                contentRecord[field] = document.fields[field] as DocumentValue;
+            }
+        }
+
+        const searchableDoc: SearchableDocument = {
+            id,
+            content: createSearchableFields({
+                content: contentRecord,
+                id
+            }, this.config.fields),
+            metadata: document.metadata
+        };
+
+        this.indexMapper.indexDocument(searchableDoc, id, this.config.fields);
+    }
+
+    getDocument(id: string): IndexedDocument | undefined {
+        return this.documents.get(id);
+    }
+
     
 
     exportIndex(): SerializedIndex {
