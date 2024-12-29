@@ -80,6 +80,59 @@ export class SearchEngine {
         }
     }
 
+    public async addDocuments(documents: IndexedDocument[]): Promise<void> {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
+
+        try {
+            const normalizedDocs = documents.map(doc => this.normalizeDocument(doc));
+            
+            if (this.documentSupport && this.config.documentSupport?.validation) {
+                this.validateDocuments(normalizedDocs);
+            }
+
+            for (const doc of normalizedDocs) {
+                this.documents.set(doc.id, doc);
+                // Fixed: Added document parameter to addData call
+                this.trie.addData(doc.id, doc.fields.content, doc);
+                await this.indexManager.addDocument(doc);
+            }
+
+            await this.storage.storeIndex(this.config.name, this.indexManager.exportIndex());
+            this.cache.clear();
+
+            this.emitEvent({
+                type: 'index:complete',
+                timestamp: Date.now(),
+                data: { documentCount: documents.length }
+            });
+        } catch (error) {
+            this.emitEvent({
+                type: 'index:error',
+                timestamp: Date.now(),
+                error: error instanceof Error ? error : new Error(String(error))
+            });
+            throw error;
+        }
+    }
+
+    public async updateDocument(document: IndexedDocument): Promise<void> {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
+
+        const normalizedDoc = this.normalizeDocument(document);
+
+        if (this.documentSupport && this.config.documentSupport?.versioning?.enabled) {
+            await this.handleVersioning(normalizedDoc);
+        }
+
+        this.documents.set(normalizedDoc.id, normalizedDoc);
+        this.trie.addData(normalizedDoc.id, normalizedDoc.fields.content, normalizedDoc);
+        await this.indexManager.updateDocument(normalizedDoc);
+    }
+
 
     public async search(
         query: string,
@@ -155,35 +208,7 @@ export class SearchEngine {
         }
     }
 
-    public async addDocuments(documents: IndexedDocument[]): Promise<void> {
-        if (!this.isInitialized) {
-            await this.initialize();
-        }
-
-        try {
-            // Normalize documents if document support is enabled
-            const normalizedDocs = documents.map(doc => this.normalizeDocument(doc));
-            
-            // Validate documents if validation is enabled
-            if (this.documentSupport && this.config.documentSupport?.validation) {
-                this.validateDocuments(normalizedDocs);
-            }
-
-            // Proceed with standard document addition
-            for (const doc of normalizedDocs) {
-                this.documents.set(doc.id, doc);
-                this.trie.addData(doc.id, doc.fields.content);
-                await this.indexManager.addDocument(doc);
-            }
-        } catch (error) {
-            this.emitEvent({
-                type: 'index:error',
-                timestamp: Date.now(),
-                error: error instanceof Error ? error : new Error(String(error))
-            });
-            throw error;
-        }
-    }
+   
 
     private validateDocuments(documents: IndexedDocument[]): void {
         if (!this.config.documentSupport?.validation) return;
@@ -207,21 +232,7 @@ export class SearchEngine {
             });
         }
     }
-
-    public async updateDocument(document: IndexedDocument): Promise<void> {
-        if (!this.isInitialized) {
-            await this.initialize();
-        }
-
-        const normalizedDoc = this.normalizeDocument(document);
-
-        if (this.documentSupport && this.config.documentSupport?.versioning?.enabled) {
-            await this.handleVersioning(normalizedDoc);
-        }
-
-        await super.updateDocument(normalizedDoc);
-    }
-
+    
     public async removeDocument(documentId: string): Promise<void> {
         if (!this.isInitialized) {
             await this.initialize();
@@ -639,7 +650,6 @@ export class SearchEngine {
             return doc;
         }
 
-        // Add NexusDocument fields if document support is enabled
         const now = new Date().toISOString();
         const normalizedFields = {
             ...doc.fields,
@@ -672,16 +682,6 @@ export class SearchEngine {
         );
     }
 
-    // Additional NexusDocument specific methods that are only available when document support is enabled
-    public async getDocumentVersion(id: string, version: number): Promise<any | undefined> {
-        if (!this.documentSupport) {
-            throw new Error('Document support is not enabled');
-        }
-
-        const doc = await this.getDocument(id);
-        return doc?.versions?.find(v => v.version === version);
-    }
-
     public async restoreVersion(id: string, version: number): Promise<void> {
         if (!this.documentSupport) {
             throw new Error('Document support is not enabled');
@@ -697,45 +697,33 @@ export class SearchEngine {
             throw new Error(`Version ${version} not found for document ${id}`);
         }
 
-        const updatedDoc = this.normalizeDocument({
-            ...doc,
-            fields: {
+        const updatedDoc = new IndexedDocument(
+            doc.id,
+            {
                 ...doc.fields,
                 content: targetVersion.content,
                 modified: new Date().toISOString(),
                 version: String(Number(doc.fields.version) + 1)
             },
-            normalizeFields: function (fields: IndexableDocumentFields): IndexableDocumentFields & { title: string; content: string; author: string; tags: string[];[key: string]: string | string[] | number | boolean | null; } {
-                throw new Error("Function not implemented.");
-            },
-            normalizeMetadata: function (metadata?: DocumentMetadata): DocumentMetadata {
-                throw new Error("Function not implemented.");
-            },
-            toObject: function () {
-                throw new Error("Function not implemented.");
-            },
-            clone: function (): IndexedDocument {
-                throw new Error("Function not implemented.");
-            },
-            update: function (updates: Partial<IndexedDocument>): IndexedDocument {
-                throw new Error("Function not implemented.");
-            },
-            getField: function <T extends keyof IndexableDocumentFields>(field: T): IndexableDocumentFields[T] {
-                throw new Error("Function not implemented.");
-            },
-            setField: function <T extends keyof IndexableDocumentFields>(field: T, value: IndexableDocumentFields[T]): void {
-                throw new Error("Function not implemented.");
-            },
-            document: function (): IndexedDocument {
-                throw new Error("Function not implemented.");
-            },
-            toJSON: function (): Record<string, any> {
-                throw new Error("Function not implemented.");
+            {
+                ...doc.metadata,
+                lastModified: Date.now()
             }
-        });
+        );
 
         await this.updateDocument(updatedDoc);
     }
+
+    // Additional NexusDocument specific methods that are only available when document support is enabled
+    public async getDocumentVersion(id: string, version: number): Promise<any | undefined> {
+        if (!this.documentSupport) {
+            throw new Error('Document support is not enabled');
+        }
+
+        const doc = await this.getDocument(id);
+        return doc?.versions?.find(v => v.version === version);
+    }
+
 
     public getStats(): {
         documentCount: number;
