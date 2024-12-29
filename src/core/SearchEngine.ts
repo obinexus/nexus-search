@@ -6,8 +6,7 @@ import {
     SearchEventListener,
     SearchEvent,
     IndexNode,
-    DocumentMetadata,
-    IndexableDocumentFields,
+    
 } from "@/types";
 import { validateSearchOptions, bfsRegexTraversal, dfsRegexTraversal } from "@/utils";
 import { IndexManager } from "../storage/IndexManager";
