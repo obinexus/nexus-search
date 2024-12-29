@@ -51,14 +51,30 @@ export class IndexMapper {
                     
                     words.forEach(word => {
                         if (word) {
-                            this.trieSearch.addDocument({ id, fields: {
-                                [field]: word,
-                                title: "",
-                                content: "",
-                                author: "",
-                                tags: [],
-                                version: ""
-                            } });
+                            this.trieSearch.addDocument({
+                                id, fields: {
+                                    [field]: word,
+                                    title: "",
+                                    content: {} as DocumentData,
+                                    author: "",
+                                    tags: [],
+                                    version: ""
+                                },
+                                versions: [],
+                                relations: [],
+                                toObject: function (): IndexedDocument {
+                                    throw new Error("Function not implemented.");
+                                },
+                                document: function (): IndexedDocument {
+                                    throw new Error("Function not implemented.");
+                                },
+                                clone: function (): IndexedDocument {
+                                    throw new Error("Function not implemented.");
+                                },
+                                update: function (updates: Partial<IndexedDocument>): IndexedDocument {
+                                    throw new Error("Function not implemented.");
+                                }
+                            });
                             this.dataMapper.mapData(word.toLowerCase(), id);
                         }
                     });
