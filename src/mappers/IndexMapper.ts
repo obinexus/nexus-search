@@ -17,8 +17,9 @@ export class IndexMapper {
     private trieSearch: TrieSearch;
     private documents: Map<string, IndexedDocument>;
 
-    constructor() {
+    constructor(state: { dataMap: Record<string, string[]> }) {
         this.dataMapper = new DataMapper();
+        this.dataMapper.importState(state.dataMap);
         this.trieSearch = new TrieSearch();
         this.documents = new Map();
     }

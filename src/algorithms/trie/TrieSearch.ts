@@ -84,6 +84,10 @@ export class TrieSearch {
         current.incrementWeight();
     }
 
+    public searchWord(term: string): SearchResult[] {
+        return this.search(term);
+    }
+
     public search(query: string, options: SearchOptions = {}): SearchResult[] {
         const {
             fuzzy = false,
