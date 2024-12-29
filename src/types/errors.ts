@@ -25,3 +25,32 @@ export class StorageError extends Error {
     this.name = 'StorageError';
   }
 }
+
+export class CacheError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CacheError';
+  }
+}
+
+export class MapperError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'MapperError';
+  }
+}
+
+export class PerformanceError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PerformanceError';
+  }
+}
+
+export class ConfigError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ConfigError';
+  }
+}
+
