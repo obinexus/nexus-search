@@ -4,9 +4,14 @@ import { StorageOptions } from "./storage";
 
 // Base metadata and value types
 export interface DocumentMetadata {
-    permissions: any;
-}
 
+    indexed?: number;
+
+    lastModified?: number;
+
+    [key: string]: any;
+
+}
 export type DocumentValue = any;
 
 // Link interface for document relationships

@@ -5,7 +5,10 @@ import {
     SearchEngineConfig,
     SearchEventListener,
     SearchEvent,
-    IndexNode
+    IndexNode,
+    DocumentMetadata,
+    IndexableDocumentFields,
+    IndexedDocument
 } from "@/types";
 import { validateSearchOptions, createSearchableFields, bfsRegexTraversal, dfsRegexTraversal } from "@/utils";
 import { IndexManager } from "../storage/IndexManager";
@@ -78,64 +81,6 @@ export class SearchEngine {
         }
     }
 
-    public async addDocuments(documents: IndexedDocument[]): Promise<void> {
-        if (!this.isInitialized) {
-            await this.initialize();
-        }
-
-        this.emitEvent({
-            type: 'index:start',
-            timestamp: Date.now(),
-            data: { documentCount: documents.length }
-        });
-
-        try {
-            for (const doc of documents) {
-                const docId = doc.id || this.generateDocumentId();
-                const indexedDoc = new IndexedDocument(docId, doc.fields, {
-                    ...doc.metadata,
-                    indexed: Date.now(),
-                    lastModified: Date.now()
-                });
-
-                this.documents.set(docId, indexedDoc);
-                const searchableContent = createSearchableFields(
-                    { content: indexedDoc.fields, id: docId },
-                    this.config.fields
-                );
-
-                for (const field of this.config.fields) {
-                    if (searchableContent[field]) {
-                        const words = searchableContent[field]
-                            .toLowerCase()
-                            .split(/\s+/)
-                            .filter(Boolean);
-
-                        for (const word of words) {
-                            this.trie.insert(word, docId);
-                        }
-                    }
-                }
-            }
-
-            await this.indexManager.addDocuments(documents);
-            await this.storage.storeIndex(this.config.name, this.indexManager.exportIndex());
-            this.cache.clear();
-
-            this.emitEvent({
-                type: 'index:complete',
-                timestamp: Date.now(),
-                data: { documentCount: documents.length }
-            });
-        } catch (error) {
-            this.emitEvent({
-                type: 'index:error',
-                timestamp: Date.now(),
-                error: error instanceof Error ? error : new Error(String(error))
-            });
-            throw new Error(`Failed to add documents: ${error}`);
-        }
-    }
 
     public async search(
         query: string,
@@ -211,33 +156,71 @@ export class SearchEngine {
         }
     }
 
+    public async addDocuments(documents: IndexedDocument[]): Promise<void> {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
+
+        try {
+            // Normalize documents if document support is enabled
+            const normalizedDocs = documents.map(doc => this.normalizeDocument(doc));
+            
+            // Validate documents if validation is enabled
+            if (this.documentSupport && this.config.documentSupport?.validation) {
+                this.validateDocuments(normalizedDocs);
+            }
+
+            // Proceed with standard document addition
+            for (const doc of normalizedDocs) {
+                this.documents.set(doc.id, doc);
+                this.trie.addData(doc.id, doc.fields.content);
+                await this.indexManager.addDocument(doc);
+            }
+        } catch (error) {
+            this.emitEvent({
+                type: 'index:error',
+                timestamp: Date.now(),
+                error: error instanceof Error ? error : new Error(String(error))
+            });
+            throw error;
+        }
+    }
+
+    private validateDocuments(documents: IndexedDocument[]): void {
+        if (!this.config.documentSupport?.validation) return;
+
+        const { required = [], customValidators = {} } = this.config.documentSupport.validation;
+
+        for (const doc of documents) {
+            // Check required fields
+            for (const field of required) {
+                if (!doc.fields[field]) {
+                    throw new Error(`Field '${field}' is required for document ${doc.id}`);
+                }
+            }
+
+            // Run custom validators
+            Object.entries(customValidators).forEach(([field, validator]) => {
+                const value = doc.fields[field];
+                if (value !== undefined && !validator(value)) {
+                    throw new Error(`Validation failed for field '${field}' in document ${doc.id}`);
+                }
+            });
+        }
+    }
+
     public async updateDocument(document: IndexedDocument): Promise<void> {
         if (!this.isInitialized) {
             await this.initialize();
         }
 
-        const documentId = document.id;
-        if (!documentId || !this.documents.has(documentId)) {
-            throw new Error(`Document ${documentId} not found`);
+        const normalizedDoc = this.normalizeDocument(document);
+
+        if (this.documentSupport && this.config.documentSupport?.versioning?.enabled) {
+            await this.handleVersioning(normalizedDoc);
         }
 
-        try {
-            await this.removeDocument(documentId);
-            await this.addDocuments([document]);
-
-            this.emitEvent({
-                type: 'update:complete',
-                timestamp: Date.now(),
-                data: { documentId }
-            });
-        } catch (error) {
-            this.emitEvent({
-                type: 'update:error',
-                timestamp: Date.now(),
-                error: error instanceof Error ? error : new Error(String(error))
-            });
-            throw new Error(`Failed to update document: ${error}`);
-        }
+        await super.updateDocument(normalizedDoc);
     }
 
     public async removeDocument(documentId: string): Promise<void> {
@@ -628,7 +611,7 @@ export class SearchEngine {
         }
     }
 
-    private async handleVersioning(doc: IndexedDocument): Promise<void> {
+    public  async handleVersioning(doc: IndexedDocument): Promise<void> {
         const existingDoc = await this.getDocument(doc.id);
         if (!existingDoc) return;
 
@@ -639,7 +622,7 @@ export class SearchEngine {
             versions.push({
                 version: Number(existingDoc.fields.version),
                 content: existingDoc.fields.content,
-                modified: new Date(existingDoc.fields.modified),
+                modified: new Date(existingDoc.fields.modified || Date.now()),
                 author: existingDoc.fields.author
             });
 
@@ -722,6 +705,33 @@ export class SearchEngine {
                 content: targetVersion.content,
                 modified: new Date().toISOString(),
                 version: String(Number(doc.fields.version) + 1)
+            },
+            normalizeFields: function (fields: IndexableDocumentFields): IndexableDocumentFields & { title: string; content: string; author: string; tags: string[];[key: string]: string | string[] | number | boolean | null; } {
+                throw new Error("Function not implemented.");
+            },
+            normalizeMetadata: function (metadata?: DocumentMetadata): DocumentMetadata {
+                throw new Error("Function not implemented.");
+            },
+            toObject: function () {
+                throw new Error("Function not implemented.");
+            },
+            clone: function (): IndexedDocument {
+                throw new Error("Function not implemented.");
+            },
+            update: function (updates: Partial<IndexedDocument>): IndexedDocument {
+                throw new Error("Function not implemented.");
+            },
+            getField: function <T extends keyof IndexableDocumentFields>(field: T): IndexableDocumentFields[T] {
+                throw new Error("Function not implemented.");
+            },
+            setField: function <T extends keyof IndexableDocumentFields>(field: T, value: IndexableDocumentFields[T]): void {
+                throw new Error("Function not implemented.");
+            },
+            document: function (): IndexedDocument {
+                throw new Error("Function not implemented.");
+            },
+            toJSON: function (): Record<string, any> {
+                throw new Error("Function not implemented.");
             }
         });
 

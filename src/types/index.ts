@@ -16,7 +16,6 @@ export * from './compactability';
 export * from './global';
 export * from './document';
 export * from './algorithms';
-export * from './nexus-document';
 // Algorithm types
 export * from './algorithms';
 
