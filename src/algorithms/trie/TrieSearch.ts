@@ -1,7 +1,6 @@
 
 
-// TrieSearch.ts
-import { IndexedDocument, DocumentLink, SerializedState, SerializedTrieNode } from "@/types";
+import { IndexedDocument, DocumentLink} from "@/types";
 import { TrieNode } from "./TrieNode";
 
 interface SearchOptions {

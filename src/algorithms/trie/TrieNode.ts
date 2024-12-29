@@ -1,4 +1,3 @@
-// TrieNode.ts
 export class TrieNode {
     children: Map<string, TrieNode>;
     isEndOfWord: boolean;
