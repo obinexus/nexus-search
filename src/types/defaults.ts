@@ -24,7 +24,7 @@ export const DEFAULT_SEARCH_OPTIONS: Required<SearchOptions> = {
     includeStats: false,
     enableRegex: false,
     maxDistance: 0,
-    regex: undefined
+    regex: undefined // Simplified to just RegExp to fix type errors
 };
 
 export const DEFAULT_INDEX_OPTIONS = {

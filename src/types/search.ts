@@ -28,7 +28,7 @@ export interface SearchOptions {
     pageSize?: number;
     enableRegex?: boolean;
     maxDistance?: number;
-    regex?: RegExp;  // Simplified to just RegExp to fix type errors
+    regex?:string |  RegExp;  // Simplified to just RegExp to fix type errors
     highlight?: boolean;
     includeMatches?: boolean;
     includeScore?: boolean;
