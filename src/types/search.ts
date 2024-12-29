@@ -24,8 +24,8 @@ export interface SearchOptions {
     sortOrder?: 'asc' | 'desc';
     page?: number;
     pageSize?: number;
-    includeRegex?: boolean;
-    regex?: { pattern: string; flags: string };
+enableRegex?: boolean;
+    regex?: { pattern: string; flags: string } | string | RegExp;
         highlight?: boolean;
     includeMatches?: boolean;
     includeScore?: boolean;
