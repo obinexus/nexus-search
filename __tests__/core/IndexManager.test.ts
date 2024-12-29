@@ -1,63 +1,201 @@
+import { IndexManager } from '@/index';
+import { DocumentData, IndexConfig, IndexedDocument } from '@/types';
+import { jest } from '@jest/globals';
 
 describe('IndexManager', () => {
   let indexManager: IndexManager;
+  
   const testConfig: IndexConfig = {
     name: 'test-index',
     version: 1,
-    fields: ['title', 'content'],
+    fields: ['title', 'content', 'author', 'tags'],
   };
+
+  const createTestDocument = (id: string): IndexedDocument => ({
+    id,
+    fields: {
+      title: `Test ${id}`,
+      content: `Content for ${id}`,
+      author: 'Test Author',
+      tags: ['test'],
+      version: '1.0'
+    },
+    metadata: {
+      indexed: Date.now(),
+      lastModified: Date.now()
+    },
+    versions: [],
+    relations: [],
+    clone: () => createTestDocument(id),
+    update: (updates) => ({ ...createTestDocument(id), ...updates }),
+    toObject: () => createTestDocument(id),
+    document: function () { return this; },
+    content: {} as DocumentData
+  });
 
   beforeEach(() => {
     indexManager = new IndexManager(testConfig);
   });
 
-  test('should add documents to index', async () => {
-    const docs = [
-      { title: 'Test', content: 'Content' },
-    ];
+  describe('Document Operations', () => {
+    test('should add documents to index', async () => {
+      const docs = [
+        createTestDocument('doc1'),
+        createTestDocument('doc2')
+      ];
+      
+      await expect(indexManager.addDocuments(docs)).resolves.not.toThrow();
+      expect(indexManager.getSize()).toBe(2);
+    });
 
-    await expect(indexManager.addDocuments(docs)).resolves.not.toThrow();
+    test('should handle empty document array', async () => {
+      await expect(indexManager.addDocuments([])).resolves.not.toThrow();
+      expect(indexManager.getSize()).toBe(0);
+    });
+
+    test('should update existing document', async () => {
+      const doc = createTestDocument('doc1');
+      await indexManager.addDocuments([doc]);
+
+      const updatedDoc: IndexedDocument = {
+        ...doc,
+        fields: {
+          ...doc.fields,
+          title: 'Updated Title'
+        }
+      };
+
+      await expect(indexManager.updateDocument(updatedDoc)).resolves.not.toThrow();
+      
+      const allDocs = indexManager.getAllDocuments();
+      const retrieved = allDocs.get(doc.id);
+      expect(retrieved?.fields.title).toBe('Updated Title');
+    });
+
+    test('should remove document', async () => {
+      const doc = createTestDocument('doc1');
+      await indexManager.addDocuments([doc]);
+      await indexManager.removeDocument(doc.id);
+      
+      expect(indexManager.getSize()).toBe(0);
+      const allDocs = indexManager.getAllDocuments();
+      expect(allDocs.has(doc.id)).toBeFalsy();
+    });
   });
 
-  test('should export and import index', async () => {
-    const docs = [
-      { title: 'Test', content: 'Content' },
-    ];
+  describe('Search Operations', () => {
+    beforeEach(async () => {
+      const docs = [
+        createTestDocument('doc1'),
+        createTestDocument('doc2')
+      ];
+      await indexManager.addDocuments(docs);
+    });
 
-    await indexManager.addDocuments(docs);
-    const exported = indexManager.exportIndex();
-    
-    const newIndexManager = new IndexManager(testConfig);
-    expect(() => newIndexManager.importIndex(exported)).not.toThrow();
+    test('should search documents', async () => {
+      const results = await indexManager.search('Test');
+      expect(results.length).toBeGreaterThan(0);
+      expect(results[0].item).toBeDefined();
+      expect(results[0].score).toBeDefined();
+    });
+
+    test('should handle empty search query', async () => {
+      const results = await indexManager.search('');
+      expect(results).toHaveLength(0);
+    });
+
+    test('should apply search options', async () => {
+      const results = await indexManager.search('Test', {
+        fuzzy: true,
+        maxResults: 1,
+        threshold: 0.5
+      });
+      
+      expect(results.length).toBeLessThanOrEqual(1);
+      if (results.length > 0) {
+        expect(results[0].score).toBeGreaterThanOrEqual(0.5);
+      }
+    });
+  });
+
+  describe('Index Management', () => {
+    test('should export and import index', async () => {
+      const docs = [createTestDocument('doc1')];
+      await indexManager.addDocuments(docs);
+      
+      const exported = indexManager.exportIndex();
+      const newIndexManager = new IndexManager(testConfig);
+      
+      expect(() => newIndexManager.importIndex(exported)).not.toThrow();
+      expect(newIndexManager.getSize()).toBe(1);
+    });
+
+    test('should handle invalid import data', () => {
+      const invalidData = { 
+        documents: [], 
+        // Missing required fields
+      };
+      
+      expect(() => indexManager.importIndex(invalidData)).toThrow();
+    });
+
+    test('should clear index', async () => {
+      const docs = [createTestDocument('doc1')];
+      await indexManager.addDocuments(docs);
+      
+      indexManager.clear();
+      expect(indexManager.getSize()).toBe(0);
+    });
+  });
+
+  describe('Error Handling', () => {
+    test('should handle document indexing errors gracefully', async () => {
+      const invalidDoc = {
+        ...createTestDocument('invalid'),
+        fields: {
+          title: '',
+          content: '',
+          author: '',
+          tags: [],
+          version: ''
+        } // This should cause an error during indexing
+      };
+
+      await expect(indexManager.addDocuments([invalidDoc])).resolves.not.toThrow();
+      // The document should not be added due to the error
+      expect(indexManager.getSize()).toBe(0);
+    });
+
+    test('should handle search errors gracefully', async () => {
+      // Force a search error by providing invalid data
+      const results = await indexManager.search(null as unknown as string);
+      expect(results).toHaveLength(0);
+    });
+  });
+
+  describe('Performance', () => {
+    test('should handle large number of documents', async () => {
+      const docs = Array.from({ length: 100 }, (_, i) => 
+        createTestDocument(`doc${i}`)
+      );
+
+      await expect(indexManager.addDocuments(docs)).resolves.not.toThrow();
+      expect(indexManager.getSize()).toBe(100);
+    });
+
+    test('should handle concurrent operations', async () => {
+      const docs = Array.from({ length: 10 }, (_, i) => 
+        createTestDocument(`doc${i}`)
+      );
+
+      const operations = [
+        indexManager.addDocuments(docs.slice(0, 5)),
+        indexManager.addDocuments(docs.slice(5)),
+        indexManager.search('Test'),
+        indexManager.removeDocument('doc1')
+      ];
+
+      await expect(Promise.all(operations)).resolves.not.toThrow();
+    });
   });
 });
-
-import { IndexManager } from '@/index';
-import { IndexConfig } from '@/types';
-// src/tests/unit/algorithms/TrieSearch.test.ts
-import { TrieSearch } from '../../../src/algorithms/trie/TrieSearch';
-
-describe('TrieSearch', () => {
-  let trie: TrieSearch;
-
-  beforeEach(() => {
-    trie = new TrieSearch();
-  });
-
-  test('should insert and find exact matches', () => {
-    trie.insert('hello', 'doc1');
-    trie.insert('help', 'doc2');
-
-    const results = trie.search('hello');
-    expect(results.has('doc1')).toBeTruthy();
-    expect(results.has('doc2')).toBeFalsy();
-  });
-
-  test('should perform fuzzy search', () => {
-    trie.insert('hello', 'doc1');
-    
-    const results = trie.fuzzySearch('helo', 1);
-    expect(results.has('doc1')).toBeTruthy();
-  });
-});
-
