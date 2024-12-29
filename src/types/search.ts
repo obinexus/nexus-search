@@ -9,11 +9,13 @@ export interface SearchResult<T = unknown> {
     matches: string[];
     metadata?: DocumentMetadata;
 }
+
+// Search interface for implementation
 export interface Search {
     search(query: string, options?: SearchOptions): Promise<SearchResult[]>;
 }
 
-// Search options with complete type safety
+// Enhanced search options with complete type safety
 export interface SearchOptions {
     fuzzy?: boolean;
     fields?: string[];
@@ -24,13 +26,12 @@ export interface SearchOptions {
     sortOrder?: 'asc' | 'desc';
     page?: number;
     pageSize?: number;
-enableRegex?: boolean;
-    regex?:  RegExp | { pattern: string; flags: string } 
-        highlight?: boolean;
+    enableRegex?: boolean;
+    maxDistance?: number;
+    regex?: RegExp;  // Simplified to just RegExp to fix type errors
+    highlight?: boolean;
     includeMatches?: boolean;
     includeScore?: boolean;
-    
-    maxDistance?: number;
     includeStats?: boolean;
 }
 
@@ -51,12 +52,12 @@ export interface SearchStats {
     queryComplexity: number;
 }
 
-// Document interface for indexing
+// Document interface for indexing with improved typing
 export interface SearchableDocument {
     id: string;
     content: Record<string, DocumentValue>;
     metadata?: DocumentMetadata;
-    [key: string]: any;
+    [key: string]: unknown;  // Changed any to unknown for better type safety
 }
 
 // Field interface for indexing
@@ -66,11 +67,41 @@ export interface SearchableField {
     metadata?: DocumentMetadata;
 }
 
-// Search tree node interface
+// Enhanced search node interface
 export interface SearchNode {
     id?: string;
     score: number;
     value?: DocumentValue;
     children: Map<string, SearchNode>;
     metadata?: DocumentMetadata;
+}
+
+// Additional helper types for search functionality
+export interface SearchScoreParams {
+    term: string;
+    documentId: string;
+    options: SearchOptions;
+}
+
+export interface SearchMatch {
+    field: string;
+    value: string;
+    indices: number[];
+}
+
+// Export a type for search engine configuration
+export interface SearchEngineOptions {
+    fuzzyMatchingEnabled?: boolean;
+    regexSearchEnabled?: boolean;
+    maxSearchResults?: number;
+    defaultThreshold?: number;
+    defaultBoost?: Record<string, number>;
+}
+
+// Helper type for search results pagination
+export interface SearchPagination {
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    totalResults: number;
 }
