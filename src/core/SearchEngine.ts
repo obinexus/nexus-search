@@ -1,18 +1,18 @@
-import {  CacheManager, IndexedDocument, SearchStorage } from "@/storage";
-import { 
-    SearchOptions, 
-    SearchResult, 
+import { CacheManager, IndexedDocument, SearchStorage } from "@/storage";
+import {
+    SearchOptions,
+    SearchResult,
     SearchEngineConfig,
     SearchEventListener,
     SearchEvent,
-    IndexNode} from "@/types";
+    IndexNode
+} from "@/types";
 import { validateSearchOptions, createSearchableFields, bfsRegexTraversal, dfsRegexTraversal } from "@/utils";
 import { IndexManager } from "../storage/IndexManager";
 import { QueryProcessor } from "./QueryProcessor";
 import { TrieSearch } from "@/algorithms/trie";
 
 export class SearchEngine {
-    private readonly indexManager: IndexManager;
     private readonly queryProcessor: QueryProcessor;
     private storage: SearchStorage;
     private readonly cache: CacheManager;
@@ -22,6 +22,8 @@ export class SearchEngine {
     private isInitialized: boolean = false;
     private documents: Map<string, IndexedDocument>;
     private trieRoot: IndexNode;
+    private readonly documentSupport: boolean;
+    private readonly indexManager: IndexManager;
 
     constructor(config: SearchEngineConfig) {
         this.config = config;
@@ -33,7 +35,19 @@ export class SearchEngine {
         this.trie = new TrieSearch();
         this.documents = new Map();
         this.trieRoot = { id: '', value: '', score: 0, children: new Map() };
-    }
+        this.documentSupport = config.documentSupport?.enabled ?? false;
+    
+        this.config = config;
+        this.indexManager = new IndexManager(config);
+        this.queryProcessor = new QueryProcessor();
+        this.storage = new SearchStorage(config.storage);
+        this.cache = new CacheManager();
+        this.eventListeners = new Set();
+        this.trie = new TrieSearch();
+        this.documents = new Map();
+        this.trieRoot = { id: '', value: '', score: 0, children: new Map() };
+    } 
+   
 
     public async initialize(): Promise<void> {
         if (this.isInitialized) return;
@@ -47,7 +61,7 @@ export class SearchEngine {
                     timestamp: Date.now(),
                     error: storageError instanceof Error ? storageError : new Error(String(storageError))
                 });
-                
+
                 this.storage = new SearchStorage({ type: 'memory' });
                 await this.storage.initialize();
             }
@@ -150,7 +164,7 @@ export class SearchEngine {
             let results: Array<{ id: string; score: number }>;
 
             if (options.regex) {
-                const regex = typeof options.regex === 'string' ? 
+                const regex = typeof options.regex === 'string' ?
                     new RegExp(options.regex) : options.regex;
 
                 if (this.isComplexRegex(regex)) {
@@ -376,12 +390,12 @@ export class SearchEngine {
 
         for (const field of searchFields) {
             const fieldContent = String(doc.fields[field] || '').toLowerCase();
-            
+
             if (options.regex) {
                 const regex = typeof options.regex === 'string' ?
                     new RegExp(options.regex, 'gi') :
                     new RegExp(options.regex.source, 'gi');
-                
+
                 const fieldMatches = fieldContent.match(regex) || [];
                 fieldMatches.forEach(match => matches.add(match));
             }
@@ -403,12 +417,12 @@ export class SearchEngine {
     private isComplexRegex(regex: RegExp): boolean {
         const pattern = regex.source;
         return (
-            pattern.includes('{') || 
-            pattern.includes('+') || 
-            pattern.includes('*') || 
-            pattern.includes('?') || 
-            pattern.includes('|') || 
-            pattern.includes('(?') || 
+            pattern.includes('{') ||
+            pattern.includes('+') ||
+            pattern.includes('*') ||
+            pattern.includes('?') ||
+            pattern.includes('|') ||
+            pattern.includes('(?') ||
             pattern.includes('[')
         );
     }
@@ -455,180 +469,280 @@ export class SearchEngine {
     }
 
     public async close(): Promise<void> {
-        try { 
-        await this.storage.close();
-        this.cache.clear();
-        this.documents.clear();
-        this.isInitialized = false;
+        try {
+            await this.storage.close();
+            this.cache.clear();
+            this.documents.clear();
+            this.isInitialized = false;
 
-        this.emitEvent({
-            type: 'engine:closed',
-            timestamp: Date.now()
-        });
-    } catch (error) {
-        console.warn('Error during close:', error);
-    }
-}
-
-public getIndexedDocumentCount(): number {
-    return this.documents.size;
-}
-
-public getTrieState(): unknown {
-    return this.trie.exportState();
-}
-
-public async bulkUpdate(updates: Map<string, Partial<IndexedDocument>>): Promise<void> {
-    if (!this.isInitialized) {
-        await this.initialize();
-    }
-
-    const updatePromises: Promise<void>[] = [];
-
-    for (const [id, update] of updates) {
-        const existingDoc = this.documents.get(id);
-        if (existingDoc) {
-            const updatedDoc = new IndexedDocument(
-                id,
-                { ...existingDoc.fields, ...update.fields },
-                { ...existingDoc.metadata, ...update.metadata }
-            );
-            updatePromises.push(this.updateDocument(updatedDoc));
+            this.emitEvent({
+                type: 'engine:closed',
+                timestamp: Date.now()
+            });
+        } catch (error) {
+            console.warn('Error during close:', error);
         }
     }
 
-    try {
-        await Promise.all(updatePromises);
-        this.emitEvent({
-            type: 'bulk:update:complete',
-            timestamp: Date.now(),
-            data: { updateCount: updates.size }
-        });
-    } catch (error) {
-        this.emitEvent({
-            type: 'bulk:update:error',
-            timestamp: Date.now(),
-            error: error instanceof Error ? error : new Error(String(error))
-        });
-        throw new Error(`Bulk update failed: ${error}`);
-    }
-}
-
-public async importIndex(indexData: unknown): Promise<void> {
-    if (!this.isInitialized) {
-        await this.initialize();
+    public getIndexedDocumentCount(): number {
+        return this.documents.size;
     }
 
-    try {
-        await this.clearIndex();
-        this.indexManager.importIndex(indexData);
-       
-        const indexedDocuments = Array.from(this.documents.values()).map(doc => IndexedDocument.fromObject(doc));
-
-        await this.addDocuments(indexedDocuments);
-
-        this.emitEvent({
-            type: 'import:complete',
-            timestamp: Date.now(),
-            data: { documentCount: this.documents.size }
-        });
-    } catch (error) {
-        this.emitEvent({
-            type: 'import:error',
-            timestamp: Date.now(),
-            error: error instanceof Error ? error : new Error(String(error))
-        });
-        throw new Error(`Import failed: ${error}`);
-    }
-}
-
-public exportIndex(): unknown {
-    if (!this.isInitialized) {
-        throw new Error('Search engine not initialized');
-    }
-    return this.indexManager.exportIndex();
-}
-
-public getDocument(id: string): IndexedDocument | undefined {
-    return this.documents.get(id);
-}
-
-public getAllDocuments(): IndexedDocument[] {
-    return Array.from(this.documents.values());
-}
-
-public async reindexAll(): Promise<void> {
-    if (!this.isInitialized) {
-        await this.initialize();
+    public getTrieState(): unknown {
+        return this.trie.exportState();
     }
 
-    try {
-        const documents = this.getAllDocuments();
-        await this.clearIndex();
-        await this.addDocuments(documents);
-
-        this.emitEvent({
-            type: 'reindex:complete',
-            timestamp: Date.now(),
-            data: { documentCount: documents.length }
-        });
-    } catch (error) {
-        this.emitEvent({
-            type: 'reindex:error',
-            timestamp: Date.now(),
-            error: error instanceof Error ? error : new Error(String(error))
-        });
-        throw new Error(`Reindex failed: ${error}`);
-    }
-}
-
-public async optimizeIndex(): Promise<void> {
-    if (!this.isInitialized) {
-        await this.initialize();
-    }
-
-    try {
-        // Trigger cache cleanup
-        this.cache.clear();
-
-        // Compact storage if possible
-        if (this.storage instanceof SearchStorage) {
-            await this.storage.clearIndices();
-            await this.storage.storeIndex(
-                this.config.name,
-                this.indexManager.exportIndex()
-            );
+    public async bulkUpdate(updates: Map<string, Partial<IndexedDocument>>): Promise<void> {
+        if (!this.isInitialized) {
+            await this.initialize();
         }
 
-        this.emitEvent({
-            type: 'optimize:complete',
-            timestamp: Date.now()
-        });
-    } catch (error) {
-        this.emitEvent({
-            type: 'optimize:error',
-            timestamp: Date.now(),
-            error: error instanceof Error ? error : new Error(String(error))
-        });
-        throw new Error(`Optimization failed: ${error}`);
+        const updatePromises: Promise<void>[] = [];
+
+        for (const [id, update] of updates) {
+            const existingDoc = this.documents.get(id);
+            if (existingDoc) {
+                const updatedDoc = new IndexedDocument(
+                    id,
+                    { ...existingDoc.fields, ...update.fields },
+                    { ...existingDoc.metadata, ...update.metadata }
+                );
+                updatePromises.push(this.updateDocument(updatedDoc));
+            }
+        }
+
+        try {
+            await Promise.all(updatePromises);
+            this.emitEvent({
+                type: 'bulk:update:complete',
+                timestamp: Date.now(),
+                data: { updateCount: updates.size }
+            });
+        } catch (error) {
+            this.emitEvent({
+                type: 'bulk:update:error',
+                timestamp: Date.now(),
+                error: error instanceof Error ? error : new Error(String(error))
+            });
+            throw new Error(`Bulk update failed: ${error}`);
+        }
     }
-}
 
-public getStats(): {
-    documentCount: number;
-    indexSize: number;
-    cacheSize: number;
-    initialized: boolean;
-} {
-    return {
-        documentCount: this.documents.size,
-        indexSize: this.indexManager.getSize(),
-        cacheSize: this.cache.getSize(),
-        initialized: this.isInitialized
-    };
-}
+    public async importIndex(indexData: unknown): Promise<void> {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
 
-public isReady(): boolean {
-    return this.isInitialized;
-}
+        try {
+            await this.clearIndex();
+            this.indexManager.importIndex(indexData);
+
+            const indexedDocuments = Array.from(this.documents.values()).map(doc => IndexedDocument.fromObject(doc));
+
+            await this.addDocuments(indexedDocuments);
+
+            this.emitEvent({
+                type: 'import:complete',
+                timestamp: Date.now(),
+                data: { documentCount: this.documents.size }
+            });
+        } catch (error) {
+            this.emitEvent({
+                type: 'import:error',
+                timestamp: Date.now(),
+                error: error instanceof Error ? error : new Error(String(error))
+            });
+            throw new Error(`Import failed: ${error}`);
+        }
+    }
+
+    public exportIndex(): unknown {
+        if (!this.isInitialized) {
+            throw new Error('Search engine not initialized');
+        }
+        return this.indexManager.exportIndex();
+    }
+
+    public getDocument(id: string): IndexedDocument | undefined {
+        return this.documents.get(id);
+    }
+
+    public getAllDocuments(): IndexedDocument[] {
+        return Array.from(this.documents.values());
+    }
+
+    public async reindexAll(): Promise<void> {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
+
+        try {
+            const documents = this.getAllDocuments();
+            await this.clearIndex();
+            await this.addDocuments(documents);
+
+            this.emitEvent({
+                type: 'reindex:complete',
+                timestamp: Date.now(),
+                data: { documentCount: documents.length }
+            });
+        } catch (error) {
+            this.emitEvent({
+                type: 'reindex:error',
+                timestamp: Date.now(),
+                error: error instanceof Error ? error : new Error(String(error))
+            });
+            throw new Error(`Reindex failed: ${error}`);
+        }
+    }
+
+    public async optimizeIndex(): Promise<void> {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
+
+        try {
+            // Trigger cache cleanup
+            this.cache.clear();
+
+            // Compact storage if possible
+            if (this.storage instanceof SearchStorage) {
+                await this.storage.clearIndices();
+                await this.storage.storeIndex(
+                    this.config.name,
+                    this.indexManager.exportIndex()
+                );
+            }
+
+            this.emitEvent({
+                type: 'optimize:complete',
+                timestamp: Date.now()
+            });
+        } catch (error) {
+            this.emitEvent({
+                type: 'optimize:error',
+                timestamp: Date.now(),
+                error: error instanceof Error ? error : new Error(String(error))
+            });
+            throw new Error(`Optimization failed: ${error}`);
+        }
+    }
+
+    private async handleVersioning(doc: IndexedDocument): Promise<void> {
+        const existingDoc = await this.getDocument(doc.id);
+        if (!existingDoc) return;
+
+        const maxVersions = this.config.documentSupport?.versioning?.maxVersions ?? 10;
+        const versions = existingDoc.versions || [];
+
+        if (doc.fields.content !== existingDoc.fields.content) {
+            versions.push({
+                version: Number(existingDoc.fields.version),
+                content: existingDoc.fields.content,
+                modified: new Date(existingDoc.fields.modified),
+                author: existingDoc.fields.author
+            });
+
+            // Keep only the latest versions
+            if (versions.length > maxVersions) {
+                versions.splice(0, versions.length - maxVersions);
+            }
+
+            doc.versions = versions;
+            doc.fields.version = String(Number(doc.fields.version) + 1);
+        }
+    }
+    private normalizeDocument(doc: IndexedDocument): IndexedDocument {
+        if (!this.documentSupport) {
+            return doc;
+        }
+
+        // Add NexusDocument fields if document support is enabled
+        const now = new Date().toISOString();
+        const normalizedFields = {
+            ...doc.fields,
+            title: doc.fields.title || '',
+            content: doc.fields.content || '',
+            type: doc.fields.type || 'document',
+            tags: Array.isArray(doc.fields.tags) ? doc.fields.tags : [],
+            category: doc.fields.category || '',
+            author: doc.fields.author || '',
+            created: doc.fields.created || now,
+            modified: doc.fields.modified || now,
+            status: doc.fields.status || 'draft',
+            version: doc.fields.version || '1.0',
+            locale: doc.fields.locale || ''
+        };
+
+        const normalizedMetadata = {
+            ...doc.metadata,
+            indexed: doc.metadata?.indexed || Date.now(),
+            lastModified: doc.metadata?.lastModified || Date.now(),
+            checksum: doc.metadata?.checksum,
+            permissions: Array.isArray(doc.metadata?.permissions) ? doc.metadata.permissions : [],
+            workflow: doc.metadata?.workflow
+        };
+
+        return new IndexedDocument(
+            doc.id,
+            normalizedFields,
+            normalizedMetadata
+        );
+    }
+
+    // Additional NexusDocument specific methods that are only available when document support is enabled
+    public async getDocumentVersion(id: string, version: number): Promise<any | undefined> {
+        if (!this.documentSupport) {
+            throw new Error('Document support is not enabled');
+        }
+
+        const doc = await this.getDocument(id);
+        return doc?.versions?.find(v => v.version === version);
+    }
+
+    public async restoreVersion(id: string, version: number): Promise<void> {
+        if (!this.documentSupport) {
+            throw new Error('Document support is not enabled');
+        }
+
+        const doc = await this.getDocument(id);
+        if (!doc) {
+            throw new Error(`Document ${id} not found`);
+        }
+
+        const targetVersion = await this.getDocumentVersion(id, version);
+        if (!targetVersion) {
+            throw new Error(`Version ${version} not found for document ${id}`);
+        }
+
+        const updatedDoc = this.normalizeDocument({
+            ...doc,
+            fields: {
+                ...doc.fields,
+                content: targetVersion.content,
+                modified: new Date().toISOString(),
+                version: String(Number(doc.fields.version) + 1)
+            }
+        });
+
+        await this.updateDocument(updatedDoc);
+    }
+
+    public getStats(): {
+        documentCount: number;
+        indexSize: number;
+        cacheSize: number;
+        initialized: boolean;
+    } {
+        return {
+            documentCount: this.documents.size,
+            indexSize: this.indexManager.getSize(),
+            cacheSize: this.cache.getSize(),
+            initialized: this.isInitialized
+        };
+    }
+
+    public isReady(): boolean {
+        return this.isInitialized;
+    }
 }
