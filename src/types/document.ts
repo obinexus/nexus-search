@@ -52,6 +52,12 @@ export interface DocumentRank {
 export interface DocumentData {
     [key: string]: any;
     metadata?: DocumentMetadata;
+    content: DocumentContent;
+    links: DocumentLink[];
+    toObject(): DocumentData;
+    clone(): DocumentData;
+    update(updates: Partial<DocumentData>): DocumentData;
+    
 }
 
 // Document content type

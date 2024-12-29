@@ -51,7 +51,14 @@ export class IndexMapper {
                     
                     words.forEach(word => {
                         if (word) {
-                            this.trieSearch.addDocument({ id, fields: { [field]: word } });
+                            this.trieSearch.addDocument({ id, fields: {
+                                [field]: word,
+                                title: "",
+                                content: "",
+                                author: "",
+                                tags: [],
+                                version: ""
+                            } });
                             this.dataMapper.mapData(word.toLowerCase(), id);
                         }
                     });
