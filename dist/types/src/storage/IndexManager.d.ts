@@ -7,15 +7,16 @@ export declare class IndexManager {
     private config;
     private documents;
     constructor(config: IndexConfig);
-    addDocuments<T extends IndexedDocument>(documents: T[]): Promise<void>;
-    search<T extends IndexedDocument>(query: string, options?: SearchOptions): Promise<SearchResult<T>[]>;
     exportIndex(): SerializedIndex;
     importIndex(data: unknown): void;
-    removeDocument(documentId: string): Promise<void>;
-    updateDocument<T extends IndexedDocument>(document: T): Promise<void>;
     clear(): void;
     private generateDocumentId;
     private isValidIndexData;
     private isValidIndexState;
     private serializeDocument;
+    addDocuments<T extends IndexedDocument>(documents: T[]): Promise<void>;
+    updateDocument<T extends IndexedDocument>(document: T): Promise<void>;
+    removeDocument(documentId: string): Promise<void>;
+    search<T extends IndexedDocument>(query: string, options?: SearchOptions): Promise<SearchResult<T>[]>;
+    hasDocument(id: string): boolean;
 }

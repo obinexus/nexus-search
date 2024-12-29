@@ -1,4 +1,3 @@
-// search.ts
 import { DocumentMetadata, DocumentValue, IndexedDocument } from './document';
 
 // Core search result interface with proper generic typing

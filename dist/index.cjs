@@ -1217,67 +1217,6 @@ class IndexManager {
         this.indexMapper = new IndexMapper();
         this.documents = new Map();
     }
-    async addDocuments(documents) {
-        for (const [index, doc] of documents.entries()) {
-            const id = this.generateDocumentId(index);
-            // Convert document fields to Record<string, DocumentValue>
-            const contentRecord = {};
-            for (const field of this.config.fields) {
-                if (field in doc) {
-                    if (field in doc) {
-                        contentRecord[field] = doc[field];
-                    }
-                }
-            }
-            // Create searchable document with proper field extraction
-            const searchableDoc = {
-                id,
-                content: createSearchableFields({
-                    content: contentRecord,
-                    id
-                }, this.config.fields),
-                metadata: doc.metadata
-            };
-            // Store original document with ID
-            this.documents.set(id, { ...doc, id });
-            // Index the document
-            try {
-                await this.indexMapper.indexDocument(searchableDoc, id, this.config.fields);
-            }
-            catch (error) {
-                console.warn(`Failed to index document ${id}:`, error);
-            }
-        }
-    }
-    async search(query, options = {}) {
-        var _a, _b;
-        if (!query.trim())
-            return [];
-        try {
-            const searchResults = await this.indexMapper.search(query, {
-                fuzzy: (_a = options.fuzzy) !== null && _a !== void 0 ? _a : false,
-                maxResults: (_b = options.maxResults) !== null && _b !== void 0 ? _b : 10
-            });
-            return searchResults
-                .filter(result => this.documents.has(result.item))
-                .map(result => {
-                const item = this.documents.get(result.item);
-                return {
-                    id: item.id,
-                    document: item,
-                    metadata: item.metadata,
-                    item,
-                    score: result.score,
-                    matches: result.matches
-                };
-            })
-                .filter(result => { var _a; return result.score >= ((_a = options.threshold) !== null && _a !== void 0 ? _a : 0.5); });
-        }
-        catch (error) {
-            console.error('Search error:', error);
-            return [];
-        }
-    }
     exportIndex() {
         return {
             documents: Array.from(this.documents.entries()).map(([key, value]) => ({
@@ -1312,35 +1251,6 @@ class IndexManager {
             throw new Error(`Failed to import index: ${message}`);
         }
     }
-    async removeDocument(documentId) {
-        if (this.documents.has(documentId)) {
-            this.documents.delete(documentId);
-            await this.indexMapper.removeDocument(documentId);
-        }
-    }
-    async updateDocument(document) {
-        const id = document.id;
-        if (this.documents.has(id)) {
-            this.documents.set(id, document);
-            const contentRecord = {};
-            for (const field of this.config.fields) {
-                if (field in document) {
-                    if (field in document) {
-                        contentRecord[field] = document[field];
-                    }
-                }
-            }
-            const searchableDoc = {
-                id,
-                content: createSearchableFields({
-                    content: contentRecord,
-                    id
-                }, this.config.fields),
-                metadata: document.metadata
-            };
-            await this.indexMapper.updateDocument(searchableDoc, id, this.config.fields);
-        }
-    }
     clear() {
         this.documents.clear();
         this.indexMapper = new IndexMapper();
@@ -1366,6 +1276,115 @@ class IndexManager {
     }
     serializeDocument(doc) {
         return JSON.parse(JSON.stringify(doc));
+    }
+    async addDocuments(documents) {
+        for (const doc of documents) {
+            // Use document's existing ID if available, otherwise generate new one
+            const id = doc.id || this.generateDocumentId(this.documents.size);
+            try {
+                // Convert document fields to Record<string, DocumentValue>
+                const contentRecord = {};
+                for (const field of this.config.fields) {
+                    if (field in doc.fields) {
+                        contentRecord[field] = doc.fields[field];
+                    }
+                }
+                // Create searchable document
+                const searchableDoc = {
+                    id,
+                    content: createSearchableFields({
+                        content: contentRecord,
+                        id
+                    }, this.config.fields),
+                    metadata: doc.metadata
+                };
+                // Store original document with ID
+                this.documents.set(id, { ...doc, id });
+                // Index the document
+                await this.indexMapper.indexDocument(searchableDoc, id, this.config.fields);
+            }
+            catch (error) {
+                console.warn(`Failed to index document ${id}:`, error);
+            }
+        }
+    }
+    async updateDocument(document) {
+        const id = document.id;
+        if (!this.documents.has(id)) {
+            throw new Error(`Document ${id} not found`);
+        }
+        try {
+            // Update the document in storage
+            this.documents.set(id, document);
+            // Convert fields for indexing
+            const contentRecord = {};
+            for (const field of this.config.fields) {
+                if (field in document.fields) {
+                    contentRecord[field] = document.fields[field];
+                }
+            }
+            // Create searchable document
+            const searchableDoc = {
+                id,
+                content: createSearchableFields({
+                    content: contentRecord,
+                    id
+                }, this.config.fields),
+                metadata: document.metadata
+            };
+            // Update the index
+            await this.indexMapper.updateDocument(searchableDoc, id, this.config.fields);
+        }
+        catch (error) {
+            console.error(`Failed to update document ${id}:`, error);
+            throw error;
+        }
+    }
+    async removeDocument(documentId) {
+        try {
+            if (this.documents.has(documentId)) {
+                await this.indexMapper.removeDocument(documentId);
+                this.documents.delete(documentId);
+            }
+        }
+        catch (error) {
+            console.error(`Failed to remove document ${documentId}:`, error);
+            throw error;
+        }
+    }
+    async search(query, options = {}) {
+        var _a, _b;
+        // Handle null or undefined query
+        if (!(query === null || query === void 0 ? void 0 : query.trim()))
+            return [];
+        try {
+            const searchResults = await this.indexMapper.search(query, {
+                fuzzy: (_a = options.fuzzy) !== null && _a !== void 0 ? _a : false,
+                maxResults: (_b = options.maxResults) !== null && _b !== void 0 ? _b : 10
+            });
+            return searchResults
+                .filter(result => this.documents.has(result.item))
+                .map(result => {
+                const item = this.documents.get(result.item);
+                return {
+                    id: item.id,
+                    document: item,
+                    metadata: item.metadata,
+                    item,
+                    score: result.score,
+                    matches: result.matches
+                };
+            })
+                .filter(result => { var _a; return result.score >= ((_a = options.threshold) !== null && _a !== void 0 ? _a : 0.5); });
+        }
+        catch (error) {
+            console.error('Search error:', error);
+            return [];
+        }
+    }
+    // Helper method for tests to check if a document exists
+    hasDocument(id) {
+        return this.documents.has(id);
     }
 }
 

@@ -1,4 +1,4 @@
-import { SearchOptions, IndexConfig } from "@/types";
+import { SearchOptions, IndexConfig, SearchableDocument } from "@/types";
 import { validateSearchOptions, validateIndexConfig, validateDocument } from "@/utils";
 
 describe('ValidationUtils', () => {
@@ -85,29 +85,80 @@ describe('ValidationUtils', () => {
   });
 
   describe('validateDocument', () => {
+    const createTestDoc = (content: Record<string, any>): SearchableDocument => ({
+      id: 'test-id',
+      content: content,
+      metadata: { timestamp: Date.now() }
+    });
+
     test('should validate document with all required fields', () => {
-      const doc = { title: 'Test', content: 'Content' };
+      const doc = createTestDoc({
+        title: 'Test',
+        content: 'Content'
+      });
       expect(validateDocument(doc, ['title', 'content'])).toBe(true);
     });
 
     test('should reject document with missing fields', () => {
-      const doc = { title: 'Test' };
+      const doc = createTestDoc({
+        title: 'Test'
+      });
       expect(validateDocument(doc, ['title', 'content'])).toBe(false);
     });
 
     test('should validate nested fields', () => {
-      const doc = { metadata: { title: 'Test' } };
+      const doc = createTestDoc({
+        metadata: {
+          title: 'Test'
+        }
+      });
       expect(validateDocument(doc, ['metadata.title'])).toBe(true);
     });
 
     test('should handle undefined values', () => {
-      const doc = { title: undefined };
+      const doc = createTestDoc({
+        title: undefined
+      });
       expect(validateDocument(doc, ['title'])).toBe(false);
     });
 
     test('should handle null values', () => {
-      const doc = { title: null };
+      const doc = createTestDoc({
+        title: null
+      });
       expect(validateDocument(doc, ['title'])).toBe(false);
+    });
+
+    test('should handle array fields', () => {
+      const doc = createTestDoc({
+        tags: ['test', 'example']
+      });
+      expect(validateDocument(doc, ['tags'])).toBe(true);
+    });
+
+    test('should handle empty array fields', () => {
+      const doc = createTestDoc({
+        tags: []
+      });
+      expect(validateDocument(doc, ['tags'])).toBe(true);
+    });
+
+    test('should handle deeply nested fields', () => {
+      const doc = createTestDoc({
+        metadata: {
+          author: {
+            name: 'Test Author'
+          }
+        }
+      });
+      expect(validateDocument(doc, ['metadata.author.name'])).toBe(true);
+    });
+
+    test('should handle missing nested fields', () => {
+      const doc = createTestDoc({
+        metadata: {}
+      });
+      expect(validateDocument(doc, ['metadata.author.name'])).toBe(false);
     });
   });
 });
