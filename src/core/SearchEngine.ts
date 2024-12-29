@@ -94,8 +94,8 @@ export class SearchEngine {
             for (const doc of normalizedDocs) {
                 this.documents.set(doc.id, doc);
                 // Fixed: Added document parameter to addData call
-                this.trie.addData(doc.id, doc.fields.content, doc);
-                await this.indexManager.addDocument(doc);
+                this.trie.addDocument(doc);
+                this.indexManager.addDocument(doc);
             }
 
             await this.storage.storeIndex(this.config.name, this.indexManager.exportIndex());
@@ -243,7 +243,7 @@ export class SearchEngine {
 
         try {
             this.documents.delete(documentId);
-            this.trie.removeData(documentId);
+            this.trie.removeDocument(documentId);
             await this.indexManager.removeDocument(documentId);
             this.cache.clear();
 
