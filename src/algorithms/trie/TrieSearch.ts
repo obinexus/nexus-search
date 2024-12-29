@@ -12,7 +12,7 @@ export class TrieSearch {
         this.documentLinks = new Map();
     }
 
-    public addData(id: string, content: string, document: IndexedDocument): void {
+    public addData(id: string, document: IndexedDocument): void {
         if (!document.id) return;
 
         this.documents.set(document.id, document);
