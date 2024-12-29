@@ -30,74 +30,7 @@ export class IndexManager {
         this.documents = new Map();
     }
 
-    async addDocuments<T extends IndexedDocument>(documents: T[]): Promise<void> {
-        for (const [index, doc] of documents.entries()) {
-            const id = this.generateDocumentId(index);
-
-            // Convert document fields to Record<string, DocumentValue>
-            const contentRecord: Record<string, DocumentValue> = {};
-            for (const field of this.config.fields) {
-                if (field in doc) {
-                    if (field in doc) {
-                        contentRecord[field] = (doc as any)[field] as DocumentValue;
-                    }
-                }
-            }
-
-            // Create searchable document with proper field extraction
-            const searchableDoc: SearchableDocument = {
-                id,
-                content: createSearchableFields({
-                    content: contentRecord,
-                    id
-                }, this.config.fields),
-                metadata: doc.metadata
-            };
-
-            // Store original document with ID
-            this.documents.set(id, { ...doc, id });
-
-            // Index the document
-            try {
-                await this.indexMapper.indexDocument(searchableDoc, id, this.config.fields);
-            } catch (error) {
-                console.warn(`Failed to index document ${id}:`, error);
-            }
-        }
-    }
-
-    async search<T extends IndexedDocument>(
-        query: string, 
-        options: SearchOptions = {}
-    ): Promise<SearchResult<T>[]> {
-        if (!query.trim()) return [];
-
-        try {
-            const searchResults = await this.indexMapper.search(query, {
-                fuzzy: options.fuzzy ?? false,
-                maxResults: options.maxResults ?? 10
-            });
-
-            return searchResults
-                .filter(result => this.documents.has(result.item))
-                .map(result => {
-                    const item = this.documents.get(result.item) as T;
-                    return {
-                        id: item.id,
-                        document: item,
-                        metadata: item.metadata,
-                        item,
-                        score: result.score,
-                        matches: result.matches
-                    };
-                })
-                .filter(result => result.score >= (options.threshold ?? 0.5));
-
-        } catch (error) {
-            console.error('Search error:', error);
-            return [];
-        }
-    }
+    
 
     exportIndex(): SerializedIndex {
         return {
@@ -137,36 +70,7 @@ export class IndexManager {
         }
     }
 
-    async removeDocument(documentId: string): Promise<void> {
-        if (this.documents.has(documentId)) {
-            this.documents.delete(documentId);
-            await this.indexMapper.removeDocument(documentId);
-        }
-    }
-
-    async updateDocument<T extends IndexedDocument>(document: T): Promise<void> {
-        const id = document.id;
-        if (this.documents.has(id)) {
-            this.documents.set(id, document);
-            const contentRecord: Record<string, DocumentValue> = {};
-            for (const field of this.config.fields) {
-                if (field in document) {
-                    if (field in document) {
-                        contentRecord[field] = (document as any)[field] as DocumentValue;
-                    }
-                }
-            }
-            const searchableDoc: SearchableDocument = {
-                id,
-                content: createSearchableFields({
-                    content: contentRecord,
-                    id
-                }, this.config.fields),
-                metadata: document.metadata
-            };
-            await this.indexMapper.updateDocument(searchableDoc, id, this.config.fields);
-        }
-    }
+   
 
     clear(): void {
         this.documents.clear();
@@ -201,5 +105,127 @@ export class IndexManager {
 
     private serializeDocument(doc: IndexedDocument): IndexedDocument {
         return JSON.parse(JSON.stringify(doc));
+    }
+
+    async addDocuments<T extends IndexedDocument>(documents: T[]): Promise<void> {
+        for (const doc of documents) {
+            // Use document's existing ID if available, otherwise generate new one
+            const id = doc.id || this.generateDocumentId(this.documents.size);
+
+            try {
+                // Convert document fields to Record<string, DocumentValue>
+                const contentRecord: Record<string, DocumentValue> = {};
+                for (const field of this.config.fields) {
+                    if (field in doc.fields) {
+                        contentRecord[field] = doc.fields[field] as DocumentValue;
+                    }
+                }
+
+                // Create searchable document
+                const searchableDoc: SearchableDocument = {
+                    id,
+                    content: createSearchableFields({
+                        content: contentRecord,
+                        id
+                    }, this.config.fields),
+                    metadata: doc.metadata
+                };
+
+                // Store original document with ID
+                this.documents.set(id, { ...doc, id });
+
+                // Index the document
+                await this.indexMapper.indexDocument(searchableDoc, id, this.config.fields);
+            } catch (error) {
+                console.warn(`Failed to index document ${id}:`, error);
+            }
+        }
+    }
+
+    async updateDocument<T extends IndexedDocument>(document: T): Promise<void> {
+        const id = document.id;
+        if (!this.documents.has(id)) {
+            throw new Error(`Document ${id} not found`);
+        }
+
+        try {
+            // Update the document in storage
+            this.documents.set(id, document);
+
+            // Convert fields for indexing
+            const contentRecord: Record<string, DocumentValue> = {};
+            for (const field of this.config.fields) {
+                if (field in document.fields) {
+                    contentRecord[field] = document.fields[field] as DocumentValue;
+                }
+            }
+
+            // Create searchable document
+            const searchableDoc: SearchableDocument = {
+                id,
+                content: createSearchableFields({
+                    content: contentRecord,
+                    id
+                }, this.config.fields),
+                metadata: document.metadata
+            };
+
+            // Update the index
+            await this.indexMapper.updateDocument(searchableDoc, id, this.config.fields);
+        } catch (error) {
+            console.error(`Failed to update document ${id}:`, error);
+            throw error;
+        }
+    }
+
+    async removeDocument(documentId: string): Promise<void> {
+        try {
+            if (this.documents.has(documentId)) {
+                await this.indexMapper.removeDocument(documentId);
+                this.documents.delete(documentId);
+            }
+        } catch (error) {
+            console.error(`Failed to remove document ${documentId}:`, error);
+            throw error;
+        }
+    }
+
+    async search<T extends IndexedDocument>(
+        query: string, 
+        options: SearchOptions = {}
+    ): Promise<SearchResult<T>[]> {
+        // Handle null or undefined query
+        if (!query?.trim()) return [];
+
+        try {
+            const searchResults = await this.indexMapper.search(query, {
+                fuzzy: options.fuzzy ?? false,
+                maxResults: options.maxResults ?? 10
+            });
+
+            return searchResults
+                .filter(result => this.documents.has(result.item))
+                .map(result => {
+                    const item = this.documents.get(result.item) as T;
+                    return {
+                        id: item.id,
+                        document: item,
+                        metadata: item.metadata,
+                        item,
+                        score: result.score,
+                        matches: result.matches
+                    };
+                })
+                .filter(result => result.score >= (options.threshold ?? 0.5));
+
+        } catch (error) {
+            console.error('Search error:', error);
+            return [];
+        }
+    }
+
+    // Helper method for tests to check if a document exists
+    hasDocument(id: string): boolean {
+        return this.documents.has(id);
     }
 }

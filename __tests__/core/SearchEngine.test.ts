@@ -1,13 +1,11 @@
 // SearchEngine.test.ts
-import { SearchEngine, IndexManager, QueryProcessor } from "@/index";
+import { SearchEngine, IndexManager } from "@/index";
 import { SearchStorage, CacheManager, IndexedDocument } from "@/storage";
-import { 
+import type { 
   SearchOptions, 
-  SearchResult, 
-  IndexedDocument,
+  SearchResult,
   SearchEngineConfig
 } from "@/types";
-import { dfsRegexTraversal, bfsRegexTraversal } from "@/utils";
 
 // Mock dependencies
 jest.mock('../../core/IndexManager');
@@ -75,7 +73,7 @@ describe('SearchEngine', () => {
 
     test('should generate ID for documents without one', async () => {
       const docWithoutId = { ...testDocuments[0] };
-      const { id, ...docWithoutIdData } = docWithoutId;
+      const { id } = docWithoutId;
       await searchEngine.addDocuments([new IndexedDocument('', docWithoutId.fields, docWithoutId.metadata)]);
       expect(mockIndexManager.addDocuments).toHaveBeenCalledWith(
         expect.arrayContaining([
