@@ -1,6 +1,5 @@
 import { IndexConfig } from "./compactability";
 import { IndexedDocument } from "./document";
-import { StorageOptions } from "./storage";
 
 export interface IndexNode {
   id: string;
