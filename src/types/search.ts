@@ -24,10 +24,12 @@ export interface SearchOptions {
     sortOrder?: 'asc' | 'desc';
     page?: number;
     pageSize?: number;
-    regex?: RegExp | string;
-    highlight?: boolean;
+    includeRegex?: boolean;
+    regex?: { pattern: string; flags: string };
+        highlight?: boolean;
     includeMatches?: boolean;
     includeScore?: boolean;
+    
     includeStats?: boolean;
 }
 
