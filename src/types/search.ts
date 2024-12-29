@@ -30,6 +30,7 @@ export interface SearchOptions {
     includeMatches?: boolean;
     includeScore?: boolean;
     
+    maxDistance?: number;
     includeStats?: boolean;
 }
 
