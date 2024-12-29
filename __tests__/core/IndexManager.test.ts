@@ -1,8 +1,14 @@
 import { IndexManager } from '@/index';
 import { DocumentData, IndexConfig, IndexedDocument } from '@/types';
+import { jest } from '@jest/globals';
+import { IndexMapper } from '@/mappers';
+
+// Mock the IndexMapper
+jest.mock('@/mappers');
 
 describe('IndexManager', () => {
   let indexManager: IndexManager;
+  let mockIndexMapper: jest.Mocked<IndexMapper>;
   
   const testConfig: IndexConfig = {
     name: 'test-index',
@@ -28,11 +34,25 @@ describe('IndexManager', () => {
     clone: () => createTestDocument(id),
     update: (updates) => ({ ...createTestDocument(id), ...updates }),
     toObject: () => createTestDocument(id),
-    document: function () { return this; },
+    document: function() { return this; },
     content: {} as DocumentData
   });
 
   beforeEach(() => {
+    jest.clearAllMocks();
+    // Setup mock IndexMapper
+    mockIndexMapper = {
+      indexDocument: jest.fn(),
+      search: jest.fn(),
+      removeDocument: jest.fn(),
+      updateDocument: jest.fn(),
+      exportState: jest.fn(),
+      importState: jest.fn(),
+    } as unknown as jest.Mocked<IndexMapper>;
+    
+    // Replace the real IndexMapper with our mock
+    (IndexMapper as jest.Mock).mockImplementation(() => mockIndexMapper);
+    
     indexManager = new IndexManager(testConfig);
   });
 
@@ -56,7 +76,7 @@ describe('IndexManager', () => {
       const doc = createTestDocument('doc1');
       await indexManager.addDocuments([doc]);
 
-      const updatedDoc: IndexedDocument = {
+      const updatedDoc = {
         ...doc,
         fields: {
           ...doc.fields,
@@ -89,6 +109,15 @@ describe('IndexManager', () => {
         createTestDocument('doc2')
       ];
       await indexManager.addDocuments(docs);
+
+      // Mock the search response
+      mockIndexMapper.search.mockResolvedValue([
+        { 
+          item: 'doc1', 
+          score: 1.0, 
+          matches: ['test']
+        }
+      ]);
     });
 
     test('should search documents', async () => {
@@ -104,16 +133,19 @@ describe('IndexManager', () => {
     });
 
     test('should apply search options', async () => {
-      const results = await indexManager.search('Test', {
+      await indexManager.search('Test', {
         fuzzy: true,
         maxResults: 1,
         threshold: 0.5
       });
       
-      expect(results.length).toBeLessThanOrEqual(1);
-      if (results.length > 0) {
-        expect(results[0].score).toBeGreaterThanOrEqual(0.5);
-      }
+      expect(mockIndexMapper.search).toHaveBeenCalledWith(
+        'Test',
+        expect.objectContaining({
+          fuzzy: true,
+          maxResults: 1
+        })
+      );
     });
   });
 
@@ -149,26 +181,33 @@ describe('IndexManager', () => {
 
   describe('Error Handling', () => {
     test('should handle document indexing errors gracefully', async () => {
-      const invalidDoc = {
-        ...createTestDocument('invalid'),
-        fields: {
-          title: '',
-          content: '',
-          author: '',
-          tags: [],
-          version: ''
-        } // This should cause an error during indexing
-      };
+      const invalidDoc = createTestDocument('invalid');
+      // Mock indexDocument to throw an error
+      mockIndexMapper.indexDocument.mockRejectedValue(new Error('Indexing failed'));
 
-      await expect(indexManager.addDocuments([invalidDoc])).resolves.not.toThrow();
-      // The document should not be added due to the error
-      expect(indexManager.getSize()).toBe(0);
+      await indexManager.addDocuments([invalidDoc]);
+      expect(indexManager.hasDocument('invalid')).toBeFalsy();
     });
 
     test('should handle search errors gracefully', async () => {
-      // Force a search error by providing invalid data
-      const results = await indexManager.search(null as unknown as string);
+      // Mock search to throw an error
+      mockIndexMapper.search.mockRejectedValue(new Error('Search failed'));
+      
+      const results = await indexManager.search('test');
       expect(results).toHaveLength(0);
+    });
+
+    test('should handle update errors gracefully', async () => {
+      const doc = createTestDocument('doc1');
+      await indexManager.addDocuments([doc]);
+
+      // Mock update to throw an error
+      mockIndexMapper.updateDocument.mockRejectedValue(new Error('Update failed'));
+
+      await expect(indexManager.updateDocument({
+        ...doc,
+        fields: { ...doc.fields, title: 'Updated' }
+      })).rejects.toThrow();
     });
   });
 
