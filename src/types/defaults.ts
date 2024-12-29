@@ -16,13 +16,15 @@ export const DEFAULT_SEARCH_OPTIONS: Required<SearchOptions> = {
     pageSize: 10,
 
     // Advanced features
-    regex: '',
     highlight: false,
 
     // Result customization
     includeMatches: false,
     includeScore: false,
-    includeStats: false
+    includeStats: false,
+    enableRegex: false,
+    maxDistance: 0,
+    regex: undefined
 };
 
 export const DEFAULT_INDEX_OPTIONS = {
