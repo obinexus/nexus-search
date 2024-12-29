@@ -12,6 +12,19 @@ export class TrieSearch {
         this.documentLinks = new Map();
     }
 
+    public addData(document: IndexedDocument): void {
+        if (!document.id) return;
+
+        this.documents.set(document.id, document);
+        
+        if (typeof document.content === 'string') {
+
+            this.insert(document.content, document.id);
+
+        }
+
+    }
+
     public insert(text: string, documentId: string): void {
         if (!text || !documentId) return;
 
