@@ -1,5 +1,5 @@
-import { TrieSearch } from "@/index";
-import { IndexedDocument } from "@/types";
+import { TrieSearch } from "@/algorithms/trie";
+import { IndexedDocument } from "@/index";
 
 describe('TrieSearch', () => {
     let trieSearch: TrieSearch;
