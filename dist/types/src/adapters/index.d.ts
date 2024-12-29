@@ -1,1 +1,0 @@
-export { NexusDocumentAdapter } from './NexusDocumentAdapter';

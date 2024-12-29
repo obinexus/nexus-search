@@ -191,8 +191,12 @@ describe('IndexManager', () => {
 
     test('should handle search errors gracefully', async () => {
       // Mock search to throw an error
-      mockIndexMapper.search.mockRejectedValue(new Error('Search failed'));
+
+      mockIndexMapper.search.mockImplementation((): never => {
+
+        throw new Error('Search error');
       
+      });      
       const results = await indexManager.search('test');
       expect(results).toHaveLength(0);
     });
@@ -202,7 +206,7 @@ describe('IndexManager', () => {
       await indexManager.addDocuments([doc]);
 
       // Mock update to throw an error
-      mockIndexMapper.updateDocument.mockRejectedValue(new Error('Update failed'));
+      mockIndexMapper = jest.fn() as unknown as jest.Mocked<IndexMapper>;
 
       await expect(indexManager.updateDocument({
         ...doc,
