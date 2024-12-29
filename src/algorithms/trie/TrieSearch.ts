@@ -163,6 +163,51 @@ export class TrieSearch {
         this.collectWords(current, prefix, results);
         return results;
     }
+public serializeState(): any {
+    return {
+        trie: this.serializeTrie(this.root),
+        documents: Array.from(this.documents.entries()),
+        documentLinks: Array.from(this.documentLinks.entries()),
+        totalDocuments: this.totalDocuments,
+        maxWordLength: this.maxWordLength
+    };
+}
+
+public deserializeState(state: any): void {
+    this.root = this.deserializeTrie(state.trie);
+    this.documents = new Map(state.documents);
+    this.documentLinks = new Map(state.documentLinks);
+    this.totalDocuments = state.totalDocuments;
+    this.maxWordLength = state.maxWordLength;
+}
+
+private serializeTrie(node: TrieNode): any {
+    const serializedNode: any = {
+        prefixCount: node.prefixCount,
+        isEndOfWord: node.isEndOfWord,
+        documentRefs: Array.from(node.documentRefs),
+        children: {}
+    };
+
+    node.children.forEach((child, char) => {
+        serializedNode.children[char] = this.serializeTrie(child);
+    });
+
+    return serializedNode;
+}
+
+private deserializeTrie(data: any): TrieNode {
+    const node = new TrieNode();
+    node.prefixCount = data.prefixCount;
+    node.isEndOfWord = data.isEndOfWord;
+    node.documentRefs = new Set(data.documentRefs);
+
+    for (const char in data.children) {
+        node.children.set(char, this.deserializeTrie(data.children[char]));
+    }
+
+    return node;
+}
 
     private collectWords(node: TrieNode, currentWord: string, results: SearchResult[]): void {
         if (node.isEndOfWord) {
