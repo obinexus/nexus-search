@@ -73,7 +73,8 @@ export class IndexMapper {
                                 },
                                 update: function (updates: Partial<IndexedDocument>): IndexedDocument {
                                     throw new Error("Function not implemented.");
-                                }
+                                },
+                                content: undefined
                             });
                             this.dataMapper.mapData(word.toLowerCase(), id);
                         }
