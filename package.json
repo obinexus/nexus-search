@@ -38,8 +38,7 @@
     "README.md",
     "TODO.md",
     "fixtures/",
-    "docs/",
-    "__tests__/"
+    "docs/"
   ],
   "dependencies": {
     "idb": "^8.0.1",
