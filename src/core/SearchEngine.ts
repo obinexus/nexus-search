@@ -425,7 +425,7 @@ public async performRegexSearch(
     /**
  * Creates a RegExp object from various input types
  */
-private createRegexFromOption(regexOption: string | RegExp | object): RegExp {
+public createRegexFromOption(regexOption: string | RegExp | object): RegExp {
     if (regexOption instanceof RegExp) {
         return regexOption;
     }
@@ -648,7 +648,7 @@ private isComplexRegex(regex: RegExp): boolean {
         }
     }
 
-    private generateCacheKey(query: string, options: SearchOptions): string {
+    public generateCacheKey(query: string, options: SearchOptions): string {
         return `${this.config.name}-${query}-${JSON.stringify(options)}`;
     }
 
