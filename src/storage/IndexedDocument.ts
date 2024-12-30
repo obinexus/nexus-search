@@ -7,7 +7,6 @@ import {
 } from "@/types/document";
 
 type DocumentFields = {
-    title: string;
     content: DocumentContent;
     author: string;
     tags: string[];
@@ -54,9 +53,7 @@ export class IndexedDocument {
     private normalizeFields(fields: DocumentFields): DocumentFields {
         const normalizedFields: DocumentFields = {
             title: "",
-            author: "",
-            tags: [],
-            version: "1.0",
+            // version: "1.0", // Removed to avoid duplication
             ...fields
         };
 
@@ -224,10 +221,6 @@ export class IndexedDocument {
         return IndexedDocument.create({
             id: obj.id,
             fields: {
-                title: obj.fields.title,
-                author: obj.fields.author,
-                tags: obj.fields.tags,
-                version: obj.fields.version,
                 ...obj.fields
             },
             metadata: obj.metadata,
