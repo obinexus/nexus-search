@@ -76,7 +76,8 @@ export class SearchEngine {
    /**
     * Initialize the search engine and its components
     */
-   public async initialize(): Promise<void> {
+
+   async initialize() {
        if (this.isInitialized) return;
 
        try {
@@ -84,7 +85,7 @@ export class SearchEngine {
            await this.storage.initialize();
 
            // Initialize index manager
-           await this.indexManager.initialize();
+           this.indexManager.initialize();
 
            // Load existing indexes if any
            await this.loadExistingIndexes();
@@ -101,6 +102,7 @@ export class SearchEngine {
            throw new Error(`Failed to initialize search engine: ${errorMessage}`);
        }
    }
+
 
    /**
     * Load existing indexes from storage
