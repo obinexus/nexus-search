@@ -4,24 +4,33 @@ import {
     DocumentVersion,
     DocumentRelation,
     BaseFields,
+    IndexedDocument as IIndexedDocument,
+    DocumentBase
 } from "@/types/document";
 
-
-
+export interface IndexedDocumentData extends DocumentBase {
+    fields: BaseFields;
+    metadata?: DocumentMetadata;
+    versions?: Array<DocumentVersion>;
+    relations?: Array<DocumentRelation>;
+}
 
 /**
  * Enhanced IndexedDocument implementation with proper type handling 
  * and versioning support
  */
-export class IndexedDocument {
-    id: string;
+export class IndexedDocument implements IIndexedDocument {
+    readonly id: string;
     fields: BaseFields;
     metadata?: DocumentMetadata;
     versions: Array<DocumentVersion>;
     relations: Array<DocumentRelation>;
-    content: any;
+    content: DocumentContent;
+    links?: string[];
+    ranks?: number[];
     
     constructor(
+        id: string,
         fields: BaseFields,
         metadata?: DocumentMetadata,
         versions: Array<DocumentVersion> = [],
@@ -32,6 +41,14 @@ export class IndexedDocument {
         this.metadata = this.normalizeMetadata(metadata);
         this.versions = versions;
         this.relations = relations;
+        this.content = this.fields.content;
+    }
+
+    /**
+     * Implement required document() method from interface
+     */
+    document(): IIndexedDocument {
+        return this;
     }
 
     /**
@@ -39,22 +56,21 @@ export class IndexedDocument {
      */
     private normalizeFields(fields: BaseFields): BaseFields {
         const normalizedFields: BaseFields = {
-            title: "",
-            // version: "1.0", // Removed to avoid duplication
+            title: fields.title || '',
+            author: fields.author || '',
+            tags: Array.isArray(fields.tags) ? [...fields.tags] : [],
+            version: fields.version || '1.0',
             ...fields
         };
 
-        // Ensure content is DocumentContent type
-        if (typeof normalizedFields.content === 'string') {
-            normalizedFields.content = { text: normalizedFields.content };
-        }
-
-        // Ensure arrays are properly initialized
-        normalizedFields.tags = Array.isArray(normalizedFields.tags) 
-            ? normalizedFields.tags 
-            : [];
-
         return normalizedFields;
+    }
+
+    private normalizeContent(content: DocumentContent | string): DocumentContent {
+        if (typeof content === 'string') {
+            return { text: content };
+        }
+        return content || {};
     }
 
     /**
@@ -95,7 +111,7 @@ export class IndexedDocument {
         if (updates.fields) {
             Object.entries(updates.fields).forEach(([key, value]) => {
                 if (value !== undefined) {
-                    updatedFields[key] = value;
+                    (updatedFields as any)[key] = value;
                 }
             });
         }
@@ -130,6 +146,9 @@ export class IndexedDocument {
         this.fields[field] = value;
         if (this.metadata) {
             this.metadata.lastModified = Date.now();
+        }
+        if (field === 'content') {
+            this.content = value as DocumentContent;
         }
     }
 
@@ -207,9 +226,7 @@ export class IndexedDocument {
     }): IndexedDocument {
         return IndexedDocument.create({
             id: obj.id,
-            fields: {
-                ...obj.fields
-            },
+            fields: obj.fields,
             metadata: obj.metadata,
             versions: obj.versions || [],
             relations: obj.relations || []
