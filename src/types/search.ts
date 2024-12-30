@@ -133,3 +133,22 @@ export interface SearchEngineConfig {
         };
     };
 }
+
+export interface RegexSearchConfig {
+    maxDepth?: number;
+    timeoutMs?: number;
+    caseSensitive?: boolean;
+    wholeWord?: boolean;
+}
+
+export interface ExtendedSearchOptions extends SearchOptions {
+    regexConfig?: RegexSearchConfig;
+}
+// Interface for regex search results
+export interface RegexSearchResult extends SearchResult {
+    regexMatches: {
+        field: string;
+        match: string;
+        indices: [number, number];
+    }[];
+}

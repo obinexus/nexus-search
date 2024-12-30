@@ -14,6 +14,9 @@ import {
     BaseFields,
     DocumentMetadata,
     DocumentStatus,
+    ExtendedSearchOptions,
+    RegexSearchConfig,
+    RegexSearchResult,
     
 } from "@/types";
 import { validateSearchOptions, bfsRegexTraversal, dfsRegexTraversal, optimizeIndex } from "@/utils";
@@ -45,9 +48,7 @@ export class SearchEngine {
         this.eventListeners = new Set();
         this.trie = new TrieSearch();
         this.documents = new Map();
-        this.trieRoot = { id: '', value: '', score: 0, children: new Map() };
         this.documentSupport = config.documentSupport?.enabled ?? false;
-    
         this.config = config;
         this.indexManager = new IndexManager(config);
         this.queryProcessor = new QueryProcessor();
@@ -56,9 +57,28 @@ export class SearchEngine {
         this.eventListeners = new Set();
         this.trie = new TrieSearch();
         this.documents = new Map();
-        this.trieRoot = { id: '', value: '', score: 0, children: new Map() };
+        this.trieRoot = { id: '', value: '', score: 0, children: new Map(), depth: 0 };
     } 
    
+    private extractRegexMatches(
+        doc: IndexedDocument,
+        positions: Array<[number, number]>,
+        options: SearchOptions
+    ): string[] {
+        const searchFields = options.fields || this.config.fields;
+        const matches = new Set<string>();
+
+        for (const field of searchFields) {
+            const fieldContent = String(doc.fields[field] || '');
+            for (const [start, end] of positions) {
+                if (start >= 0 && end <= fieldContent.length) {
+                    matches.add(fieldContent.slice(start, end));
+                }
+            }
+        }
+
+        return Array.from(matches);
+    }
 
     public async initialize(): Promise<void> {
         if (this.isInitialized) return;
@@ -213,10 +233,9 @@ export class SearchEngine {
         this.documents.set(normalizedDoc.id, normalizedDoc);
         this.trie.addDocument(normalizedDoc);
         await this.indexManager.updateDocument(normalizedDoc);
-    }
-    public async search(
+    }    public async search(
         query: string,
-        options: SearchOptions = {}
+        options: ExtendedSearchOptions = {}
     ): Promise<SearchResult<IndexedDocument>[]> {
         if (!this.isInitialized) {
             await this.initialize();
@@ -238,30 +257,10 @@ export class SearchEngine {
         }
     
         try {
-            let results: Array<{ id: string; score: number }>;
+            let results: RegexSearchResult[] | Array<{ id: string; score: number }>;
     
             if (options.regex) {
-                const regex = typeof options.regex === 'string' ?
-                    new RegExp(options.regex) :
-                    options.regex instanceof RegExp ?
-                        options.regex :
-                        typeof options.regex === 'object' && options.regex !== null ?
-                            new RegExp(String(options.regex)) :
-                            new RegExp('');
-    
-                if (this.isComplexRegex(regex)) {
-                    results = dfsRegexTraversal(
-                        this.trieRoot,
-                        regex,
-                        options.maxResults || 10
-                    );
-                } else {
-                    results = bfsRegexTraversal(
-                        this.trieRoot,
-                        regex,
-                        options.maxResults || 10
-                    );
-                }
+                results = await this.performRegexSearch(query, options);
             } else {
                 const processedQuery = this.queryProcessor.process(query);
                 const searchTerms = processedQuery.toLowerCase().split(/\s+/).filter(Boolean);
@@ -292,7 +291,48 @@ export class SearchEngine {
             throw new Error(`Search failed: ${error}`);
         }
     }
-    
+
+    private async performRegexSearch(
+        query: string,
+        options: ExtendedSearchOptions
+    ): Promise<SearchResult<IndexedDocument>[]> {
+        const regexConfig: RegexSearchConfig = {
+            maxDepth: options.regexConfig?.maxDepth || 50,
+            timeoutMs: options.regexConfig?.timeoutMs || 5000,
+            caseSensitive: options.regexConfig?.caseSensitive || false,
+            wholeWord: options.regexConfig?.wholeWord || false
+        };
+
+        const regex = this.createRegexFromOption(options.regex || '');
+
+        // Determine search strategy based on regex complexity
+        if (this.isComplexRegex(regex)) {
+            const regexResults = await dfsRegexTraversal(
+                this.trieRoot,
+                regex,
+                options.maxResults || 10,
+                regexConfig
+            );
+
+            return regexResults.map(result => ({
+                ...result,
+                item: this.documents.get(result.id) as IndexedDocument
+            }));
+        } else {
+            const regexResults = await bfsRegexTraversal(
+                this.trieRoot,
+                regex,
+                options.maxResults || 10,
+                regexConfig
+            );
+
+            return regexResults.map(result => ({
+                ...result,
+                item: this.documents.get(result.id) as IndexedDocument
+            }));
+        }
+    }
+
     private async performBasicSearch(
         searchTerms: string[],
         options: SearchOptions
@@ -317,33 +357,38 @@ export class SearchEngine {
             .map(([id, { score }]) => ({ id, score }))
             .sort((a, b) => b.score - a.score);
     }
-    
     private async processSearchResults(
-        results: Array<{ id: string; score: number }>,
+        results: RegexSearchResult[] | Array<{ id: string; score: number }>,
         options: SearchOptions
     ): Promise<SearchResult<IndexedDocument>[]> {
         const processedResults: SearchResult<IndexedDocument>[] = [];
     
-        for (const { id, score } of results) {
-            const doc = this.documents.get(id);
+        for (const result of results) {
+            const doc = this.documents.get(result.id);
             if (!doc) continue;
     
             const searchResult: SearchResult<IndexedDocument> = {
-                id,
-                docId: id, // Add missing docId field
+                id: result.id,
+                docId: result.id,
                 item: doc,
-                score: this.normalizeScore(score),
+                score: 'score' in result ? this.normalizeScore(result.score) : result.score,
                 matches: [],
                 metadata: {
                     ...doc.metadata,
                     lastAccessed: Date.now()
                 },
                 document: doc,
-                term: "",
-                        };
+                term: 'matched' in result ? result.matched : '',
+            };
     
             if (options.includeMatches) {
-                searchResult.matches = this.extractMatches(doc, options);
+                if ('positions' in result) {
+                    // Handle regex search results
+                    searchResult.matches = this.extractRegexMatches(doc, result.positions as [number, number][], options);
+                } else {
+                    // Handle basic search results
+                    searchResult.matches = this.extractMatches(doc, options);
+                }
             }
     
             processedResults.push(searchResult);
@@ -351,7 +396,36 @@ export class SearchEngine {
     
         return this.applyPagination(processedResults, options);
     }
-    
+    private createRegexFromOption(regexOption: string | RegExp | object): RegExp {
+        if (regexOption instanceof RegExp) {
+            return regexOption;
+        }
+        if (typeof regexOption === 'string') {
+            return new RegExp(regexOption);
+        }
+        if (typeof regexOption === 'object' && regexOption !== null) {
+            const pattern = (regexOption as any).pattern;
+            const flags = (regexOption as any).flags;
+            return new RegExp(pattern || '', flags || '');
+        }
+        return new RegExp('');
+    }
+
+    private isComplexRegex(regex: RegExp): boolean {
+        const pattern = regex.source;
+        return (
+            pattern.includes('{') ||
+            pattern.includes('+') ||
+            pattern.includes('*') ||
+            pattern.includes('?') ||
+            pattern.includes('|') ||
+            pattern.includes('(?') ||
+            pattern.includes('[') ||
+            pattern.length > 20  // Additional complexity check based on pattern length
+        );
+    }
+
+  
     public getTrieState(): unknown {
         return this.trie.serializeState();
     }
@@ -498,18 +572,7 @@ export class SearchEngine {
         return results.slice(start, start + pageSize);
     }
 
-    private isComplexRegex(regex: RegExp): boolean {
-        const pattern = regex.source;
-        return (
-            pattern.includes('{') ||
-            pattern.includes('+') ||
-            pattern.includes('*') ||
-            pattern.includes('?') ||
-            pattern.includes('|') ||
-            pattern.includes('(?') ||
-            pattern.includes('[')
-        );
-    }
+ 
 
     private async loadIndexes(): Promise<void> {
         try {

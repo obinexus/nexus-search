@@ -2,6 +2,7 @@ import { IndexConfig } from "./compactability";
 import { IndexedDocument } from "./document";
 
 export interface IndexNode {
+  depth: number;
   id: string;
   value: unknown;
   score: number;
