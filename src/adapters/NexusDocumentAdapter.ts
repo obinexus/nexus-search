@@ -177,6 +177,7 @@ export class NexusDocumentAdapter implements NexusDocument {
             version: this.config.version,
             fields: this.config.fields,
             storage: this.config.storage,
+            search: true,
             documentSupport: {
                 enabled: true,
                 versioning: { 
@@ -211,7 +212,7 @@ export class NexusDocumentAdapter implements NexusDocument {
         const results = await this.searchEngine.search(query, options);
         return results.map(result => ({
             ...result,
-            item: new NexusDocumentAdapter(this.convertToNexusDocument(result.item))
+            item: new NexusDocumentAdapter(this.convertToNexusDocument(result.item as IndexedDocument))
         }));
     }
 
