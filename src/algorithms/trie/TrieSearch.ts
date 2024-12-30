@@ -1,24 +1,9 @@
 
 
-import { IndexedDocument, DocumentLink} from "@/types";
+import { IndexedDocument, DocumentLink, SearchOptions, SearchResult} from "@/types";
 import { TrieNode } from "./TrieNode";
 
-interface SearchOptions {
-    fuzzy?: boolean;
-    maxDistance?: number;
-    prefixMatch?: boolean;
-    maxResults?: number;
-    minScore?: number;
-    includePartial?: boolean;
-    caseSensitive?: boolean;
-}
 
-interface SearchResult {
-    docId: string;
-    score: number;
-    term: string;
-    distance?: number;
-}
 
 export class TrieSearch {
     private root: TrieNode;
@@ -143,7 +128,11 @@ export class TrieSearch {
                 results.push({
                     docId,
                     score: this.calculateScore(current, word),
-                    term: word
+                    term: word,
+                    id: "",
+                    document: this.documents.get(docId)!,
+                    item: undefined,
+                    matches: []
                 });
             });
         }
@@ -219,7 +208,11 @@ private deserializeTrie(data: any): TrieNode {
                 results.push({
                     docId,
                     score: this.calculateScore(node, currentWord),
-                    term: currentWord
+                    term: currentWord,
+                    id: "",
+                    document: this.documents.get(docId)!,
+                    item: undefined,
+                    matches: []
                 });
             });
         }
@@ -255,11 +248,15 @@ private deserializeTrie(data: any): TrieNode {
             const distance = this.calculateLevenshteinDistance(state.word, current);
             if (distance <= state.maxDistance) {
                 node.documentRefs.forEach(docId => {
-                    state.results.push({
+                    return state.results.push({
                         docId,
                         score: this.calculateFuzzyScore(node, current, distance),
                         term: current,
-                        distance
+                        distance,
+                        id: "",
+                        document: this.documents.get(docId)!,
+                        item: undefined,
+                        matches: []
                     });
                 });
             }

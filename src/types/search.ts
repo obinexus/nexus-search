@@ -3,7 +3,8 @@ import { DocumentMetadata, DocumentValue, IndexedDocument } from './document';
 // Core search result interface with proper generic typing
 export interface SearchResult<T = unknown> {
     docId: string;
-
+    term: string;
+    distance?: number;
     id: string;
     document: IndexedDocument;
     item: T;
@@ -35,6 +36,10 @@ export interface SearchOptions {
     includeMatches?: boolean;
     includeScore?: boolean;
     includeStats?: boolean;
+    prefixMatch?: boolean;
+    minScore?: number;
+    includePartial?: boolean;
+    caseSensitive?: boolean;
 }
 
 // Search context with runtime information
