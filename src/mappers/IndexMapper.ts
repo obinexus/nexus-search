@@ -4,10 +4,14 @@ import {
     SearchableDocument, 
     SearchResult, 
     SerializedState,
-    DocumentValue, 
-    DocumentData
+    DocumentValue
 } from "@/types";
 import { DataMapper } from "./DataMapper";
+
+interface DocumentScore {
+    score: number;
+    matches: Set<string>;
+}
 
 /**
  * IndexMapper class
@@ -17,7 +21,7 @@ export class IndexMapper {
     private dataMapper: DataMapper;
     private trieSearch: TrieSearch;
     private documents: Map<string, IndexedDocument>;
-    private documentScores: Map<string, SearchResult> = new Map();
+    private documentScores: Map<string, DocumentScore>;
 
     constructor(state?: { dataMap?: Record<string, string[]> }) {
         this.dataMapper = new DataMapper();
@@ -53,7 +57,8 @@ export class IndexMapper {
                     words.forEach(word => {
                         if (word) {
                             this.trieSearch.addDocument({
-                                id, fields: {
+                                id,
+                                fields: {
                                     [field]: word,
                                     title: "",
                                     content: "",
@@ -61,7 +66,7 @@ export class IndexMapper {
                                     tags: [],
                                     version: ""
                                 },
-                                versions: [],
+                                versions: []
                             });
                             this.dataMapper.mapData(word.toLowerCase(), id);
                         }
@@ -87,91 +92,43 @@ export class IndexMapper {
             searchTerms.forEach(term => {
                 if (!term) return;
 
-                const documentIds = fuzzy
+                const searchResults = fuzzy
                     ? this.trieSearch.fuzzySearch(term, 2)
                     : this.trieSearch.searchWord(term);
 
-                documentIds.forEach(docId => {
-                    const current = this.documentScores.get(docId) || { 
-                        score: 0, 
-                        matches: new Set<string>() 
+                searchResults.forEach(result => {
+                    const docId = result.docId;
+                    const current = this.documentScores.get(docId) || {
+                        score: 0,
+                        matches: new Set<string>()
                     };
                     current.score += this.calculateScore(docId, term);
                     current.matches.add(term);
-                    this.documentScores.set(docId, { score: current.score, matches: current.matches });
+                    this.documentScores.set(docId, current);
                 });
             });
 
-            const results = Array.from(this.documentScores.entries())
+            return Array.from(this.documentScores.entries())
                 .map(([docId, { score, matches }]): SearchResult<string> => ({
                     id: docId,
+                    docId: docId,
                     document: this.documents.get(docId) as IndexedDocument,
                     item: docId,
+                    term: query,
                     score: score / searchTerms.length,
                     matches: Array.from(matches),
-                    metadata: this.documents.get(docId)?.metadata,
-                    docId: "",
-                    term: ""
+                    metadata: this.documents.get(docId)?.metadata
                 }))
                 .sort((a, b) => b.score - a.score)
                 .slice(0, maxResults);
-
-            return results;
         } catch (error) {
             console.error('Search error:', error);
             return [];
         }
     }
 
-    /**
-     * Export the current state for persistence
-     */
-    exportState(): unknown {
-        return {
-            trie: this.trieSearch.serializeState(),
-            dataMap: this.dataMapper.exportState(),
-            documents: Array.from(this.documents.entries())
-        };
-    }
-
-    /**
-     * Import a previously exported state
-     */
-    importState(state: { 
-        trie: SerializedState; 
-        dataMap: Record<string, string[]>;
-        documents?: [string, IndexedDocument][];
-    }): void {
-        if (!state || !state.trie || !state.dataMap) {
-            throw new Error('Invalid index state');
-        }
-
-        this.trieSearch = new TrieSearch();
-        this.trieSearch.deserializeState(state.trie);
-        
-        // Create new DataMapper instance instead of reassigning
-        const newDataMapper = new DataMapper();
-        newDataMapper.importState(state.dataMap);
-        this.dataMapper = newDataMapper;
-
-        // Restore documents if available
-        if (state.documents) {
-            this.documents = new Map(state.documents);
-        }
-    }
-
-    /**
-     * Clear all indexed data
-     */
-    clear(): void {
-        this.trieSearch = new TrieSearch();
-        const newDataMapper = new DataMapper();
-        this.dataMapper = newDataMapper;
-        this.documents.clear();
-        this.documentScores.clear();
-    }
-
-    // Helper methods remain unchanged
+    // ... rest of the methods remain the same ...
+    
     private normalizeValue(value: DocumentValue): string {
         if (typeof value === 'string') {
             return value;
@@ -209,7 +166,6 @@ export class IndexMapper {
         return matches ? matches.length : 0;
     }
 
-    // Additional utility methods
     removeDocument(id: string): void {
         this.trieSearch.removeDocument(id);
         this.dataMapper.removeDocument(id);
@@ -232,5 +188,42 @@ export class IndexMapper {
 
     getAllDocuments(): Map<string, IndexedDocument> {
         return new Map(this.documents);
+    }
+
+    exportState(): unknown {
+        return {
+            trie: this.trieSearch.serializeState(),
+            dataMap: this.dataMapper.exportState(),
+            documents: Array.from(this.documents.entries())
+        };
+    }
+
+    importState(state: { 
+        trie: SerializedState; 
+        dataMap: Record<string, string[]>;
+        documents?: [string, IndexedDocument][];
+    }): void {
+        if (!state || !state.trie || !state.dataMap) {
+            throw new Error('Invalid index state');
+        }
+
+        this.trieSearch = new TrieSearch();
+        this.trieSearch.deserializeState(state.trie);
+        
+        const newDataMapper = new DataMapper();
+        newDataMapper.importState(state.dataMap);
+        this.dataMapper = newDataMapper;
+
+        if (state.documents) {
+            this.documents = new Map(state.documents);
+        }
+    }
+
+    clear(): void {
+        this.trieSearch = new TrieSearch();
+        const newDataMapper = new DataMapper();
+        this.dataMapper = newDataMapper;
+        this.documents.clear();
+        this.documentScores.clear();
     }
 }
