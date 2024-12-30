@@ -54,9 +54,8 @@ export interface DocumentData {
     metadata?: DocumentMetadata;
     content: DocumentContent;
     links: DocumentLink[];
-    toObject(): DocumentData;
-    clone(): DocumentData;
-    update(updates: Partial<DocumentData>): DocumentData;
+    ranks: DocumentRank[];
+    
     
 }
 
@@ -81,10 +80,8 @@ export interface IndexedDocument {
         targetId: string;
     }>;
     content: DocumentData;
-    toObject(): IndexedDocument;
-    document(): IndexedDocument;
-    clone(): IndexedDocument;
-    update(updates: Partial<IndexedDocument>): IndexedDocument;
+    links: DocumentLink[];
+    ranks: DocumentRank[];
 }
 
 // Searchable document interface

@@ -1,6 +1,6 @@
 
 
-import { IndexedDocument, DocumentLink, SearchOptions, SearchResult} from "@/types";
+import { IndexedDocument, DocumentLink, SearchOptions, SearchResult, DocumentData} from "@/types";
 import { TrieNode } from "./TrieNode";
 
 
@@ -187,6 +187,25 @@ private serializeTrie(node: TrieNode): any {
     });
 
     return serializedNode;
+}
+public addData(documentId: string, content: string, document: IndexedDocument): void {
+    if (!documentId || !content) return;
+    this.addDocument({
+        id: documentId,
+        fields: {
+            content,
+            title: document.fields.title || '',
+            author: document.fields.author || '',
+            tags: document.fields.tags || [],
+            version: document.fields.version || ''
+        },
+        metadata: document.metadata,
+        versions: document.versions || [],
+        relations: [],
+        content: document.fields.content as unknown as DocumentData || { text: '' },
+        links: document.links || [],
+        ranks: []
+    });
 }
 
 private deserializeTrie(data: any): TrieNode {

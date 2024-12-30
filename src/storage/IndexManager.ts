@@ -236,6 +236,8 @@ export class IndexManager {
                     const item = this.documents.get(result.item) as T;
                     return {
                         id: item.id,
+                        docId: item.id,
+                        term: query,
                         document: item,
                         metadata: item.metadata,
                         item,

@@ -4,7 +4,8 @@ import {
     SearchableDocument, 
     SearchResult, 
     SerializedState,
-    DocumentValue 
+    DocumentValue, 
+    DocumentData
 } from "@/types";
 import { DataMapper } from "./DataMapper";
 
@@ -55,7 +56,7 @@ export class IndexMapper {
                                 id, fields: {
                                     [field]: word,
                                     title: "",
-                                    content: {} as DocumentData,
+                                    content: "",
                                     author: "",
                                     tags: [],
                                     version: ""
@@ -123,7 +124,8 @@ export class IndexMapper {
                     score: score / searchTerms.length,
                     matches: Array.from(matches),
                     metadata: this.documents.get(docId)?.metadata,
-                    docId: ""
+                    docId: "",
+                    term: ""
                 }))
                 .sort((a, b) => b.score - a.score)
                 .slice(0, maxResults);
