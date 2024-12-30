@@ -3,24 +3,12 @@ import {
     DocumentMetadata, 
     IndexableDocumentFields,
     DocumentVersion,
-    DocumentRelation
+    DocumentRelation,
+    DocumentFields,
+    IndexedDocumentData
 } from "@/types/document";
 
-type DocumentFields = {
-    content: DocumentContent;
-    author: string;
-    tags: string[];
-    version: string;
-    [key: string]: DocumentContent | string | string[] | number | boolean | null;
-};
 
-export interface IndexedDocumentData {
-    id: string;
-    fields: DocumentFields;
-    metadata?: DocumentMetadata;
-    versions?: Array<DocumentVersion>;
-    relations?: Array<DocumentRelation>;
-}
 
 /**
  * Enhanced IndexedDocument implementation with proper type handling 
