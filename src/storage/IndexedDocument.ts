@@ -3,7 +3,9 @@ import {
     DocumentMetadata, 
     DocumentVersion,
     DocumentRelation,
+    BaseFields,
 } from "@/types/document";
+
 
 
 
@@ -12,16 +14,15 @@ import {
  * and versioning support
  */
 export class IndexedDocument {
-    readonly id: string;
-    fields: DocumentFields;
+    id: string;
+    fields: BaseFields;
     metadata?: DocumentMetadata;
     versions: Array<DocumentVersion>;
     relations: Array<DocumentRelation>;
     content: any;
     
     constructor(
-        id: string,
-        fields: DocumentFields,
+        fields: BaseFields,
         metadata?: DocumentMetadata,
         versions: Array<DocumentVersion> = [],
         relations: Array<DocumentRelation> = []
@@ -36,8 +37,8 @@ export class IndexedDocument {
     /**
      * Normalize document fields ensuring required fields exist
      */
-    private normalizeFields(fields: DocumentFields): DocumentFields {
-        const normalizedFields: DocumentFields = {
+    private normalizeFields(fields: BaseFields): BaseFields {
+        const normalizedFields: BaseFields = {
             title: "",
             // version: "1.0", // Removed to avoid duplication
             ...fields
@@ -115,16 +116,16 @@ export class IndexedDocument {
     /**
      * Get a specific field value
      */
-    getField<T extends keyof DocumentFields>(field: T): DocumentFields[T] {
+    getField<T extends keyof BaseFields>(field: T): BaseFields[T] {
         return this.fields[field];
     }
 
     /**
      * Set a specific field value
      */
-    setField<T extends keyof DocumentFields>(
+    setField<T extends keyof BaseFields>(
         field: T,
-        value: DocumentFields[T]
+        value: BaseFields[T]
     ): void {
         this.fields[field] = value;
         if (this.metadata) {
@@ -202,7 +203,7 @@ export class IndexedDocument {
      */
     static fromObject(obj: Partial<IndexedDocumentData> & { 
         id: string; 
-        fields: DocumentFields;
+        fields: BaseFields;
     }): IndexedDocument {
         return IndexedDocument.create({
             id: obj.id,
@@ -223,7 +224,7 @@ export class IndexedDocument {
         content: string | DocumentContent,
         metadata?: DocumentMetadata
     ): IndexedDocument {
-        const fields: DocumentFields = {
+        const fields: BaseFields = {
             title: "",
             content: typeof content === 'string' ? { text: content } : content,
             author: "",
