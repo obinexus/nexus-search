@@ -12,9 +12,23 @@ import { DocumentValue } from "@/types/document";
 import { createSearchableFields } from "@/utils";
 
 export class IndexManager {
-    initialize() {
-        throw new Error("Method not implemented.");
+   initialize() {
+       this.documents = new Map();
+       this.indexMapper = new IndexMapper();
+       this.config = {
+           name: "default",
+           version: 1,
+           fields: ["content"],
+       };
+   }
+   
+    importDocuments(documents: IndexedDocument[]) {
+        documents.forEach(doc => {
+            this.documents.set(doc.id, doc);
+        });
     }
+
+
    getSize() {
         return this.documents.size;
     }
