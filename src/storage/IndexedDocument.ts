@@ -5,15 +5,9 @@ import {
     DocumentRelation,
     BaseFields,
     IndexedDocument as IIndexedDocument,
-    DocumentBase
+    IndexedDocumentData
 } from "@/types/document";
 
-export interface IndexedDocumentData extends DocumentBase {
-    fields: BaseFields;
-    metadata?: DocumentMetadata;
-    versions?: Array<DocumentVersion>;
-    relations?: Array<DocumentRelation>;
-}
 
 /**
  * Enhanced IndexedDocument implementation with proper type handling 
@@ -41,9 +35,8 @@ export class IndexedDocument implements IIndexedDocument {
         this.metadata = this.normalizeMetadata(metadata);
         this.versions = versions;
         this.relations = relations;
-        this.content = this.fields.content;
+        this.content = this.normalizeContent(this.fields.content); // Add this line
     }
-
     /**
      * Implement required document() method from interface
      */
@@ -56,11 +49,11 @@ export class IndexedDocument implements IIndexedDocument {
      */
     private normalizeFields(fields: BaseFields): BaseFields {
         const normalizedFields: BaseFields = {
+            ...fields,
             title: fields.title || '',
             author: fields.author || '',
             tags: Array.isArray(fields.tags) ? [...fields.tags] : [],
-            version: fields.version || '1.0',
-            ...fields
+            version: fields.version || '1.0'
         };
 
         return normalizedFields;

@@ -86,6 +86,12 @@ export interface NexusDocument extends Omit<IndexedDocument, 'fields' | 'metadat
 export interface SearchableDocument extends DocumentBase {
     content: Record<string, DocumentValue>;
 }
+export interface IndexedDocumentData extends DocumentBase {
+    fields: BaseFields;
+    metadata?: DocumentMetadata;
+    versions: Array<DocumentVersion>;
+    relations: Array<DocumentRelation>;
+}
 
 // ----------------
 // Relationship Types
