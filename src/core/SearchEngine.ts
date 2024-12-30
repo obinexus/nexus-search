@@ -9,7 +9,6 @@ import {
     SearchEvent,
     IndexNode,
     DocumentContent,
-
     DocumentStatus,
     ExtendedSearchOptions,
     RegexSearchConfig,

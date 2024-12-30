@@ -3,7 +3,6 @@ import {
     IndexNode, 
     OptimizationResult, 
     SearchableDocument,
-    DocumentContent, 
     DocumentValue,
     RegexSearchResult,
     RegexSearchConfig} from "@/types";
