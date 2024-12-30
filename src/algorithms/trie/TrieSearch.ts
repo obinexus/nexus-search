@@ -1,6 +1,6 @@
 
 
-import { IndexedDocument, DocumentLink, SearchOptions, SearchResult} from "@/types";
+import { IndexedDocument, DocumentLink, SearchOptions, SearchResult, DocumentContent} from "@/types";
 import { TrieNode } from "./TrieNode";
 
 
@@ -187,7 +187,8 @@ private serializeTrie(node: TrieNode): any {
 
     return serializedNode;
 }
-public addData(documentId: string, content: string, document: IndexedDocument): void {
+
+public addData(documentId: string, content: DocumentContent, document: IndexedDocument): void {
     if (!documentId || !content) return;
     this.addDocument({
         id: documentId,
@@ -201,7 +202,11 @@ public addData(documentId: string, content: string, document: IndexedDocument): 
         metadata: document.metadata,
         versions: document.versions || [],
         links: document.links || [],
-        ranks: []
+        ranks: [],
+        document: function (): IndexedDocument {
+            throw new Error("Function not implemented.");
+        },
+        relations: []
     });
 }
 
