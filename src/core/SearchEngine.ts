@@ -120,19 +120,19 @@ export class SearchEngine {
         if (!this.isInitialized) {
             await this.initialize();
         }
-
+    
         const normalizedDoc = this.normalizeDocument(document);
-
+    
         if (this.documentSupport && this.config.documentSupport?.versioning?.enabled) {
             await this.handleVersioning(normalizedDoc);
         }
-
+    
         this.documents.set(normalizedDoc.id, normalizedDoc);
-        this.trie.addData(normalizedDoc.id, normalizedDoc.fields.content, normalizedDoc);
+        // Fix: Use addDocument instead of addData
+        this.trie.addDocument(normalizedDoc);
         await this.indexManager.updateDocument(normalizedDoc);
     }
-
-
+    
     public async search(
         query: string,
         options: SearchOptions = {}
@@ -140,30 +140,35 @@ export class SearchEngine {
         if (!this.isInitialized) {
             await this.initialize();
         }
-
+    
         validateSearchOptions(options);
-
+    
         const searchStartTime = Date.now();
         this.emitEvent({
             type: 'search:start',
             timestamp: searchStartTime,
             data: { query, options }
         });
-
+    
         const cacheKey = this.generateCacheKey(query, options);
         const cachedResults = this.cache.get(cacheKey);
         if (cachedResults) {
             return cachedResults as SearchResult<IndexedDocument>[];
         }
-
+    
         try {
             let results: Array<{ id: string; score: number }>;
-
+    
             if (options.regex) {
                 const regex = typeof options.regex === 'string' ?
-                    new RegExp(options.regex) : options.regex;
-
-                if (this.isComplexRegex(regex instanceof RegExp ? regex : new RegExp(regex.pattern, regex.flags))) {
+                    new RegExp(options.regex) :
+                    options.regex instanceof RegExp ?
+                        options.regex :
+                        typeof options.regex === 'object' && options.regex !== null ?
+                            new RegExp(String(options.regex)) :
+                            new RegExp('');
+    
+                if (this.isComplexRegex(regex)) {
                     results = dfsRegexTraversal(
                         this.trieRoot,
                         regex,
@@ -181,10 +186,10 @@ export class SearchEngine {
                 const searchTerms = processedQuery.toLowerCase().split(/\s+/).filter(Boolean);
                 results = await this.performBasicSearch(searchTerms, options);
             }
-
+    
             const searchResults = await this.processSearchResults(results, options);
             this.cache.set(cacheKey, searchResults);
-
+    
             this.emitEvent({
                 type: 'search:complete',
                 timestamp: Date.now(),
@@ -195,7 +200,7 @@ export class SearchEngine {
                     searchTime: Date.now() - searchStartTime
                 }
             });
-
+    
             return searchResults;
         } catch (error) {
             this.emitEvent({
@@ -206,7 +211,70 @@ export class SearchEngine {
             throw new Error(`Search failed: ${error}`);
         }
     }
-
+    
+    private async performBasicSearch(
+        searchTerms: string[],
+        options: SearchOptions
+    ): Promise<Array<{ id: string; score: number }>> {
+        const results = new Map<string, { score: number; matches: Set<string> }>();
+    
+        for (const term of searchTerms) {
+            const matches = options.fuzzy ?
+                this.trie.fuzzySearch(term, options.maxDistance || 2) :
+                this.trie.search(term);
+    
+            for (const match of matches) {
+                const docId = match.docId;
+                const current = results.get(docId) || { score: 0, matches: new Set<string>() };
+                current.score += this.calculateTermScore(term, docId, options);
+                current.matches.add(term);
+                results.set(docId, current);
+            }
+        }
+    
+        return Array.from(results.entries())
+            .map(([id, { score }]) => ({ id, score }))
+            .sort((a, b) => b.score - a.score);
+    }
+    
+    private async processSearchResults(
+        results: Array<{ id: string; score: number }>,
+        options: SearchOptions
+    ): Promise<SearchResult<IndexedDocument>[]> {
+        const processedResults: SearchResult<IndexedDocument>[] = [];
+    
+        for (const { id, score } of results) {
+            const doc = this.documents.get(id);
+            if (!doc) continue;
+    
+            const searchResult: SearchResult<IndexedDocument> = {
+                id,
+                docId: id, // Add missing docId field
+                item: doc,
+                score: this.normalizeScore(score),
+                matches: [],
+                metadata: {
+                    ...doc.metadata,
+                    lastAccessed: Date.now()
+                },
+                document: doc,
+                term: ""
+            };
+    
+            if (options.includeMatches) {
+                searchResult.matches = this.extractMatches(doc, options);
+            }
+    
+            processedResults.push(searchResult);
+        }
+    
+        return this.applyPagination(processedResults, options);
+    }
+    
+    public getTrieState(): unknown {
+        return this.trie.serializeState();
+    }
+    
    
 
     private validateDocuments(documents: IndexedDocument[]): void {
@@ -298,63 +366,6 @@ export class SearchEngine {
         }
     }
 
-    private async performBasicSearch(
-        searchTerms: string[],
-        options: SearchOptions
-    ): Promise<Array<{ id: string; score: number }>> {
-        const results = new Map<string, { score: number; matches: Set<string> }>();
-
-        for (const term of searchTerms) {
-            const matches = options.fuzzy ?
-                this.trie.fuzzySearch(term, options.maxDistance || 2) :
-                this.trie.search(term);
-
-            for (const docId of matches) {
-                const current = results.get(docId) || { score: 0, matches: new Set<string>() };
-                current.score += this.calculateTermScore(term, docId, options);
-                current.matches.add(term);
-                results.set(docId, current);
-            }
-        }
-
-        return Array.from(results.entries())
-            .map(([id, { score }]) => ({ id, score }))
-            .sort((a, b) => b.score - a.score);
-    }
-
-    private async processSearchResults(
-        results: Array<{ id: string; score: number }>,
-        options: SearchOptions
-    ): Promise<SearchResult<IndexedDocument>[]> {
-        const processedResults: SearchResult<IndexedDocument>[] = [];
-
-        for (const { id, score } of results) {
-            const doc = this.documents.get(id);
-            if (!doc) continue;
-
-            const searchResult: SearchResult<IndexedDocument> = {
-                id,
-                item: doc,
-
-                score: this.normalizeScore(score),
-                matches: [],
-                metadata: {
-                    ...doc.metadata,
-                    lastAccessed: Date.now()
-                },
-                document: doc
-            };
-
-            if (options.includeMatches) {
-                searchResult.matches = this.extractMatches(doc, options);
-            }
-
-            processedResults.push(searchResult);
-        }
-
-        return this.applyPagination(processedResults, options);
-    }
-
     private calculateTermScore(term: string, docId: string, options: SearchOptions): number {
         const doc = this.documents.get(docId);
         if (!doc) return 0;
@@ -438,10 +449,6 @@ export class SearchEngine {
         return `${this.config.name}-${query}-${JSON.stringify(options)}`;
     }
 
-    private generateDocumentId(): string {
-        return `${this.config.name}-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-    }
-
     public addEventListener(listener: SearchEventListener): void {
         this.eventListeners.add(listener);
     }
@@ -480,10 +487,7 @@ export class SearchEngine {
         return this.documents.size;
     }
 
-    public getTrieState(): unknown {
-        return this.trie.exportState();
-    }
-
+  
     public async bulkUpdate(updates: Map<string, Partial<IndexedDocument>>): Promise<void> {
         if (!this.isInitialized) {
             await this.initialize();
