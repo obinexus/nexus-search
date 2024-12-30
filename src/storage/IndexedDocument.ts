@@ -1,192 +1,257 @@
 import { 
-    IndexedDocument as IIndexedDocument, 
+    DocumentContent,
     DocumentMetadata, 
-    IndexableDocumentFields 
+    IndexableDocumentFields,
+    DocumentVersion,
+    DocumentRelation
 } from "@/types/document";
 
+type DocumentFields = {
+    title: string;
+    content: DocumentContent;
+    author: string;
+    tags: string[];
+    version: string;
+    [key: string]: DocumentContent | string | string[] | number | boolean | null;
+};
 
-
-export class IndexedDocument implements IIndexedDocument {
-    readonly id: string;
-    fields: IndexableDocumentFields & {
-        title: string;
-        content: string;
-        author: string;
-        tags: string[];
-        [key: string]: string | string[] | number | boolean | null;
-    };
+export interface IndexedDocumentData {
+    id: string;
+    fields: DocumentFields;
     metadata?: DocumentMetadata;
-    versions: any[] = [];
-    relations: any[] = [];
-    content: any;
+    versions?: Array<DocumentVersion>;
+    relations?: Array<DocumentRelation>;
+}
 
+/**
+ * Enhanced IndexedDocument implementation with proper type handling 
+ * and versioning support
+ */
+export class IndexedDocument {
+    readonly id: string;
+    fields: DocumentFields;
+    metadata?: DocumentMetadata;
+    versions: Array<DocumentVersion>;
+    relations: Array<DocumentRelation>;
+    
     constructor(
         id: string,
-        fields: IndexableDocumentFields & {
-            title: string;
-            content: string;
-            author: string;
-            tags: string[];
-            [key: string]: string | string[] | number | boolean | null;
-        },
-        metadata?: DocumentMetadata
+        fields: DocumentFields,
+        metadata?: DocumentMetadata,
+        versions: Array<DocumentVersion> = [],
+        relations: Array<DocumentRelation> = []
     ) {
         this.id = id;
         this.fields = this.normalizeFields(fields);
         this.metadata = this.normalizeMetadata(metadata);
+        this.versions = versions;
+        this.relations = relations;
     }
 
-    private normalizeFields(fields: IndexableDocumentFields): IndexableDocumentFields & {
-        title: string;
-        content: string;
-        author: string;
-        tags: string[];
-        [key: string]: string | string[] | number | boolean | null;
-    } {
-        const normalizedFields: IndexableDocumentFields = {
+    /**
+     * Normalize document fields ensuring required fields exist
+     */
+    private normalizeFields(fields: DocumentFields): DocumentFields {
+        const normalizedFields: DocumentFields = {
             title: "",
-            content: "",
             author: "",
             tags: [],
-            version: ""
+            version: "1.0",
+            ...fields
         };
-    
-        for (const key in fields) {
-            if (fields[key] !== undefined) {
-                normalizedFields[key] = fields[key];
-            }
+
+        // Ensure content is DocumentContent type
+        if (typeof normalizedFields.content === 'string') {
+            normalizedFields.content = { text: normalizedFields.content };
         }
-    
-        return {
-            ...normalizedFields,
-            title: fields.title || '',
-            content: fields.content || '',
-            author: fields.author || '',
-            tags: fields.tags || []
-        };
+
+        // Ensure arrays are properly initialized
+        normalizedFields.tags = Array.isArray(normalizedFields.tags) 
+            ? normalizedFields.tags 
+            : [];
+
+        return normalizedFields;
     }
 
+    /**
+     * Normalize document metadata with timestamps
+     */
     private normalizeMetadata(metadata?: DocumentMetadata): DocumentMetadata {
+        const now = Date.now();
         return {
-            indexed: Date.now(),
-            lastModified: Date.now(),
+            indexed: now,
+            lastModified: now,
             ...metadata
         };
     }
 
-    toObject(): any {
-        return {
-            id: this.id,
-            fields: {
-                ...this.fields,
-                tags: [...this.fields.tags]
-            },
-            metadata: this.metadata ? { ...this.metadata } : undefined,
-            versions: [...this.versions],
-            relations: [...this.relations],
-            content: this.content,
-            document: () => this,
-            clone: () => this.clone(),
-            update: (updates: Partial<IIndexedDocument>) => this.update(updates)
-        };
-    }
-
+    /**
+     * Create a deep clone of the document
+     */
     clone(): IndexedDocument {
         return new IndexedDocument(
             this.id,
-            { ...this.fields, tags: [...this.fields.tags] },
-            this.metadata ? { ...this.metadata } : undefined
+            JSON.parse(JSON.stringify(this.fields)),
+            this.metadata ? { ...this.metadata } : undefined,
+            this.versions.map(v => ({ ...v })),
+            this.relations.map(r => ({ ...r }))
         );
     }
 
-    update(updates: Partial<IIndexedDocument>): IndexedDocument {
-        const updatedFields = {
-            ...this.fields
+    /**
+     * Update document fields and metadata
+     */
+    update(updates: Partial<IndexedDocumentData>): IndexedDocument {
+        const updatedFields = { ...this.fields };
+        const updatedMetadata = { 
+            ...this.metadata,
+            lastModified: Date.now()
         };
 
         if (updates.fields) {
             Object.entries(updates.fields).forEach(([key, value]) => {
                 if (value !== undefined) {
-                    // Type assertion to handle string index signature
-                    (updatedFields as any)[key] = value;
+                    updatedFields[key] = value;
                 }
             });
+        }
+
+        if (updates.metadata) {
+            Object.assign(updatedMetadata, updates.metadata);
         }
 
         return new IndexedDocument(
             this.id,
             updatedFields,
-            {
-                ...this.metadata,
-                ...updates.metadata,
-                lastModified: Date.now()
-            }
+            updatedMetadata,
+            updates.versions || this.versions,
+            updates.relations || this.relations
         );
     }
 
-    getField<T extends keyof IndexableDocumentFields>(
-        field: T
-    ): IndexableDocumentFields[T] {
+    /**
+     * Get a specific field value
+     */
+    getField<T extends keyof DocumentFields>(field: T): DocumentFields[T] {
         return this.fields[field];
     }
 
-    setField<T extends keyof IndexableDocumentFields>(
+    /**
+     * Set a specific field value
+     */
+    setField<T extends keyof DocumentFields>(
         field: T,
-        value: IndexableDocumentFields[T]
+        value: DocumentFields[T]
     ): void {
-        (this.fields as any)[field] = value;
+        this.fields[field] = value;
+        if (this.metadata) {
+            this.metadata.lastModified = Date.now();
+        }
     }
 
-    document(): IIndexedDocument {
-        return this;
+    /**
+     * Add a new version of the document
+     */
+    addVersion(version: Omit<DocumentVersion, 'version'>): void {
+        const nextVersion = this.versions.length + 1;
+        this.versions.push({
+            ...version,
+            version: nextVersion
+        });
+        this.fields.version = String(nextVersion);
+        if (this.metadata) {
+            this.metadata.lastModified = Date.now();
+        }
     }
 
-    static create(data: {
-        id: string;
-        fields: IndexableDocumentFields & {
-            title: string;
-            content: string;
-            author: string;
-            tags: string[];
-            [key: string]: string | string[] | number | boolean | null;
+    /**
+     * Add a relationship to another document
+     */
+    addRelation(relation: DocumentRelation): void {
+        this.relations.push(relation);
+        if (this.metadata) {
+            this.metadata.lastModified = Date.now();
+        }
+    }
+
+    /**
+     * Convert to plain object representation
+     */
+    toObject(): IndexedDocumentData {
+        return {
+            id: this.id,
+            fields: { ...this.fields },
+            metadata: this.metadata ? { ...this.metadata } : undefined,
+            versions: this.versions.map(v => ({ ...v })),
+            relations: this.relations.map(r => ({ ...r }))
         };
-        metadata?: DocumentMetadata;
-    }): IndexedDocument {
+    }
+
+    /**
+     * Convert to JSON string
+     */
+    toJSON(): string {
+        return JSON.stringify(this.toObject());
+    }
+
+    /**
+     * Create string representation
+     */
+    toString(): string {
+        return `IndexedDocument(${this.id})`;
+    }
+
+    /**
+     * Create new document instance
+     */
+    static create(data: IndexedDocumentData): IndexedDocument {
         return new IndexedDocument(
             data.id,
             data.fields,
-            data.metadata
+            data.metadata,
+            data.versions,
+            data.relations
         );
     }
 
-    static fromObject(obj: Partial<IIndexedDocument> & { 
+    /**
+     * Create from plain object
+     */
+    static fromObject(obj: Partial<IndexedDocumentData> & { 
         id: string; 
-        fields: IndexableDocumentFields;
+        fields: DocumentFields;
     }): IndexedDocument {
         return IndexedDocument.create({
             id: obj.id,
             fields: {
-                ...obj.fields,
                 title: obj.fields.title,
-                content: obj.fields.content,
                 author: obj.fields.author,
-                tags: obj.fields.tags
+                tags: obj.fields.tags,
+                version: obj.fields.version,
+                ...obj.fields
             },
-            metadata: obj.metadata
+            metadata: obj.metadata,
+            versions: obj.versions || [],
+            relations: obj.relations || []
         });
     }
 
-    toJSON(): Record<string, any> {
-        return {
-            id: this.id,
-            fields: this.fields,
-            metadata: this.metadata,
-            versions: this.versions,
-            relations: this.relations
+    /**
+     * Create from raw data
+     */
+    static fromRawData(
+        id: string,
+        content: string | DocumentContent,
+        metadata?: DocumentMetadata
+    ): IndexedDocument {
+        const fields: DocumentFields = {
+            title: "",
+            content: typeof content === 'string' ? { text: content } : content,
+            author: "",
+            tags: [],
+            version: "1.0"
         };
-    }
 
-    toString(): string {
-        return `IndexedDocument(${this.id})`;
+        return new IndexedDocument(id, fields, metadata);
     }
 }
