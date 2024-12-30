@@ -25,6 +25,11 @@ export const DEFAULT_SEARCH_OPTIONS: Required<SearchOptions> = {
     enableRegex: false,
     maxDistance: 0,
     regex: /./ // Simplified to just RegExp to fix type errors
+    ,
+    prefixMatch: false,
+    minScore: 0,
+    includePartial: false,
+    caseSensitive: false
 };
 
 export const DEFAULT_INDEX_OPTIONS = {
