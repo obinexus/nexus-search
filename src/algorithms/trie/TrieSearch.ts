@@ -200,7 +200,6 @@ public addData(documentId: string, content: string, document: IndexedDocument): 
         },
         metadata: document.metadata,
         versions: document.versions || [],
-        content: document.fields.content as unknown as DocumentData || { text: '' },
         links: document.links || [],
         ranks: []
     });
