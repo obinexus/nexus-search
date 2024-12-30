@@ -8,6 +8,9 @@ import {
     SearchEventListener,
     SearchEvent,
     IndexNode,
+    NexusDocumentFields,
+    NexusDocumentMetadata,
+    DocumentContent,
     
 } from "@/types";
 import { validateSearchOptions, bfsRegexTraversal, dfsRegexTraversal } from "@/utils";
@@ -660,16 +663,17 @@ export class SearchEngine {
             doc.fields.version = String(Number(doc.fields.version) + 1);
         }
     }
+
     private normalizeDocument(doc: IndexedDocument): IndexedDocument {
         if (!this.documentSupport) {
             return doc;
         }
 
         const now = new Date().toISOString();
-        const normalizedFields = {
+        const normalizedFields: NexusDocumentFields = {
             ...doc.fields,
             title: doc.fields.title || '',
-            content: doc.fields.content || '',
+            content: doc.fields.content as DocumentContent,
             type: doc.fields.type || 'document',
             tags: Array.isArray(doc.fields.tags) ? doc.fields.tags : [],
             category: doc.fields.category || '',
@@ -681,7 +685,7 @@ export class SearchEngine {
             locale: doc.fields.locale || ''
         };
 
-        const normalizedMetadata = {
+        const normalizedMetadata: NexusDocumentMetadata = {
             ...doc.metadata,
             indexed: doc.metadata?.indexed || Date.now(),
             lastModified: doc.metadata?.lastModified || Date.now(),
@@ -690,11 +694,11 @@ export class SearchEngine {
             workflow: doc.metadata?.workflow
         };
 
-        return new IndexedDocument(
-            doc.id,
-            normalizedFields,
-            normalizedMetadata
-        );
+        return {
+            ...doc,
+            fields: normalizedFields,
+            metadata: normalizedMetadata
+        };
     }
 
     public async restoreVersion(id: string, version: number): Promise<void> {

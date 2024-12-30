@@ -1,5 +1,4 @@
 import { SearchOptions } from "./search";
-import { StorageOptions } from "./storage";
 
 // Base metadata and value types
 export interface DocumentMetadata {
