@@ -17,9 +17,10 @@ const banner = `/**
  * @license ISC
  */`;
 
-// External dependencies
+// External dependencies - now including peer dependencies
 const external = [
-  'idb',
+  ...Object.keys(pkg.dependencies || {}),
+  ...Object.keys(pkg.peerDependencies || {}),
   'punycode',
   'tslib'
 ];
@@ -33,7 +34,7 @@ const srcAliases = [
   { find: '@utils', replacement: path.resolve(__dirname, 'src/utils') },
   { find: '@types', replacement: path.resolve(__dirname, 'src/types') },
   { find: '@plugins', replacement: path.resolve(__dirname, 'src/plugins') },
-  { find: '@adapter', replacement: path.resolve(__dirname, 'src/adapters') }
+  { find: '@adapters', replacement: path.resolve(__dirname, 'src/adapters') }
 ];
 
 // TypeScript plugin configuration
@@ -45,7 +46,10 @@ const typeScriptConfig = {
     compilerOptions: {
       declaration: true,
       declarationDir: './dist/types',
-      sourceMap: true
+      sourceMap: true,
+      module: 'esnext',
+      moduleResolution: 'node',
+      allowSyntheticDefaultImports: true
     },
     exclude: ['**/__tests__/**', '**/*.test.ts', 'src/**/*.spec.ts']
   }
@@ -56,10 +60,14 @@ const basePlugins = [
   alias({ entries: srcAliases }),
   resolve({
     browser: true,
-    preferBuiltins: false,
+    preferBuiltins: true,
+    mainFields: ['module', 'browser', 'main'],
     extensions: ['.ts', '.js']
   }),
-  commonjs(),
+  commonjs({
+    include: /node_modules/,
+    requireReturnsDefault: 'auto'
+  }),
   typescript(typeScriptConfig)
 ];
 
@@ -144,16 +152,6 @@ const typesBuild = {
         ...entry,
         replacement: entry.replacement.replace('/src/', '/dist/types/')
       }))
-    }),
-    typescript({
-      ...typeScriptConfig,
-      tsconfigOverride: {
-        ...typeScriptConfig.tsconfigOverride,
-        compilerOptions: {
-          ...typeScriptConfig.tsconfigOverride.compilerOptions,
-          emitDeclarationOnly: true
-        }
-      }
     }),
     dts()
   ]
