@@ -9,19 +9,17 @@ import {
     SearchEvent,
     IndexNode,
     DocumentContent,
-    BaseFields,
-    DocumentMetadata,
+
     DocumentStatus,
     ExtendedSearchOptions,
     RegexSearchConfig,
     RegexSearchResult,
     
 } from "@/types";
-import { validateSearchOptions, bfsRegexTraversal, dfsRegexTraversal, calculateScore, extractMatches } from "@/utils";
+import { bfsRegexTraversal, dfsRegexTraversal, calculateScore, extractMatches } from "@/utils";
 import { IndexManager } from "../storage/IndexManager";
 import { QueryProcessor } from "./QueryProcessor";
 import { TrieSearch } from "@/algorithms/trie";
-import { NexusDocumentAdapter } from "@/adapters";
 
 
 export class SearchEngine {
@@ -30,7 +28,7 @@ export class SearchEngine {
    private readonly queryProcessor: QueryProcessor;
    private readonly storage: SearchStorage;
    private readonly cache: CacheManager;
-   private readonly trie: TrieSearch;
+   private readonly trie: TrieSearch = new  TrieSearch();
    
    // Configuration and state
    private readonly config: SearchEngineConfig;
@@ -57,8 +55,7 @@ export class SearchEngine {
        this.queryProcessor = new QueryProcessor();
        this.storage = new SearchStorage(config.storage);
        this.cache = new CacheManager();
-       this.trie = new TrieSearch();
-       this.trie.clear();
+    this.trie.clear();
 
        // Initialize data structures
        this.documents = new Map();
@@ -286,7 +283,7 @@ export class SearchEngine {
     /**
      * Helper method to normalize document content
      */
-    private normalizeContent(content: unknown): DocumentContent {
+    public normalizeContent(content: unknown): DocumentContent {
         if (!content) return {};
         if (typeof content === 'string') return { text: content };
         if (typeof content === 'object') return content as DocumentContent;
@@ -296,7 +293,7 @@ export class SearchEngine {
     /**
      * Helper method to normalize date strings
      */
-    private normalizeDate(date: unknown): string | undefined {
+    public normalizeDate(date: unknown): string | undefined {
         if (!date) return undefined;
         if (date instanceof Date) return date.toISOString();
         if (typeof date === 'string') return new Date(date).toISOString();
@@ -307,7 +304,7 @@ export class SearchEngine {
     /**
      * Helper method to normalize document status
      */
-    private normalizeStatus(status: unknown): DocumentStatus | undefined {
+    public normalizeStatus(status: unknown): DocumentStatus | undefined {
         if (!status) return undefined;
         const statusStr = String(status).toLowerCase();
         
@@ -347,7 +344,7 @@ export class SearchEngine {
 /**
  * Performs regex-based search using either BFS or DFS traversal
  */
-private async performRegexSearch(
+public async performRegexSearch(
     query: string,
     options: ExtendedSearchOptions
 ): Promise<SearchResult<IndexedDocument>[]> {
@@ -400,7 +397,7 @@ private async performRegexSearch(
 
 
 
-    private async performBasicSearch(
+    public async performBasicSearch(
         searchTerms: string[],
         options: SearchOptions
     ): Promise<Array<{ id: string; score: number }>> {
