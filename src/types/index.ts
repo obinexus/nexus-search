@@ -42,10 +42,19 @@ export type {
 
 // Document types
 export type {
-    DocumentData,
     DocumentLink,
     DocumentRank,
-    IndexedDocument
+    IndexedDocument,
+    NexusDocument,
+    DocumentBase,
+    DocumentMetadata,
+    DocumentRelation,
+    DocumentVersion,
+    DocumentValue,
+    DocumentContent,
+    DocumentStatus,
+
+
 } from './document';
 
 // Database types
