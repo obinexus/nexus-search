@@ -157,6 +157,16 @@ export interface RegexSearchResult {
 
 }
 
+/**
+ * Enhanced regex search configuration
+ */
+export interface RegexSearchConfig {
+    maxDepth?: number;
+    timeoutMs?: number;
+    caseSensitive?: boolean;
+    wholeWord?: boolean;
+}
+
 export interface ExtendedSearchOptions extends SearchOptions {
     regexConfig?: RegexSearchConfig;
 }

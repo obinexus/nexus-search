@@ -6,18 +6,7 @@ import {
     DocumentContent, 
     DocumentValue,
     RegexSearchResult,
-    RegexOptions
-} from "@/types";
-
-/**
- * Enhanced regex search configuration
- */
-interface RegexSearchConfig {
-    maxDepth?: number;
-    timeoutMs?: number;
-    caseSensitive?: boolean;
-    wholeWord?: boolean;
-}
+    RegexSearchConfig} from "@/types";
 
 /**
  * Performs an optimized Breadth-First Search traversal with regex matching
@@ -54,7 +43,6 @@ export function bfsRegexTraversal(
     });
 
     while (queue.length > 0 && results.length < maxResults) {
-        // Check timeout
         if (Date.now() - startTime > timeoutMs) {
             console.warn('BFS regex search timeout');
             break;
@@ -65,19 +53,17 @@ export function bfsRegexTraversal(
 
         if (depth > maxDepth) continue;
 
-        // Process matches
         if (regex.test(matched) && node.id && !visited.has(node.id)) {
             results.push({
                 id: node.id,
                 score: calculateRegexMatchScore(node, matched, regex),
-                matched,
+                matches: [matched],
                 path: [...path],
                 positions: findMatchPositions(matched, regex)
             });
             visited.add(node.id);
         }
 
-        // Add children to queue with breadth-first ordering
         for (const [char, childNode] of node.children.entries()) {
             queue.push({
                 node: childNode,
@@ -118,26 +104,23 @@ export function dfsRegexTraversal(
         depth: number,
         path: string[]
     ): void {
-        // Early termination conditions
         if (results.length >= maxResults || 
             depth > maxDepth || 
             Date.now() - startTime > timeoutMs) {
             return;
         }
 
-        // Process matches
         if (regex.test(matched) && node.id && !visited.has(node.id)) {
             results.push({
                 id: node.id,
                 score: calculateRegexMatchScore(node, matched, regex),
-                matched,
+                matches: [matched],
                 path: [...path],
                 positions: findMatchPositions(matched, regex)
             });
             visited.add(node.id);
         }
 
-        // Explore children depth-first
         for (const [char, childNode] of node.children.entries()) {
             dfs(
                 childNode, 
@@ -198,7 +181,6 @@ function findMatchPositions(text: string, regex: RegExp): Array<[number, number]
     const positions: Array<[number, number]> = [];
     let match: RegExpExecArray | null;
     
-    // Create a new regex with global flag for iteration
     const globalRegex = new RegExp(regex.source, regex.flags + (regex.global ? '' : 'g'));
     
     while ((match = globalRegex.exec(text)) !== null) {
@@ -373,42 +355,4 @@ export function generateSortKey(doc: IndexedDocument): string {
     } catch {
         return doc.id;
     }
-}
-
-/**
- * Creates an indexed document
- */
-export function createDocument({ 
-    id, 
-    fields, 
-    metadata = {} 
-}: { 
-    id: string; 
-    fields: Record<string, any>; 
-    metadata?: Record<string, any> 
-}) {
-    return {
-        id,
-        fields,
-        metadata: {
-            indexed: Date.now(),
-            lastModified: Date.now(),
-            ...metadata
-        }
-    };
-}
-
-/**
- * Creates a searchable document
- */
-export function createSearchableDocument({ 
-    id, 
-    content, 
-    metadata = {} 
-}: { 
-    id: string; 
-    content: Record<string, DocumentValue>; 
-    metadata?: Record<string, DocumentValue> 
-}) {
-    return { id, content, metadata };
 }
