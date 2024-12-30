@@ -87,7 +87,7 @@ export class SearchEngine {
         }
     }
 
-    public async addDocuments(documents: IndexDocument[]): Promise<void> {
+    public async addDocuments(documents: IndexedDocument[]): Promise<void> {
         if (!this.isInitialized) {
             await this.initialize();
         }
@@ -102,7 +102,15 @@ export class SearchEngine {
             for (const doc of normalizedDocs) {
                 this.documents.set(doc.id, doc);
                 // Use adapter when adding to trie
-                const adaptedDoc = new DocumentAdapter(doc);
+                const adaptedDoc = new NexusDocumentAdapter({
+                    ...doc,
+                    fields: {
+                        ...doc.fields,
+                        type: doc.fields.type || '',
+                        created: doc.fields.created || new Date().toISOString(),
+                        status: doc.fields.status || 'active'
+                    }
+                });
                 this.trie.addDocument(adaptedDoc);
                 this.indexManager.addDocument(adaptedDoc);
             }
@@ -125,21 +133,21 @@ export class SearchEngine {
         }
     }
 
-    public async updateDocument(document: IndexDocument): Promise<void> {
+    public async updateDocument(document: IndexedDocument): Promise<void> {
         if (!this.isInitialized) {
             await this.initialize();
         }
 
         const normalizedDoc = this.normalizeDocument(document);
-        const adaptedDoc = new NexusDocumentAdapter(normalizedDoc);
+        await this.handleVersioning(normalizedDoc);
 
         if (this.documentSupport && this.config.documentSupport?.versioning?.enabled) {
-            await this.handleVersioning(adaptedDoc);
+            await this.handleVersioning(normalizedDoc);
         }
 
-        this.documents.set(adaptedDoc.id, normalizedDoc);
-        this.trie.addDocument(adaptedDoc);
-        await this.indexManager.updateDocument(adaptedDoc);
+        this.documents.set(normalizedDoc.id, normalizedDoc);
+        this.trie.addDocument(normalizedDoc);
+        await this.indexManager.updateDocument(normalizedDoc);
     }
     public async search(
         query: string,
@@ -673,7 +681,6 @@ export class SearchEngine {
             return doc;
         }
 
-        const now = new Date().toISOString();
         const normalizedFields: BaseFields = {
             title: doc.fields.title || '',
             content: doc.fields.content as DocumentContent,
