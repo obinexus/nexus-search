@@ -106,7 +106,13 @@ export class SearchEngine {
             throw new Error(`Failed to initialize search engine: ${String(error)}`);
         }
     }
-
+ 
+    /**
+     * Add a single document to the search engine
+     */
+    public async addDocument(document: IndexedDocument): Promise<void> {
+        await this.addDocuments([document]);
+    }
     /**
      * Add documents to the search engine
      */
@@ -824,7 +830,7 @@ private isComplexRegex(regex: RegExp): boolean {
         }
     }
  
-
+    
     private normalizeDocument(doc: IndexedDocument): IndexedDocument {
         if (!this.documentSupport) {
             return doc;
