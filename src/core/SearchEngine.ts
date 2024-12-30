@@ -8,9 +8,11 @@ import {
     SearchEventListener,
     SearchEvent,
     IndexNode,
-    NexusDocumentFields,
+    NexusDocument,
     NexusDocumentMetadata,
     DocumentContent,
+    BaseFields,
+    DocumentMetadata,
     
 } from "@/types";
 import { validateSearchOptions, bfsRegexTraversal, dfsRegexTraversal } from "@/utils";
@@ -84,7 +86,7 @@ export class SearchEngine {
         }
     }
 
-    public async addDocuments(documents: IndexedDocument[]): Promise<void> {
+    public async addDocuments(documents: IndexDocument[]): Promise<void> {
         if (!this.isInitialized) {
             await this.initialize();
         }
@@ -98,9 +100,10 @@ export class SearchEngine {
 
             for (const doc of normalizedDocs) {
                 this.documents.set(doc.id, doc);
-                // Fixed: Added document parameter to addData call
-                this.trie.addDocument(doc);
-                this.indexManager.addDocument(doc);
+                // Use adapter when adding to trie
+                const adaptedDoc = new DocumentAdapter(doc);
+                this.trie.addDocument(adaptedDoc);
+                this.indexManager.addDocument(adaptedDoc);
             }
 
             await this.storage.storeIndex(this.config.name, this.indexManager.exportIndex());
@@ -121,23 +124,22 @@ export class SearchEngine {
         }
     }
 
-    public async updateDocument(document: IndexedDocument): Promise<void> {
+    public async updateDocument(document: IndexDocument): Promise<void> {
         if (!this.isInitialized) {
             await this.initialize();
         }
-    
+
         const normalizedDoc = this.normalizeDocument(document);
-    
+        const adaptedDoc = new DocumentAdapter(normalizedDoc);
+
         if (this.documentSupport && this.config.documentSupport?.versioning?.enabled) {
-            await this.handleVersioning(normalizedDoc);
+            await this.handleVersioning(adaptedDoc);
         }
-    
-        this.documents.set(normalizedDoc.id, normalizedDoc);
-        // Fix: Use addDocument instead of addData
-        this.trie.addDocument(normalizedDoc);
-        await this.indexManager.updateDocument(normalizedDoc);
+
+        this.documents.set(adaptedDoc.id, normalizedDoc);
+        this.trie.addDocument(adaptedDoc);
+        await this.indexManager.updateDocument(adaptedDoc);
     }
-    
     public async search(
         query: string,
         options: SearchOptions = {}
@@ -663,6 +665,7 @@ export class SearchEngine {
             doc.fields.version = String(Number(doc.fields.version) + 1);
         }
     }
+ 
 
     private normalizeDocument(doc: IndexedDocument): IndexedDocument {
         if (!this.documentSupport) {
@@ -670,35 +673,24 @@ export class SearchEngine {
         }
 
         const now = new Date().toISOString();
-        const normalizedFields: NexusDocumentFields = {
-            ...doc.fields,
+        const normalizedFields: BaseFields = {
             title: doc.fields.title || '',
             content: doc.fields.content as DocumentContent,
-            type: doc.fields.type || 'document',
-            tags: Array.isArray(doc.fields.tags) ? doc.fields.tags : [],
-            category: doc.fields.category || '',
             author: doc.fields.author || '',
-            created: doc.fields.created || now,
-            modified: doc.fields.modified || now,
-            status: doc.fields.status || 'draft',
+            tags: Array.isArray(doc.fields.tags) ? doc.fields.tags : [],
             version: doc.fields.version || '1.0',
-            locale: doc.fields.locale || ''
         };
 
-        const normalizedMetadata: NexusDocumentMetadata = {
-            ...doc.metadata,
+        const normalizedMetadata: DocumentMetadata = {
             indexed: doc.metadata?.indexed || Date.now(),
             lastModified: doc.metadata?.lastModified || Date.now(),
-            checksum: doc.metadata?.checksum,
-            permissions: Array.isArray(doc.metadata?.permissions) ? doc.metadata.permissions : [],
-            workflow: doc.metadata?.workflow
         };
 
-        return {
-            ...doc,
-            fields: normalizedFields,
-            metadata: normalizedMetadata
-        };
+        return new IndexedDocument(
+            doc.id,
+            normalizedFields,
+            normalizedMetadata
+        );
     }
 
     public async restoreVersion(id: string, version: number): Promise<void> {
