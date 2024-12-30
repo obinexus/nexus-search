@@ -552,7 +552,7 @@ private isComplexRegex(regex: RegExp): boolean {
         try {
             await this.storage.clearIndices();
             this.documents.clear();
-            this.trie = new TrieSearch();
+            this.trie.clear();
             this.indexManager.clear();
             this.cache.clear();
 
