@@ -5,7 +5,8 @@ import {
     SearchResult, 
     SerializedState,
     DocumentValue,
-    DocumentData
+    DocumentMetadata,
+    DocumentContent
 } from "@/types";
 import { DataMapper } from "./DataMapper";
 
@@ -62,14 +63,14 @@ export class IndexMapper {
                                 fields: {
                                     [field]: word,
                                     title: "",
-                                    content: "",
+                                    content: {} as DocumentContent,
                                     author: "",
                                     tags: [],
                                     version: ""
                                 },
                                 versions: [],
                                 relations: [],
-                                content: {} as DocumentData,
+                                metadata: {} as DocumentMetadata,
                                 document: () => {
                                     const doc = this.documents.get(id);
                                     if (!doc) {

@@ -11,6 +11,7 @@ export class BaseDocument implements IndexedDocument {
         author: string;
     }>;
     relations: Array<{
+        sourceId: string;
         type: string;
         targetId: string;
     }>;
@@ -26,7 +27,10 @@ export class BaseDocument implements IndexedDocument {
             tags: doc.fields?.tags || [],
             ...doc.fields
         };
-        this.versions = doc.versions || [];
+        this.relations = doc.relations?.map(relation => ({
+            ...relation,
+            sourceId: this.id
+        })) || [];
         this.relations = doc.relations || [];
         this.metadata = {
             indexed: Date.now(),
