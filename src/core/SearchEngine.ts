@@ -13,13 +13,15 @@ import {
     DocumentContent,
     BaseFields,
     DocumentMetadata,
+    DocumentStatus,
     
 } from "@/types";
-import { validateSearchOptions, bfsRegexTraversal, dfsRegexTraversal } from "@/utils";
+import { validateSearchOptions, bfsRegexTraversal, dfsRegexTraversal, optimizeIndex } from "@/utils";
 import { IndexManager } from "../storage/IndexManager";
 import { QueryProcessor } from "./QueryProcessor";
 import { TrieSearch } from "@/algorithms/trie";
 import { NexusDocumentAdapter } from "@/adapters";
+
 
 export class SearchEngine {
     private readonly queryProcessor: QueryProcessor;
@@ -87,6 +89,9 @@ export class SearchEngine {
         }
     }
 
+    /**
+     * Add documents to the search engine
+     */
     public async addDocuments(documents: IndexedDocument[]): Promise<void> {
         if (!this.isInitialized) {
             await this.initialize();
@@ -101,16 +106,34 @@ export class SearchEngine {
 
             for (const doc of normalizedDocs) {
                 this.documents.set(doc.id, doc);
-                // Use adapter when adding to trie
+
+                // Convert type-specific fields with proper type safety
                 const adaptedDoc = new NexusDocumentAdapter({
-                    ...doc,
+                    id: doc.id,
                     fields: {
                         ...doc.fields,
-                        type: doc.fields.type || '',
-                        created: doc.fields.created || new Date().toISOString(),
-                        status: doc.fields.status || 'active'
-                    }
+                        title: String(doc.fields.title || ''),
+                        content: this.normalizeContent(doc.fields.content),
+                        author: String(doc.fields.author || ''),
+                        type: String(doc.fields.type || 'document'),
+                        tags: Array.isArray(doc.fields.tags) ? doc.fields.tags.map(String) : [],
+                        category: String(doc.fields.category || ''),
+                        created: this.normalizeDate(doc.fields.created) || new Date().toISOString(),
+                        modified: this.normalizeDate(doc.fields.modified) || new Date().toISOString(),
+                        status: this.normalizeStatus(doc.fields.status) || 'draft',
+                        version: String(doc.fields.version || '1.0'),
+                        locale: String(doc.fields.locale || '')
+                    },
+                    metadata: {
+                        ...doc.metadata,
+                        indexed: doc.metadata?.indexed ?? Date.now(),
+                        lastModified: doc.metadata?.lastModified ?? Date.now()
+                    },
+                    versions: doc.versions,
+                    relations: doc.relations,
+                    content: doc.content
                 });
+
                 this.trie.addDocument(adaptedDoc);
                 this.indexManager.addDocument(adaptedDoc);
             }
@@ -132,6 +155,48 @@ export class SearchEngine {
             throw error;
         }
     }
+
+    /**
+     * Helper method to normalize document content
+     */
+    private normalizeContent(content: unknown): DocumentContent {
+        if (!content) return {};
+        if (typeof content === 'string') return { text: content };
+        if (typeof content === 'object') return content as DocumentContent;
+        return { value: String(content) };
+    }
+
+    /**
+     * Helper method to normalize date strings
+     */
+    private normalizeDate(date: unknown): string | undefined {
+        if (!date) return undefined;
+        if (date instanceof Date) return date.toISOString();
+        if (typeof date === 'string') return new Date(date).toISOString();
+        if (typeof date === 'number') return new Date(date).toISOString();
+        return undefined;
+    }
+
+    /**
+     * Helper method to normalize document status
+     */
+    private normalizeStatus(status: unknown): DocumentStatus | undefined {
+        if (!status) return undefined;
+        const statusStr = String(status).toLowerCase();
+        
+        switch (statusStr) {
+            case 'draft':
+            case 'published':
+            case 'archived':
+                return statusStr as DocumentStatus;
+            case 'active':
+                return 'published';
+            default:
+                return 'draft';
+        }
+    }
+
+  
 
     public async updateDocument(document: IndexedDocument): Promise<void> {
         if (!this.isInitialized) {
@@ -483,16 +548,18 @@ export class SearchEngine {
         this.eventListeners.delete(listener);
     }
 
-    private emitEvent(event: SearchEvent): void {
-        this.eventListeners.forEach(listener => {
-            try {
-                listener(event);
-            } catch (error) {
-                console.error('Error in event listener:', error);
-            }
-        });
-    }
-
+   /**
+     * Emit search engine events
+     */
+   private emitEvent(event: SearchEvent): void {
+    this.eventListeners.forEach(listener => {
+        try {
+            listener(event);
+        } catch (error) {
+            console.error('Error in event listener:', error);
+        }
+    });
+}
     public async close(): Promise<void> {
         try {
             await this.storage.close();
