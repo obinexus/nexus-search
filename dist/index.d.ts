@@ -587,10 +587,12 @@ interface SerializedState {
     documentLinks: [string, DocumentLink[]][];
 }
 
-type QueryToken = {
-    type: 'term' | 'operator' | 'modifier';
+interface QueryToken {
+    type: 'operator' | 'modifier' | 'term';
     value: string;
-};
+    original: string;
+    field?: string;
+}
 
 declare global {
     interface Window {

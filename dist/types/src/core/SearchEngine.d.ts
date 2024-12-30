@@ -16,6 +16,10 @@ export declare class SearchEngine {
     private extractRegexMatches;
     initialize(): Promise<void>;
     /**
+     * Add a single document to the search engine
+     */
+    addDocument(document: IndexedDocument): Promise<void>;
+    /**
      * Add documents to the search engine
      */
     addDocuments(documents: IndexedDocument[]): Promise<void>;
