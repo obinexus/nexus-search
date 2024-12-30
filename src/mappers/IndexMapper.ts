@@ -4,7 +4,8 @@ import {
     SearchableDocument, 
     SearchResult, 
     SerializedState,
-    DocumentValue
+    DocumentValue,
+    DocumentData
 } from "@/types";
 import { DataMapper } from "./DataMapper";
 
@@ -66,7 +67,16 @@ export class IndexMapper {
                                     tags: [],
                                     version: ""
                                 },
-                                versions: []
+                                versions: [],
+                                relations: [],
+                                content: {} as DocumentData,
+                                document: () => {
+                                    const doc = this.documents.get(id);
+                                    if (!doc) {
+                                        throw new Error(`Document with id ${id} not found`);
+                                    }
+                                    return doc;
+                                }
                             });
                             this.dataMapper.mapData(word.toLowerCase(), id);
                         }

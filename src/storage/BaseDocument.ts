@@ -1,4 +1,4 @@
-import { DocumentMetadata, IndexedDocument, IndexableDocumentFields, DocumentData } from "@/types";
+import { DocumentMetadata, IndexedDocument, IndexableDocumentFields, DocumentData, DocumentContent } from "@/types";
 
 export class BaseDocument implements IndexedDocument {
     id: string;
@@ -20,7 +20,7 @@ export class BaseDocument implements IndexedDocument {
         this.id = doc.id || '';
         this.fields = {
             title: doc.fields?.title || '',
-            content: doc.fields?.content || '',
+            content: doc.fields?.content || { text: '' } as DocumentContent, // Assuming DocumentContent has a 'text' property
             author: doc.fields?.author || '',
             version: doc.fields?.version || '1',
             tags: doc.fields?.tags || [],
@@ -33,7 +33,12 @@ export class BaseDocument implements IndexedDocument {
             lastModified: Date.now(),
             ...(doc.metadata || {})
         };
-        this.content = { ...this.fields };
+        this.content = {
+            ...this.fields,
+            content: doc.content?.content || { text: '' } as DocumentContent, // Assuming DocumentContent has a 'text' property
+            links: doc.content?.links || [],
+            ranks: doc.content?.ranks || []
+        };
     }
 
     document(): IndexedDocument {
@@ -58,10 +63,7 @@ export class BaseDocument implements IndexedDocument {
             versions: this.versions,
             relations: this.relations,
             content: this.content,
-            document: () => this.document(),
-            toObject: () => this.toObject(),
-            clone: () => this.clone(),
-            update: (updates: Partial<IndexedDocument>) => this.update(updates)
+            document: () => this,
         };
         return obj;
     }

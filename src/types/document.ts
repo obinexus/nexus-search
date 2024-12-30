@@ -1,18 +1,19 @@
-
 import { SearchOptions } from "./search";
 import { StorageOptions } from "./storage";
 
 // Base metadata and value types
 export interface DocumentMetadata {
-
     indexed?: number;
-
     lastModified?: number;
-
     [key: string]: any;
-
 }
+
 export type DocumentValue = any;
+
+// Document content type definitions
+export type DocumentContent = {
+    [key: string]: DocumentValue | DocumentContent;
+};
 
 // Link interface for document relationships
 export interface DocumentLink {
@@ -23,14 +24,13 @@ export interface DocumentLink {
 }
 
 // Core document field structure
-export interface IndexableDocumentFields {
+export interface BaseDocumentFields {
     title: string;
-    content: string;
     author: string;
     tags: string[];
     version: string;
     modified?: string;
-    [key: string]: string | string[] | number | boolean | null | undefined;
+    [key: string]: DocumentValue | DocumentContent | string | string[] | number | boolean | null | undefined;
 }
 
 // Value type definitions
@@ -50,31 +50,35 @@ export interface DocumentRank {
 
 // Core document data interface
 export interface DocumentData {
-    [key: string]: any;
     metadata?: DocumentMetadata;
     content: DocumentContent;
     links: DocumentLink[];
     ranks: DocumentRank[];
-    
-    
+    [key: string]: any;
 }
 
-// Document content type
-export type DocumentContent = {
-    [key: string]: DocumentValue | DocumentContent;
-};
+// Base indexable document fields
+export interface IndexableDocumentFields extends BaseDocumentFields {
+    content: DocumentContent;
+}
 
-// Main indexed document interface
+// Base indexed document interface
 export interface IndexedDocument {
     id: string;
-    fields: Record<string, any>;
+    fields: IndexableDocumentFields;
     metadata?: DocumentMetadata;
-    versions?: Array<{
+    versions: Array<{
         version: number;
-        content: string;
+        content: DocumentContent;
         modified: Date;
         author: string;
     }>;
+    relations: Array<{
+        type: string;
+        targetId: string;
+    }>;
+    content: DocumentData;
+    document(): IndexedDocument;
     links?: string[];
     ranks?: number[];
 }
@@ -86,9 +90,7 @@ export interface SearchableDocument {
     metadata?: DocumentMetadata;
 }
 
-/**
- * Configuration for document operations
- */
+// Document configuration
 export interface DocumentConfig {
     fields?: string[];
     storage?: {
@@ -105,233 +107,87 @@ export interface DocumentConfig {
     };
 }
 
-
-export interface NexusDocumentFields {
-    title: string;
-    content: string;
-    type: string;
-    tags: string[];
-    category?: string;
-    author: string;
-    created: string;
-    modified: string;
-    status: 'draft' | 'published' | 'archived';
-    version: string;
-    locale?: string;
-}
-
-// Enhanced SearchEngineConfig with optional NexusDocument support
-export interface SearchEngineConfig {
-    name: string;
-    version: number;
-    fields: string[];
-    storage?: StorageOptions;
-    documentSupport?: {
-        enabled: boolean;
-        versioning?: {
-            enabled: boolean;
-            maxVersions?: number;
-        };
-        validation?: {
-            required?: string[];
-            customValidators?: Record<string, (value: any) => boolean>;
-        };
-    };
-}
-
-
-/**
- * Version information for document versioning system
- */
+// Version information
 export interface DocumentVersion {
-    /** Document version number */
     version: number;
-    /** Content at this version */
-    content: string;
-    /** Modification timestamp */
+    content: DocumentContent;
     modified: Date;
-    /** Author who made the changes */
     author: string;
-    /** Optional changelog message */
     changelog?: string;
 }
 
-/**
- * Relationship definition between documents
- */
+// Document relationship
 export interface DocumentRelation {
-    /** Source document ID */
     sourceId: string;
-    /** Target document ID */
     targetId: string;
-    /** Type of relationship */
     type: 'reference' | 'parent' | 'child' | 'related';
-    /** Optional metadata for the relationship */
     metadata?: Record<string, any>;
 }
 
-/**
- * Workflow status information
- */
+// Workflow status
 export interface DocumentWorkflow {
-    /** Current workflow status */
     status: string;
-    /** Optional assignee for the document */
     assignee?: string;
-    /** Optional due date */
     dueDate?: string;
 }
 
-/**
- * Extended metadata for Nexus documents
- */
+// Extended metadata for Nexus documents
 export interface NexusDocumentMetadata extends DocumentMetadata {
-    /** Timestamp when document was indexed */
     indexed: number;
-    /** Last modification timestamp */
     lastModified: number;
-    /** Optional document checksum */
     checksum?: string;
-    /** Optional access permissions */
     permissions?: string[];
-    /** Optional workflow information */
     workflow?: DocumentWorkflow;
 }
 
-/**
- * Fields specific to Nexus documents
- */
+// Nexus document fields
 export interface NexusDocumentFields extends IndexableDocumentFields {
-    /** Document title */
-    title: string;
-    /** Document content */
-    content: string;
-    /** Document type */
     type: string;
-    /** Associated tags */
-    tags: string[];
-    /** Optional category */
     category?: string;
-    /** Document author */
-    author: string;
-    /** Creation timestamp (ISO string) */
     created: string;
-    /** Modification timestamp (ISO string) */
-    modified: string;
-    /** Document status */
     status: 'draft' | 'published' | 'archived';
-    /** Version identifier */
-    version: string;
-    /** Optional locale */
     locale?: string;
-    /** Allow additional string fields */
-    [key: string]: string | string[] | undefined;
 }
 
-/**
- * Nexus document interface extending base indexed document
- */
-export interface NexusDocument extends IndexedDocument {
-    /** Document fields */
+// Complete Nexus document interface
+export interface NexusDocument extends Omit<IndexedDocument, 'fields'> {
     fields: NexusDocumentFields;
-    /** Document versions */
-    versions: DocumentVersion[];
-    /** Document relationships */
-    relations: DocumentRelation[];
-    /** Extended metadata */
     metadata: NexusDocumentMetadata;
-    /** Clone the document */
-    clone(): this;
-    /** Update document fields */
-    update(updates: Partial<IndexedDocument>): IndexedDocument;
-    /** Convert to plain object */
-    toObject(): this;
+    versions: DocumentVersion[];
+    relations: DocumentRelation[];
+    clone(): NexusDocument;
+    update(updates: Partial<NexusDocument>): NexusDocument;
+    toObject(): NexusDocument;
 }
 
-/**
- * Configuration options for Nexus document plugin
- */
-export interface NexusDocumentPluginConfig {
-    /** Plugin instance name */
-    name?: string;
-    /** Plugin version */
-    version?: number;
-    /** Searchable document fields */
-    fields?: string[];
-    /** Storage configuration */
-    storage?: {
-        /** Storage type */
-        type: 'memory' | 'indexeddb';
-        /** Optional storage options */
-        options?: Record<string, any>;
-    };
-    /** Version control settings */
-    versioning?: {
-        /** Whether versioning is enabled */
-        enabled: boolean;
-        /** Maximum number of versions to keep */
-        maxVersions?: number;
-    };
-    /** Document validation rules */
-    validation?: {
-        /** Required field names */
-        required?: string[];
-        /** Custom validation functions */
-        customValidators?: Record<string, (value: any) => boolean>;
-    };
-}
 
-/**
- * Parameters for creating new documents
- */
+// Document creation options
 export interface CreateDocumentOptions {
-    /** Document title */
     title: string;
-    /** Document content */
-    content: string;
-    /** Document type */
+    content: DocumentContent;
     type: string;
-    /** Optional tags */
     tags?: string[];
-    /** Optional category */
     category?: string;
-    /** Document author */
     author: string;
-    /** Optional status */
     status?: 'draft' | 'published' | 'archived';
-    /** Optional locale */
     locale?: string;
-    /** Optional metadata */
     metadata?: Partial<NexusDocumentMetadata>;
 }
 
-/**
- * Enhanced search options for documents
- */
+// Advanced search options
 export interface AdvancedSearchOptions extends SearchOptions {
-    /** Filter criteria */
     filters?: {
-        /** Filter by status */
         status?: ('draft' | 'published' | 'archived')[];
-        /** Filter by date range */
         dateRange?: {
-            /** Start date */
             start: Date;
-            /** End date */
             end: Date;
         };
-        /** Filter by categories */
         categories?: string[];
-        /** Filter by types */
         types?: string[];
-        /** Filter by authors */
         authors?: string[];
     };
-    /** Sort configuration */
     sort?: {
-        /** Field to sort by */
         field: keyof NexusDocumentFields;
-        /** Sort order */
         order: 'asc' | 'desc';
     };
 }

@@ -1,6 +1,6 @@
 
 
-import { IndexedDocument, DocumentLink, SearchOptions, SearchResult, DocumentData} from "@/types";
+import { IndexedDocument, DocumentLink, SearchOptions, SearchResult} from "@/types";
 import { TrieNode } from "./TrieNode";
 
 

@@ -1,4 +1,5 @@
 import { DocumentMetadata, DocumentValue, IndexedDocument } from './document';
+import { StorageOptions } from './storage';
 
 // Core search result interface with proper generic typing
 export interface SearchResult<T = unknown> {
@@ -111,4 +112,24 @@ export interface SearchPagination {
     pageSize: number;
     totalPages: number;
     totalResults: number;
+}
+
+
+// Search engine configuration
+export interface SearchEngineConfig {
+    name: string;
+    version: number;
+    fields: string[];
+    storage?: StorageOptions;
+    documentSupport?: {
+        enabled: boolean;
+        versioning?: {
+            enabled: boolean;
+            maxVersions?: number;
+        };
+        validation?: {
+            required?: string[];
+            customValidators?: Record<string, (value: any) => boolean>;
+        };
+    };
 }
