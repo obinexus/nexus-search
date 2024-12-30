@@ -2126,7 +2126,7 @@ class SearchEngine {
             // Initialize storage
             await this.storage.initialize();
             // Initialize index manager
-            await this.indexManager.initialize();
+            this.indexManager.initialize();
             // Load existing indexes if any
             await this.loadExistingIndexes();
             this.isInitialized = true;
