@@ -15,7 +15,6 @@ export type DocumentContent = {
 // ----------------
 // Metadata Types
 // ----------------
-
 export interface DocumentMetadata {
     indexed?: number;
     lastModified?: number;

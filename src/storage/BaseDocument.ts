@@ -1,48 +1,142 @@
-import { DocumentMetadata, IndexedDocument, IndexableDocumentFields, DocumentData, DocumentContent } from "@/types";
+import { 
+    DocumentMetadata, 
+    IndexedDocument,
+    DocumentContent,
+    DocumentVersion,
+    DocumentRelation,
+    RelationType,
+    IndexableFields,
+    PrimitiveValue,
+    DocumentValue
+} from "@/types";
 
 export class BaseDocument implements IndexedDocument {
-    id: string;
-    fields: IndexableDocumentFields & { content: string };
+    readonly id: string;
+    fields: IndexableFields;
     metadata?: DocumentMetadata;
-    versions: Array<{
-        version: number;
-        content: DocumentContent;
-        modified: Date;
-        author: string;
-    }>;
-    relations: Array<{
-        sourceId: string;
-        type: string;
-        targetId: string;
-    }>;
-    content: DocumentData;
+    versions: DocumentVersion[];
+    relations: DocumentRelation[];
+    content?: Record<string, DocumentValue>;
+    links?: string[];
+    ranks?: number[];
 
     constructor(doc: Partial<BaseDocument>) {
-        this.id = doc.id || '';
-        this.fields = {
-            title: doc.fields?.title || '',
-            content: doc.fields?.content || { text: '' } as DocumentContent, // Assuming DocumentContent has a 'text' property
-            author: doc.fields?.author || '',
-            version: doc.fields?.version || '1',
-            tags: doc.fields?.tags || [],
-            ...doc.fields
+        this.id = doc.id || this.generateId();
+        this.fields = this.normalizeFields(doc.fields);
+        this.metadata = this.normalizeMetadata(doc.metadata);
+        this.versions = doc.versions || [];
+        this.relations = this.normalizeRelations(doc.relations || []);
+        this.content = doc.content;
+        this.links = doc.links || [];
+        this.ranks = doc.ranks || [];
+    }
+
+    private generateId(): string {
+        return `doc-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    }
+
+    private normalizeFields(fields?: Partial<IndexableFields>): IndexableFields {
+        return {
+            title: fields?.title || '',
+            content: this.normalizeContent(fields?.content),
+            author: fields?.author || '',
+            tags: Array.isArray(fields?.tags) ? [...fields.tags] : [],
+            version: fields?.version || '1.0',
+            modified: fields?.modified || new Date().toISOString(),
+            ...fields
         };
-        this.relations = doc.relations?.map(relation => ({
-            ...relation,
-            sourceId: this.id
-        })) || [];
-        this.relations = doc.relations || [];
-        this.metadata = {
-            indexed: Date.now(),
-            lastModified: Date.now(),
-            ...(doc.metadata || {})
+    }
+
+    private normalizeMetadata(metadata?: Partial<DocumentMetadata>): DocumentMetadata {
+        const now = Date.now();
+        return {
+            indexed: metadata?.indexed ?? now,
+            lastModified: metadata?.lastModified ?? now,
+            ...metadata
         };
-        this.content = {
-            ...this.fields,
-            content: doc.content?.content || { text: '' } as DocumentContent, // Assuming DocumentContent has a 'text' property
-            links: doc.content?.links || [],
-            ranks: doc.content?.ranks || []
-        };
+    }
+
+    private normalizeContent(content: any): DocumentContent {
+        if (!content) {
+            return { text: '' };
+        }
+
+        if (typeof content === 'string') {
+            return { text: content };
+        }
+
+        if (typeof content === 'object' && content !== null) {
+            return this.normalizeContentObject(content);
+        }
+
+        return { text: String(content) };
+    }
+
+    private normalizeContentObject(obj: Record<string, any>): DocumentContent {
+        const result: DocumentContent = {};
+        
+        for (const [key, value] of Object.entries(obj)) {
+            if (value === null || value === undefined) {
+                result[key] = null;
+                continue;
+            }
+
+            if (typeof value === 'object') {
+                if (Array.isArray(value)) {
+                    result[key] = value.map(v => this.normalizeValue(v));
+                } else {
+                    result[key] = this.normalizeContentObject(value);
+                }
+            } else {
+                result[key] = this.normalizeValue(value);
+            }
+        }
+
+        return result;
+    }
+
+    private normalizeValue(value: any): DocumentValue {
+        if (value === null || value === undefined) {
+            return null;
+        }
+
+        if (Array.isArray(value)) {
+            return value.map(v => this.normalizeValue(v)) as DocumentValue[];
+        }
+
+        if (typeof value === 'object') {
+            return this.normalizeContentObject(value);
+        }
+
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+            return value as PrimitiveValue;
+        }
+
+        return String(value);
+    }
+
+    private normalizeRelations(relations: Array<Partial<DocumentRelation>>): DocumentRelation[] {
+        return relations.map(relation => ({
+            sourceId: this.id,
+            targetId: relation.targetId || '',
+            type: this.normalizeRelationType(relation.type || 'reference'),
+            metadata: relation.metadata
+        }));
+    }
+
+    private normalizeRelationType(type: string): RelationType {
+        const normalizedType = type.toLowerCase();
+        switch (normalizedType) {
+            case 'parent':
+                return 'parent' as RelationType;
+            case 'child':
+                return 'child' as RelationType;
+            case 'related':
+                return 'related' as RelationType;
+            case 'reference':
+            default:
+                return 'reference' as RelationType;
+        }
     }
 
     document(): IndexedDocument {
@@ -51,37 +145,40 @@ export class BaseDocument implements IndexedDocument {
 
     clone(): IndexedDocument {
         return new BaseDocument({
-            ...this,
+            id: this.id,
             fields: { ...this.fields },
             versions: [...this.versions],
             relations: [...this.relations],
-            metadata: { ...this.metadata }
+            metadata: { ...this.metadata },
+            content: this.content ? { ...this.content } : undefined,
+            links: this.links ? [...this.links] : undefined,
+            ranks: this.ranks ? [...this.ranks] : undefined
         });
     }
 
     toObject(): IndexedDocument {
-        const obj: IndexedDocument = {
+        return {
             id: this.id,
             fields: this.fields,
             metadata: this.metadata,
             versions: this.versions,
             relations: this.relations,
-            content: this.content,
-            document: () => this,
+            links: this.links,
+            ranks: this.ranks,
+            document: () => this.document(),
         };
-        return obj;
     }
 
     update(updates: Partial<IndexedDocument>): IndexedDocument {
         const now = Date.now();
         const currentVersion = this.fields.version;
-        const fields = updates.fields as Partial<IndexableDocumentFields> || {};
+        const updatedFields: Partial<IndexableFields> = updates.fields || {};
 
-        // Create new version if content changes
-        if (fields.content && fields.content !== this.fields.content) {
+        // Handle versioning
+        if (updatedFields.content && !this.isContentEqual(updatedFields.content, this.fields.content)) {
             this.versions.push({
                 version: Number(currentVersion),
-                content: this.fields.content as DocumentContent,
+                content: this.fields.content,
                 modified: new Date(this.metadata?.lastModified || now),
                 author: this.fields.author
             });
@@ -89,18 +186,28 @@ export class BaseDocument implements IndexedDocument {
 
         // Create updated document
         return new BaseDocument({
-            ...this,
+            id: this.id,
             fields: {
                 ...this.fields,
-                ...fields,
-                version: fields.content ? 
+                ...updatedFields,
+                version: updatedFields.content ? 
                     (Number(currentVersion) + 1).toString() : 
-                    currentVersion
+                    currentVersion,
+                modified: new Date().toISOString()
             },
+            versions: this.versions,
+            relations: updates.relations || this.relations,
             metadata: {
                 ...this.metadata,
                 lastModified: now
-            }
+            },
+            content: updates.fields?.content || this.content,
+            links: updates.links || this.links,
+            ranks: updates.ranks || this.ranks
         });
+    }
+
+    private isContentEqual(content1: DocumentContent, content2: DocumentContent): boolean {
+        return JSON.stringify(content1) === JSON.stringify(content2);
     }
 }
