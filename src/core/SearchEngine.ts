@@ -17,7 +17,7 @@ import {
     RegexSearchResult,
     
 } from "@/types";
-import { validateSearchOptions, bfsRegexTraversal, dfsRegexTraversal } from "@/utils";
+import { validateSearchOptions, bfsRegexTraversal, dfsRegexTraversal, calculateScore, extractMatches } from "@/utils";
 import { IndexManager } from "../storage/IndexManager";
 import { QueryProcessor } from "./QueryProcessor";
 import { TrieSearch } from "@/algorithms/trie";
@@ -25,39 +25,107 @@ import { NexusDocumentAdapter } from "@/adapters";
 
 
 export class SearchEngine {
-    private readonly queryProcessor: QueryProcessor;
-    private storage: SearchStorage;
-    private readonly cache: CacheManager;
-    private readonly config: SearchEngineConfig;
-    private readonly eventListeners: Set<SearchEventListener>;
-    private trie: TrieSearch;
-    private isInitialized: boolean = false;
-    private documents: Map<string, IndexedDocument>;
-    private trieRoot: IndexNode;
-    private readonly documentSupport: boolean;
-    private readonly indexManager: IndexManager;
-
-    constructor(config: SearchEngineConfig) {
-        this.config = config;
-        this.indexManager = new IndexManager(config);
-        this.queryProcessor = new QueryProcessor();
-        this.storage = new SearchStorage(config.storage);
-        this.cache = new CacheManager();
-        this.eventListeners = new Set();
-        this.trie = new TrieSearch();
-        this.documents = new Map();
-        this.documentSupport = config.documentSupport?.enabled ?? false;
-        this.config = config;
-        this.indexManager = new IndexManager(config);
-        this.queryProcessor = new QueryProcessor();
-        this.storage = new SearchStorage(config.storage);
-        this.cache = new CacheManager();
-        this.eventListeners = new Set();
-        this.trie = new TrieSearch();
-        this.documents = new Map();
-        this.trieRoot = { id: '', value: '', score: 0, children: new Map(), depth: 0 };
-    } 
+   // Core components
+   private readonly indexManager: IndexManager;
+   private readonly queryProcessor: QueryProcessor;
+   private readonly storage: SearchStorage;
+   private readonly cache: CacheManager;
+   private readonly trie: TrieSearch;
    
+   // Configuration and state
+   private readonly config: SearchEngineConfig;
+   private readonly documentSupport: boolean;
+   private isInitialized: boolean = false;
+   
+   // Data structures
+   private readonly documents: Map<string, IndexedDocument>;
+   private readonly eventListeners: Set<SearchEventListener>;
+   private readonly trieRoot: IndexNode;
+
+   constructor(config: SearchEngineConfig) {
+       // Validate config
+       if (!config || !config.name) {
+           throw new Error('Invalid search engine configuration');
+       }
+
+       // Initialize configuration
+       this.config = config;
+       this.documentSupport = config.documentSupport?.enabled ?? false;
+
+       // Initialize core components
+       this.indexManager = new IndexManager(config);
+       this.queryProcessor = new QueryProcessor();
+       this.storage = new SearchStorage(config.storage);
+       this.cache = new CacheManager();
+       this.trie = new TrieSearch();
+       this.trie.clear();
+
+       // Initialize data structures
+       this.documents = new Map();
+       this.eventListeners = new Set();
+       this.trieRoot = { 
+           id: '', 
+           value: '', 
+           score: 0, 
+           children: new Map(), 
+           depth: 0 
+       };
+
+       // Bind methods that need 'this' context
+       this.search = this.search.bind(this);
+       this.addDocument = this.addDocument.bind(this);
+       this.removeDocument = this.removeDocument.bind(this);
+   }
+
+   /**
+    * Initialize the search engine and its components
+    */
+   public async initialize(): Promise<void> {
+       if (this.isInitialized) return;
+
+       try {
+           // Initialize storage
+           await this.storage.initialize();
+
+           // Initialize index manager
+           await this.indexManager.initialize();
+
+           // Load existing indexes if any
+           await this.loadExistingIndexes();
+
+           this.isInitialized = true;
+
+           // Emit initialization event
+           this.emitEvent({
+               type: 'engine:initialized',
+               timestamp: Date.now()
+           });
+       } catch (error) {
+           const errorMessage = error instanceof Error ? error.message : String(error);
+           throw new Error(`Failed to initialize search engine: ${errorMessage}`);
+       }
+   }
+
+   /**
+    * Load existing indexes from storage
+    */
+   private async loadExistingIndexes(): Promise<void> {
+       try {
+           const storedIndex = await this.storage.getIndex(this.config.name);
+           if (storedIndex) {
+               await this.indexManager.importIndex(storedIndex);
+               const documents = await this.indexManager.getAllDocuments();
+               
+               for (const [id, doc] of documents) {
+                this.documents.set(id, doc as import("../storage/IndexedDocument").IndexedDocument);
+                this.trie.addDocument(doc);
+               }
+           }
+       } catch (error) {
+           console.warn('Failed to load stored indexes:', error);
+       }
+   }
+
     private extractRegexMatches(
         doc: IndexedDocument,
         positions: Array<[number, number]>,
@@ -78,107 +146,143 @@ export class SearchEngine {
         return Array.from(matches);
     }
 
-    public async initialize(): Promise<void> {
-        if (this.isInitialized) return;
+  
 
-        try {
-            try {
-                await this.storage.initialize();
-            } catch (storageError) {
-                this.emitEvent({
-                    type: 'storage:error',
-                    timestamp: Date.now(),
-                    error: storageError instanceof Error ? storageError : new Error(String(storageError))
-                });
-
-                this.storage = new SearchStorage({ type: 'memory' });
-                await this.storage.initialize();
-            }
-
-            await this.loadIndexes();
-            this.isInitialized = true;
-
-            this.emitEvent({
-                type: 'engine:initialized',
-                timestamp: Date.now()
-            });
-        } catch (error) {
-            throw new Error(`Failed to initialize search engine: ${String(error)}`);
-        }
-    }
- 
-    /**
-     * Add a single document to the search engine
-     */
-    public async addDocument(document: IndexedDocument): Promise<void> {
-        await this.addDocuments([document]);
-    }
-    /**
-     * Add documents to the search engine
-     */
-    public async addDocuments(documents: IndexedDocument[]): Promise<void> {
+    async addDocument(document: IndexedDocument): Promise<void> {
         if (!this.isInitialized) {
             await this.initialize();
         }
 
+        // Normalize and validate document
+        const normalizedDoc = this.normalizeDocument(document);
+        if (!this.validateDocument(normalizedDoc)) {
+            throw new Error(`Invalid document structure: ${document.id}`);
+        }
+
         try {
-            const normalizedDocs = documents.map(doc => this.normalizeDocument(doc));
+            // Store the document
+            this.documents.set(normalizedDoc.id, normalizedDoc);
             
-            if (this.documentSupport && this.config.documentSupport?.validation) {
-                this.validateDocuments(normalizedDocs);
-            }
-
-            for (const doc of normalizedDocs) {
-                this.documents.set(doc.id, doc);
-
-                // Convert type-specific fields with proper type safety
-                const adaptedDoc = new NexusDocumentAdapter({
-                    id: doc.id,
-                    fields: {
-                        ...doc.fields,
-                        title: String(doc.fields.title || ''),
-                        content: this.normalizeContent(doc.fields.content),
-                        author: String(doc.fields.author || ''),
-                        type: String(doc.fields.type || 'document'),
-                        tags: Array.isArray(doc.fields.tags) ? doc.fields.tags.map(String) : [],
-                        category: String(doc.fields.category || ''),
-                        created: this.normalizeDate(doc.fields.created) || new Date().toISOString(),
-                        modified: this.normalizeDate(doc.fields.modified) || new Date().toISOString(),
-                        status: this.normalizeStatus(doc.fields.status) || 'draft',
-                        version: String(doc.fields.version || '1.0'),
-                        locale: String(doc.fields.locale || '')
-                    },
-                    metadata: {
-                        ...doc.metadata,
-                        indexed: doc.metadata?.indexed ?? Date.now(),
-                        lastModified: doc.metadata?.lastModified ?? Date.now()
-                    },
-                    versions: doc.versions,
-                    relations: doc.relations
-                });
-
-                this.trie.addDocument(adaptedDoc);
-                this.indexManager.addDocument(adaptedDoc);
-            }
-
-            await this.storage.storeIndex(this.config.name, this.indexManager.exportIndex());
-            this.cache.clear();
-
-            this.emitEvent({
-                type: 'index:complete',
-                timestamp: Date.now(),
-                data: { documentCount: documents.length }
-            });
+            // Index the document
+            await this.indexManager.addDocument(normalizedDoc);
+            
         } catch (error) {
-            this.emitEvent({
-                type: 'index:error',
-                timestamp: Date.now(),
-                error: error instanceof Error ? error : new Error(String(error))
-            });
-            throw error;
+            throw new Error(`Failed to add document: ${error}`);
         }
     }
 
+    async addDocuments(documents: IndexedDocument[]): Promise<void> {
+        for (const doc of documents) {
+            await this.addDocument(doc);
+        }
+    }
+
+    async search<T>(query: string, options: SearchOptions = {}): Promise<SearchResult<T>[]> {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
+
+        if (!query.trim()) {
+            return [];
+        }
+
+        const searchOptions = {
+            ...this.config.search?.defaultOptions,
+            ...options,
+            fields: options.fields || this.config.fields
+        };
+
+        try {
+            // Process the query
+            const processedQuery = this.queryProcessor.process(query);
+            if (!processedQuery) return [];
+
+            // Get matching documents
+            const searchResults = new Map<string, SearchResult<T>>();
+
+            // Search through each field
+            for (const field of searchOptions.fields) {
+                for (const [docId, document] of this.documents) {
+                    const score = calculateScore(document, processedQuery, field, {
+                        fuzzy: searchOptions.fuzzy,
+                        caseSensitive: searchOptions.caseSensitive,
+                        exactMatch: searchOptions.exact,
+                        fieldWeight: searchOptions.boost?.[field] || 1
+                    });
+
+                    if (score > 0) {
+                        const existingResult = searchResults.get(docId);
+                        if (!existingResult || score > existingResult.score) {
+                            const matches = extractMatches(
+                                document,
+                                processedQuery,
+                                [field],
+                                {
+                                    fuzzy: searchOptions.fuzzy,
+                                    caseSensitive: searchOptions.caseSensitive
+                                }
+                            );
+
+                            searchResults.set(docId, {
+                                id: docId,
+                                docId,
+                                item: document as unknown as T,
+                                score,
+                                matches,
+                                metadata: {
+                                    ...document.metadata,
+                                    lastAccessed: Date.now()
+                                },
+                                document: document,
+                                term: processedQuery
+                            });
+                        }
+                    }
+                }
+            }
+
+            // Sort and limit results
+            let results = Array.from(searchResults.values())
+                .sort((a, b) => b.score - a.score);
+
+            if (searchOptions.maxResults) {
+                results = results.slice(0, searchOptions.maxResults);
+            }
+
+            return results;
+        } catch (error) {
+            console.error('Search error:', error);
+            throw new Error(`Search failed: ${error}`);
+        }
+    }
+
+    private normalizeDocument(doc: IndexedDocument): IndexedDocument {
+        return new IndexedDocument(
+            doc.id,
+            {
+                ...doc.fields,
+                title: doc.fields.title || '',
+                content: doc.fields.content || '',
+                author: doc.fields.author || '',
+                tags: Array.isArray(doc.fields.tags) ? doc.fields.tags : [],
+                version: doc.fields.version || '1.0'
+            },
+            {
+                ...doc.metadata,
+                indexed: doc.metadata?.indexed || Date.now(),
+                lastModified: doc.metadata?.lastModified || Date.now()
+            }
+        );
+    }
+
+    private validateDocument(doc: IndexedDocument): boolean {
+        return (
+            typeof doc.id === 'string' &&
+            doc.id.length > 0 &&
+            typeof doc.fields === 'object' &&
+            doc.fields !== null
+        );
+    }
     /**
      * Helper method to normalize document content
      */
@@ -236,64 +340,10 @@ export class SearchEngine {
         this.documents.set(normalizedDoc.id, normalizedDoc);
         this.trie.addDocument(normalizedDoc);
         await this.indexManager.updateDocument(normalizedDoc);
-    }    public async search(
-        query: string,
-        options: ExtendedSearchOptions = {}
-    ): Promise<SearchResult<IndexedDocument>[]> {
-        if (!this.isInitialized) {
-            await this.initialize();
-        }
-    
-        validateSearchOptions(options);
-    
-        const searchStartTime = Date.now();
-        this.emitEvent({
-            type: 'search:start',
-            timestamp: searchStartTime,
-            data: { query, options }
-        });
-    
-        const cacheKey = this.generateCacheKey(query, options);
-        const cachedResults = this.cache.get(cacheKey);
-        if (cachedResults) {
-            return cachedResults as SearchResult<IndexedDocument>[];
-        }
-    
-        try {
-            let results: RegexSearchResult[] | Array<{ id: string; score: number }>;
-    
-            if (options.regex) {
-                results = await this.performRegexSearch(query, options);
-            } else {
-                const processedQuery = this.queryProcessor.process(query);
-                const searchTerms = processedQuery.toLowerCase().split(/\s+/).filter(Boolean);
-                results = await this.performBasicSearch(searchTerms, options);
-            }
-    
-            const searchResults = await this.processSearchResults(results, options);
-            this.cache.set(cacheKey, searchResults);
-    
-            this.emitEvent({
-                type: 'search:complete',
-                timestamp: Date.now(),
-                data: {
-                    query,
-                    options,
-                    resultCount: searchResults.length,
-                    searchTime: Date.now() - searchStartTime
-                }
-            });
-    
-            return searchResults;
-        } catch (error) {
-            this.emitEvent({
-                type: 'search:error',
-                timestamp: Date.now(),
-                error: error instanceof Error ? error : new Error(String(error))
-            });
-            throw new Error(`Search failed: ${error}`);
-        }
-    }
+    }  
+
+
+
 /**
  * Performs regex-based search using either BFS or DFS traversal
  */
@@ -456,29 +506,6 @@ private isComplexRegex(regex: RegExp): boolean {
     }
     
    
-
-    private validateDocuments(documents: IndexedDocument[]): void {
-        if (!this.config.documentSupport?.validation) return;
-
-        const { required = [], customValidators = {} } = this.config.documentSupport.validation;
-
-        for (const doc of documents) {
-            // Check required fields
-            for (const field of required) {
-                if (!doc.fields[field]) {
-                    throw new Error(`Field '${field}' is required for document ${doc.id}`);
-                }
-            }
-
-            // Run custom validators
-            Object.entries(customValidators).forEach(([field, validator]) => {
-                const value = doc.fields[field];
-                if (value !== undefined && !validator(value)) {
-                    throw new Error(`Validation failed for field '${field}' in document ${doc.id}`);
-                }
-            });
-        }
-    }
     
     public async removeDocument(documentId: string): Promise<void> {
         if (!this.isInitialized) {
@@ -831,30 +858,6 @@ private isComplexRegex(regex: RegExp): boolean {
     }
  
     
-    private normalizeDocument(doc: IndexedDocument): IndexedDocument {
-        if (!this.documentSupport) {
-            return doc;
-        }
-
-        const normalizedFields: BaseFields = {
-            title: doc.fields.title || '',
-            content: doc.fields.content as DocumentContent,
-            author: doc.fields.author || '',
-            tags: Array.isArray(doc.fields.tags) ? doc.fields.tags : [],
-            version: doc.fields.version || '1.0',
-        };
-
-        const normalizedMetadata: DocumentMetadata = {
-            indexed: doc.metadata?.indexed || Date.now(),
-            lastModified: doc.metadata?.lastModified || Date.now(),
-        };
-
-        return new IndexedDocument(
-            doc.id,
-            normalizedFields,
-            normalizedMetadata
-        );
-    }
 
     public async restoreVersion(id: string, version: number): Promise<void> {
         if (!this.documentSupport) {

@@ -117,6 +117,7 @@ export interface SearchPagination {
 
 // Search engine configuration
 export interface SearchEngineConfig {
+    search: any;
     name: string;
     version: number;
     fields: string[];
