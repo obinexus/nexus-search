@@ -80,7 +80,6 @@ export class TrieSearch {
             prefixMatch = false,
             maxResults = 10,
             minScore = 0.1,
-            includePartial = false,
             caseSensitive = false
         } = options;
 
@@ -201,7 +200,6 @@ public addData(documentId: string, content: string, document: IndexedDocument): 
         },
         metadata: document.metadata,
         versions: document.versions || [],
-        relations: [],
         content: document.fields.content as unknown as DocumentData || { text: '' },
         links: document.links || [],
         ranks: []
