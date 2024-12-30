@@ -36,6 +36,13 @@ export interface NexusFields extends IndexableFields {
     status: DocumentStatus;
     locale?: string;
 }
+export interface IndexConfig {
+    name: string;
+    fields: string[];
+    searchFields: string[];
+    metadataFields: string[];
+    searchOptions: SearchOptions;
+}
 export interface DocumentBase {
     id: string;
     metadata?: DocumentMetadata;

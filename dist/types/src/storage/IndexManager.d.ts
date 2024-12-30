@@ -2,6 +2,7 @@ import { IndexConfig, SearchOptions, SearchResult, IndexedDocument } from "@/typ
 import { SerializedIndex } from "@/types/core";
 export declare class IndexManager {
     initialize(): void;
+    importDocuments(documents: IndexedDocument[]): void;
     getSize(): number;
     getAllDocuments(): Map<string, IndexedDocument>;
     private indexMapper;
