@@ -289,47 +289,61 @@ export class SearchEngine {
             throw new Error(`Search failed: ${error}`);
         }
     }
+/**
+ * Performs regex-based search using either BFS or DFS traversal
+ */
+private async performRegexSearch(
+    query: string,
+    options: ExtendedSearchOptions
+): Promise<SearchResult<IndexedDocument>[]> {
+    const regexConfig: RegexSearchConfig = {
+        maxDepth: options.regexConfig?.maxDepth || 50,
+        timeoutMs: options.regexConfig?.timeoutMs || 5000,
+        caseSensitive: options.regexConfig?.caseSensitive || false,
+        wholeWord: options.regexConfig?.wholeWord || false
+    };
 
-    private async performRegexSearch(
-        _query: string,
-        options: ExtendedSearchOptions
-    ): Promise<SearchResult<IndexedDocument>[]> {
-        const regexConfig: RegexSearchConfig = {
-            maxDepth: options.regexConfig?.maxDepth || 50,
-            timeoutMs: options.regexConfig?.timeoutMs || 5000,
-            caseSensitive: options.regexConfig?.caseSensitive || false,
-            wholeWord: options.regexConfig?.wholeWord || false
-        };
+    const regex = this.createRegexFromOption(options.regex || '');
 
-        const regex = this.createRegexFromOption(options.regex || '');
+    // Determine search strategy based on regex complexity
+    const regexResults = this.isComplexRegex(regex) ?
+        await dfsRegexTraversal(
+            this.trieRoot,
+            regex,
+            options.maxResults || 10,
+            regexConfig
+        ) :
+        await bfsRegexTraversal(
+            this.trieRoot,
+            regex,
+            options.maxResults || 10,
+            regexConfig
+        );
 
-        // Determine search strategy based on regex complexity
-        if (this.isComplexRegex(regex)) {
-            const regexResults = await dfsRegexTraversal(
-                this.trieRoot,
-                regex,
-                options.maxResults || 10,
-                regexConfig
-            );
-
-            return regexResults.map(result => ({
-                ...result,
-                item: this.documents.get(result.id) as IndexedDocument
-            }));
-        } else {
-            const regexResults = await bfsRegexTraversal(
-                this.trieRoot,
-                regex,
-                options.maxResults || 10,
-                regexConfig
-            );
-
-            return regexResults.map(result => ({
-                ...result,
-                item: this.documents.get(result.id) as IndexedDocument
-            }));
+    // Map regex results to SearchResult format
+    return regexResults.map(result => {
+        const document = this.documents.get(result.id);
+        if (!document) {
+            throw new Error(`Document not found for id: ${result.id}`);
         }
-    }
+
+        return {
+            id: result.id,
+            docId: result.id,
+            term: result.matches[0] || query, // Use first match or query as term
+            score: result.score,
+            matches: result.matches,
+            document: document,
+            item: document,
+            metadata: {
+                ...document.metadata,
+                lastAccessed: Date.now()
+            }
+        };
+    }).filter(result => result.score >= (options.minScore || 0));
+}
+
+
 
     private async performBasicSearch(
         searchTerms: string[],
@@ -355,6 +369,42 @@ export class SearchEngine {
             .map(([id, { score }]) => ({ id, score }))
             .sort((a, b) => b.score - a.score);
     }
+
+    /**
+ * Creates a RegExp object from various input types
+ */
+private createRegexFromOption(regexOption: string | RegExp | object): RegExp {
+    if (regexOption instanceof RegExp) {
+        return regexOption;
+    }
+    if (typeof regexOption === 'string') {
+        return new RegExp(regexOption);
+    }
+    if (typeof regexOption === 'object' && regexOption !== null) {
+        const pattern = (regexOption as any).pattern;
+        const flags = (regexOption as any).flags;
+        return new RegExp(pattern || '', flags || '');
+    }
+    return new RegExp('');
+}
+
+
+/**
+ * Determines if a regex pattern is complex
+ */
+private isComplexRegex(regex: RegExp): boolean {
+    const pattern = regex.source;
+    return (
+        pattern.includes('{') ||
+        pattern.includes('+') ||
+        pattern.includes('*') ||
+        pattern.includes('?') ||
+        pattern.includes('|') ||
+        pattern.includes('(?') ||
+        pattern.includes('[') ||
+        pattern.length > 20  // Additional complexity check based on pattern length
+    );
+}
     private async processSearchResults(
         results: RegexSearchResult[] | Array<{ id: string; score: number }>,
         options: SearchOptions
@@ -393,34 +443,6 @@ export class SearchEngine {
         }
     
         return this.applyPagination(processedResults, options);
-    }
-    private createRegexFromOption(regexOption: string | RegExp | object): RegExp {
-        if (regexOption instanceof RegExp) {
-            return regexOption;
-        }
-        if (typeof regexOption === 'string') {
-            return new RegExp(regexOption);
-        }
-        if (typeof regexOption === 'object' && regexOption !== null) {
-            const pattern = (regexOption as any).pattern;
-            const flags = (regexOption as any).flags;
-            return new RegExp(pattern || '', flags || '');
-        }
-        return new RegExp('');
-    }
-
-    private isComplexRegex(regex: RegExp): boolean {
-        const pattern = regex.source;
-        return (
-            pattern.includes('{') ||
-            pattern.includes('+') ||
-            pattern.includes('*') ||
-            pattern.includes('?') ||
-            pattern.includes('|') ||
-            pattern.includes('(?') ||
-            pattern.includes('[') ||
-            pattern.length > 20  // Additional complexity check based on pattern length
-        );
     }
 
   
