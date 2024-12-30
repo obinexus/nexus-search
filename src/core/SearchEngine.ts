@@ -8,8 +8,6 @@ import {
     SearchEventListener,
     SearchEvent,
     IndexNode,
-    NexusDocument,
-    NexusDocumentMetadata,
     DocumentContent,
     BaseFields,
     DocumentMetadata,
@@ -19,7 +17,7 @@ import {
     RegexSearchResult,
     
 } from "@/types";
-import { validateSearchOptions, bfsRegexTraversal, dfsRegexTraversal, optimizeIndex } from "@/utils";
+import { validateSearchOptions, bfsRegexTraversal, dfsRegexTraversal } from "@/utils";
 import { IndexManager } from "../storage/IndexManager";
 import { QueryProcessor } from "./QueryProcessor";
 import { TrieSearch } from "@/algorithms/trie";
@@ -293,7 +291,7 @@ export class SearchEngine {
     }
 
     private async performRegexSearch(
-        query: string,
+        _query: string,
         options: ExtendedSearchOptions
     ): Promise<SearchResult<IndexedDocument>[]> {
         const regexConfig: RegexSearchConfig = {
@@ -371,14 +369,14 @@ export class SearchEngine {
                 id: result.id,
                 docId: result.id,
                 item: doc,
-                score: 'score' in result ? this.normalizeScore(result.score) : result.score,
+                score: (result as { score: number }).score ? this.normalizeScore((result as { score: number }).score) : (result as { score: number }).score,
                 matches: [],
                 metadata: {
                     ...doc.metadata,
                     lastAccessed: Date.now()
                 },
                 document: doc,
-                term: 'matched' in result ? result.matched : '',
+                term: 'matched' in result ? String(result.matched) : '',
             };
     
             if (options.includeMatches) {
