@@ -211,3 +211,4 @@ interface SortConfig {
     field: keyof NexusFields;
     order: 'asc' | 'desc';
 }
+

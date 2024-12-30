@@ -134,6 +134,10 @@ export interface SearchEngineConfig {
     };
 }
 
+
+/**
+ * Enhanced regex search configuration
+ */
 export interface RegexSearchConfig {
     maxDepth?: number;
     timeoutMs?: number;
@@ -141,14 +145,19 @@ export interface RegexSearchConfig {
     wholeWord?: boolean;
 }
 
+/**
+ * Search result with regex matching details
+ */
+export interface RegexSearchResult {
+    id: string;
+    score: number;
+    matches: string[];
+    path: string[];
+    positions: Array<[number, number]>;
+
+}
+
 export interface ExtendedSearchOptions extends SearchOptions {
     regexConfig?: RegexSearchConfig;
 }
-// Interface for regex search results
-export interface RegexSearchResult extends SearchResult {
-    regexMatches: {
-        field: string;
-        match: string;
-        indices: [number, number];
-    }[];
-}
+

@@ -6,7 +6,7 @@ export class BaseDocument implements IndexedDocument {
     metadata?: DocumentMetadata;
     versions: Array<{
         version: number;
-        content: string;
+        content: DocumentContent;
         modified: Date;
         author: string;
     }>;
@@ -81,7 +81,7 @@ export class BaseDocument implements IndexedDocument {
         if (fields.content && fields.content !== this.fields.content) {
             this.versions.push({
                 version: Number(currentVersion),
-                content: this.fields.content,
+                content: this.fields.content as DocumentContent,
                 modified: new Date(this.metadata?.lastModified || now),
                 author: this.fields.author
             });
