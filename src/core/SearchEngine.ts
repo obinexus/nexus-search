@@ -1,4 +1,6 @@
+
 import { CacheManager, IndexedDocument, SearchStorage } from "@/storage";
+
 import {
     SearchOptions,
     SearchResult,
@@ -258,8 +260,8 @@ export class SearchEngine {
                     lastAccessed: Date.now()
                 },
                 document: doc,
-                term: ""
-            };
+                term: "",
+                        };
     
             if (options.includeMatches) {
                 searchResult.matches = this.extractMatches(doc, options);
@@ -437,7 +439,17 @@ export class SearchEngine {
                 this.indexManager.importIndex(storedIndex);
                 const indexedDocs = this.indexManager.getAllDocuments();
                 for (const doc of indexedDocs) {
-                    this.documents.set(doc[1].id, IndexedDocument.fromObject(doc[1]));
+                    this.documents.set(doc[1].id, IndexedDocument.fromObject({
+                        id: doc[1].id,
+                        fields: {
+                            title: doc[1].fields.title,
+                            content: doc[1].fields.content,
+                            author: doc[1].fields.author,
+                            tags: doc[1].fields.tags,
+                            version: doc[1].fields.version
+                        },
+                        metadata: doc[1].metadata
+                    }));
                 }
             }
         } catch (error) {

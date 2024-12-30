@@ -62,20 +62,6 @@ export class IndexMapper {
                                     version: ""
                                 },
                                 versions: [],
-                                relations: [],
-                                toObject: function (): IndexedDocument {
-                                    throw new Error("Function not implemented.");
-                                },
-                                document: function (): IndexedDocument {
-                                    throw new Error("Function not implemented.");
-                                },
-                                clone: function (): IndexedDocument {
-                                    throw new Error("Function not implemented.");
-                                },
-                                update: function (updates: Partial<IndexedDocument>): IndexedDocument {
-                                    throw new Error("Function not implemented.");
-                                },
-                                content: undefined
                             });
                             this.dataMapper.mapData(word.toLowerCase(), id);
                         }

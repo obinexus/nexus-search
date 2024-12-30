@@ -67,21 +67,16 @@ export type DocumentContent = {
 // Main indexed document interface
 export interface IndexedDocument {
     id: string;
-    fields: IndexableDocumentFields;
+    fields: Record<string, any>;
     metadata?: DocumentMetadata;
-    versions: Array<{
+    versions?: Array<{
         version: number;
         content: string;
         modified: Date;
         author: string;
     }>;
-    relations: Array<{
-        type: string;
-        targetId: string;
-    }>;
-    content: DocumentData;
-    links: DocumentLink[];
-    ranks: DocumentRank[];
+    links?: string[];
+    ranks?: number[];
 }
 
 // Searchable document interface
