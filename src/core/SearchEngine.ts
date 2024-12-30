@@ -457,7 +457,7 @@ private isComplexRegex(regex: RegExp): boolean {
         pattern.length > 20  // Additional complexity check based on pattern length
     );
 }
-    private async processSearchResults(
+    public async processSearchResults(
         results: RegexSearchResult[] | Array<{ id: string; score: number }>,
         options: SearchOptions
     ): Promise<SearchResult<IndexedDocument>[]> {
@@ -623,7 +623,7 @@ private isComplexRegex(regex: RegExp): boolean {
 
  
 
-    private async loadIndexes(): Promise<void> {
+    public async loadIndexes(): Promise<void> {
         try {
             const storedIndex = await this.storage.getIndex(this.config.name);
             if (storedIndex) {
