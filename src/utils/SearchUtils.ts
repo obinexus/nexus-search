@@ -190,93 +190,6 @@ function findMatchPositions(text: string, regex: RegExp): Array<[number, number]
     return positions;
 }
 
-/**
- * Creates searchable fields from a document based on specified field paths
- */
-export function createSearchableFields(
-    document: SearchableDocument,
-    fields: string[]
-): Record<string, string> {
-    if (!document?.content || !Array.isArray(fields)) {
-        return {};
-    }
-
-    return fields.reduce((acc, field) => {
-        try {
-            const value = getNestedValue(document.content, field);
-            if (value !== undefined) {
-                acc[field] = normalizeFieldValue(value);
-            }
-        } catch (error) {
-            console.warn(`Error processing field ${field}:`, error);
-        }
-        return acc;
-    }, {} as Record<string, string>);
-}
-
-/**
- * Normalizes field values into searchable strings
- */
-export function normalizeFieldValue(value: DocumentValue): string {
-    if (value === null || value === undefined) {
-        return '';
-    }
-
-    try {
-        if (typeof value === 'string') {
-            return value.toLowerCase().trim();
-        }
-
-        if (Array.isArray(value)) {
-            return value
-                .map(normalizeFieldValue)
-                .filter(Boolean)
-                .join(' ');
-        }
-
-        if (typeof value === 'object') {
-            return Object.values(value)
-                .map(normalizeFieldValue)
-                .filter(Boolean)
-                .join(' ');
-        }
-
-        return String(value).toLowerCase().trim();
-    } catch (error) {
-        console.warn('Error normalizing field value:', error);
-        return '';
-    }
-}
-
-/**
- * Retrieves a nested value from an object using dot notation path
- */
-export function getNestedValue(
-    obj: DocumentContent,
-    path: string
-): DocumentValue | undefined {
-    if (!obj || !path) {
-        return undefined;
-    }
-
-    try {
-        return path.split('.').reduce((current: any, key) => {
-            if (current === null || typeof current !== 'object') {
-                return undefined;
-            }
-            
-            if (Array.isArray(current)) {
-                const index = parseInt(key, 10);
-                return isNaN(index) ? undefined : current[index];
-            }
-            
-            return current[key];
-        }, obj);
-    } catch (error) {
-        console.warn(`Error getting nested value for path ${path}:`, error);
-        return undefined;
-    }
-}
 
 /**
  * Optimizes an array of indexable documents
@@ -355,4 +268,195 @@ export function generateSortKey(doc: IndexedDocument): string {
     } catch {
         return doc.id;
     }
+}
+
+
+
+export function createSearchableFields(
+    document: SearchableDocument,
+    fields: string[]
+): Record<string, string> {
+    if (!document?.content) {
+        return {};
+    }
+
+    const result: Record<string, string> = {};
+    
+    for (const field of fields) {
+        const value = getNestedValue(document.content, field);
+        if (value !== undefined) {
+            // Store both original and normalized values for better matching
+            result[`${field}_original`] = String(value);
+            result[field] = normalizeFieldValue(value);
+        }
+    }
+
+    return result;
+}
+
+export function normalizeFieldValue(value: DocumentValue): string {
+    if (!value) return '';
+
+    try {
+        if (typeof value === 'string') {
+            // Preserve original case but remove extra whitespace
+            return value.trim().replace(/\s+/g, ' ');
+        }
+
+        if (Array.isArray(value)) {
+            return value
+                .map(v => normalizeFieldValue(v))
+                .filter(Boolean)
+                .join(' ');
+        }
+
+        if (typeof value === 'object') {
+            return Object.values(value)
+                .map(v => normalizeFieldValue(v))
+                .filter(Boolean)
+                .join(' ');
+        }
+
+        return String(value).trim();
+    } catch (error) {
+        console.warn('Error normalizing field value:', error);
+        return '';
+    }
+}
+
+export function getNestedValue(obj: any, path: string): any {
+    if (!obj || !path) return undefined;
+
+    try {
+        return path.split('.').reduce((current, key) => {
+            return current?.[key];
+        }, obj);
+    } catch (error) {
+        console.warn(`Error getting nested value for path ${path}:`, error);
+        return undefined;
+    }
+}
+
+export function calculateScore(
+    document: IndexedDocument,
+    query: string,
+    field: string,
+    options: {
+        fuzzy?: boolean;
+        caseSensitive?: boolean;
+        exactMatch?: boolean;
+        fieldWeight?: number;
+    } = {}
+): number {
+    const {
+        fuzzy = false,
+        caseSensitive = false,
+        exactMatch = false,
+        fieldWeight = 1
+    } = options;
+
+    const fieldValue = document.fields[field];
+    if (!fieldValue) return 0;
+
+    const documentText = String(fieldValue);
+    const searchQuery = caseSensitive ? query : query.toLowerCase();
+    const fieldText = caseSensitive ? documentText : documentText.toLowerCase();
+
+    let score = 0;
+
+    // Exact match check
+    if (exactMatch && fieldText === searchQuery) {
+        return 1 * fieldWeight;
+    }
+
+    // Regular word matching
+    const queryWords = searchQuery.split(/\s+/);
+    const fieldWords = fieldText.split(/\s+/);
+
+    for (const queryWord of queryWords) {
+        for (const fieldWord of fieldWords) {
+            if (fuzzy) {
+                const distance = calculateLevenshteinDistance(queryWord, fieldWord);
+                const maxLength = Math.max(queryWord.length, fieldWord.length);
+                const similarity = 1 - (distance / maxLength);
+                
+                if (similarity >= 0.8) { // Adjust threshold as needed
+                    score += similarity * fieldWeight;
+                }
+            } else if (fieldWord.includes(queryWord)) {
+                score += fieldWeight;
+            }
+        }
+    }
+
+    // Normalize score
+    return Math.min(score / queryWords.length, 1);
+}
+
+export function calculateLevenshteinDistance(str1: string, str2: string): number {
+    const m = str1.length;
+    const n = str2.length;
+    const dp: number[][] = Array(m + 1).fill(0).map(() => Array(n + 1).fill(0));
+
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+    for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+            if (str1[i - 1] === str2[j - 1]) {
+                dp[i][j] = dp[i - 1][j - 1];
+            } else {
+                dp[i][j] = Math.min(
+                    dp[i - 1][j],     // deletion
+                    dp[i][j - 1],     // insertion
+                    dp[i - 1][j - 1]  // substitution
+                ) + 1;
+            }
+        }
+    }
+
+    return dp[m][n];
+}
+
+export function extractMatches(
+    document: IndexedDocument,
+    query: string,
+    fields: string[],
+    options: { fuzzy?: boolean; caseSensitive?: boolean } = {}
+): string[] {
+    const matches = new Set<string>();
+    const searchQuery = options.caseSensitive ? query : query.toLowerCase();
+
+    for (const field of fields) {
+        const fieldValue = document.fields[field];
+        if (!fieldValue) continue;
+
+        const fieldText = options.caseSensitive ? 
+            String(fieldValue) : 
+            String(fieldValue).toLowerCase();
+
+        if (options.fuzzy) {
+            // For fuzzy matching, find similar substrings
+            const words = fieldText.split(/\s+/);
+            const queryWords = searchQuery.split(/\s+/);
+
+            for (const queryWord of queryWords) {
+                for (const word of words) {
+                    const distance = calculateLevenshteinDistance(queryWord, word);
+                    if (distance <= Math.min(2, Math.floor(word.length / 3))) {
+                        matches.add(word);
+                    }
+                }
+            }
+        } else {
+            // For exact matching, find all occurrences
+            const regex = new RegExp(searchQuery, 'gi');
+            let match;
+            while ((match = regex.exec(fieldText)) !== null) {
+                matches.add(match[0]);
+            }
+        }
+    }
+
+    return Array.from(matches);
 }
