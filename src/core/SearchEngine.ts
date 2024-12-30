@@ -19,6 +19,7 @@ import { validateSearchOptions, bfsRegexTraversal, dfsRegexTraversal } from "@/u
 import { IndexManager } from "../storage/IndexManager";
 import { QueryProcessor } from "./QueryProcessor";
 import { TrieSearch } from "@/algorithms/trie";
+import { NexusDocumentAdapter } from "@/adapters";
 
 export class SearchEngine {
     private readonly queryProcessor: QueryProcessor;
@@ -130,7 +131,7 @@ export class SearchEngine {
         }
 
         const normalizedDoc = this.normalizeDocument(document);
-        const adaptedDoc = new DocumentAdapter(normalizedDoc);
+        const adaptedDoc = new NexusDocumentAdapter(normalizedDoc);
 
         if (this.documentSupport && this.config.documentSupport?.versioning?.enabled) {
             await this.handleVersioning(adaptedDoc);

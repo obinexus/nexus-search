@@ -10,7 +10,7 @@ import {
     NexusDocumentFields,
     DocumentData,
     IndexedDocument,
-    IndexableDocumentFields,
+
     SearchResult,
     DocumentContent,
     DocumentStatus
@@ -37,7 +37,7 @@ export class NexusDocumentAdapter implements NexusDocument {
     get relations(): DocumentRelation[] { return [...this._relations]; }
     get content(): DocumentData { return { ...this._content }; }
 
-    constructor(doc: Partial<NexusDocument> & { id?: string }) {
+    constructor(doc: Partial<NexusDocument> & { id?: string, content?: DocumentContent }) {
         this._id = doc.id || this.generateId();
         this._fields = this.normalizeFields(doc.fields);
         this._metadata = this.normalizeMetadata(doc.metadata);
@@ -123,7 +123,7 @@ export class NexusDocumentAdapter implements NexusDocument {
             metadata: newMetadata,
             versions,
             relations: updates.relations || this._relations,
-            content: updates.content || this._content
+            content: updates.fields?.content || this._content
         });
     }
 
@@ -138,10 +138,9 @@ export class NexusDocumentAdapter implements NexusDocument {
             metadata: this._metadata,
             versions: this._versions,
             relations: this._relations,
-            content: this._content,
             document: () => this.document(),
             clone: () => this.clone(),
-            update: (updates) => this.update(updates),
+            update: (updates: Partial<NexusDocument>) => this.update(updates),
             toObject: () => this.toObject()
         };
     }
@@ -153,10 +152,9 @@ export class NexusDocumentAdapter implements NexusDocument {
             metadata: this._metadata,
             versions: this._versions,
             relations: this._relations,
-            content: this._content,
             document: () => this.document(),
             clone: () => this.clone(),
-            update: (updates) => this.update(updates),
+            update: (updates: Partial<NexusDocument>) => this.update(updates),
             toObject: () => this.toObject()
         };
     }
@@ -207,7 +205,7 @@ export class NexusDocumentAdapter implements NexusDocument {
         const results = await this.searchEngine.search(query, options);
         return results.map(result => ({
             ...result,
-            item: new NexusDocumentAdapter(result.item as NexusDocument)
+            item: new NexusDocumentAdapter(result.item as unknown as NexusDocument)
         }));
     }
 
@@ -218,7 +216,8 @@ export class NexusDocumentAdapter implements NexusDocument {
                 ...options,
                 created: new Date().toISOString(),
                 modified: new Date().toISOString(),
-                version: '1.0'
+                version: '1.0',
+                status: options.status || 'draft' as DocumentStatus
             }
         });
         await doc.save();
@@ -257,7 +256,7 @@ export class NexusDocumentAdapter implements NexusDocument {
 
         for (const [field, validator] of Object.entries(customValidators)) {
             const value = doc[field as keyof typeof doc];
-            if (value !== undefined && !validator(value)) {
+            if (value !== undefined && !(validator as (value: any) => boolean)(value)) {
                 throw new Error(`Validation failed for field '${field}'`);
             }
         }

@@ -1,11 +1,8 @@
 import { 
     DocumentContent,
     DocumentMetadata, 
-    IndexableDocumentFields,
     DocumentVersion,
     DocumentRelation,
-    DocumentFields,
-    IndexedDocumentData
 } from "@/types/document";
 
 
@@ -20,6 +17,7 @@ export class IndexedDocument {
     metadata?: DocumentMetadata;
     versions: Array<DocumentVersion>;
     relations: Array<DocumentRelation>;
+    content: any;
     
     constructor(
         id: string,
