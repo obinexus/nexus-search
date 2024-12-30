@@ -148,8 +148,7 @@ export class SearchEngine {
                         lastModified: doc.metadata?.lastModified ?? Date.now()
                     },
                     versions: doc.versions,
-                    relations: doc.relations,
-                    content: doc.content
+                    relations: doc.relations
                 });
 
                 this.trie.addDocument(adaptedDoc);

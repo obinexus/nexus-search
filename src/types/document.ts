@@ -211,3 +211,23 @@ interface SortConfig {
     order: 'asc' | 'desc';
 }
 
+/**
+ * Plugin configuration for NexusDocument
+ */
+export interface NexusDocumentPluginConfig {
+    name?: string;
+    version?: number;
+    fields?: string[];
+    storage?: {
+        type: 'memory' | 'indexeddb';
+        options?: Record<string, any>;
+    };
+    versioning?: {
+        enabled?: boolean;
+        maxVersions?: number;
+    };
+    validation?: {
+        required?: string[];
+        customValidators?: Record<string, (value: any) => boolean>;
+    };
+}
