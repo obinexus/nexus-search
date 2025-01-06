@@ -65,6 +65,9 @@ export interface SearchableDocument {
     content: Record<string, DocumentValue>;
     metadata?: DocumentMetadata;
     [key: string]: unknown;  // Changed any to unknown for better type safety
+    version: string;
+    indexed?: number;
+    
 }
 
 // Field interface for indexing

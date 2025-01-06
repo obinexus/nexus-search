@@ -58,7 +58,12 @@ export class SearchEngine {
        this.documentSupport = config.documentSupport?.enabled ?? false;
 
        // Initialize core components
-       this.indexManager = new IndexManager(config);
+       this.indexManager = new IndexManager({
+           name: config.name,
+           version: config.version,
+           fields: config.fields,
+           options: config.search?.defaultOptions
+       });
        this.queryProcessor = new QueryProcessor();
        this.storage = new SearchStorage(config.storage);
        this.cache = new CacheManager();
