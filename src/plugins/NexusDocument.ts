@@ -42,29 +42,30 @@ export class NexusDocumentAdapter {
     async addDocument(document: NexusDocument): Promise<void> {
         this.documents.push(document);
         const indexedDocument: IndexedDocument = {
-            id: document.id,
-            fields: {
-                title: document.title,
-                content: document.content as unknown as DocumentContent,
-                path: document.path,
-                type: document.type,
-                author: '',
-                tags: [],
-                version: "1"
-            },
-            versions: [],
-            relations: [],
+          id: document.id,
+          fields: {
+            title: document.title,
+            content: document.content as unknown as DocumentContent,
+            path: document.path,
+            type: document.type,
             author: '',
-            
-            metadata: {},
             tags: [],
-            version: "1",
-            document: () => indexedDocument,
-            base: () => ({} as DocumentBase),
-            links: [],
-            ranks: [],
-            content: document.content as unknown as DocumentContent
-        };
+            version: "1"
+          },
+          versions: [],
+          relations: [],
+          author: '',
+
+          metadata: {},
+          tags: [],
+          version: "1",
+          document: () => indexedDocument,
+          base: () => ({} as DocumentBase),
+          links: [],
+          ranks: [],
+          content: document.content as unknown as DocumentContent,
+          title: "",
+        } as unknown as IndexedDocument;
         await this.searchEngine.addDocument(indexedDocument);
     }
 
