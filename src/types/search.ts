@@ -67,7 +67,7 @@ export interface SearchableDocument {
     [key: string]: unknown;  // Changed any to unknown for better type safety
     version: string;
     indexed?: number;
-    
+
 }
 
 // Field interface for indexing
@@ -119,6 +119,7 @@ export interface SearchPagination {
 
 // Search engine configuration
 export interface SearchEngineConfig extends IndexConfig {
+    version: number;
     documentSupport?: {
         enabled: boolean;
         versioning?: {

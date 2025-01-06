@@ -59,10 +59,12 @@ export class IndexManager {
         }
 
         const searchableDoc: SearchableDocument = {
+            version: this.config.version.toString(),
             id,
             content: createSearchableFields({
                 content: contentRecord,
-                id
+                id,
+                version: this.config.version.toString()
             }, this.config.fields),
             metadata: document.metadata
         };
@@ -168,9 +170,11 @@ export class IndexManager {
                 // Create searchable document
                 const searchableDoc: SearchableDocument = {
                     id,
+                    version: this.config.version.toString(),
                     content: createSearchableFields({
                         content: contentRecord,
-                        id
+                        id,
+                        version: this.config.version.toString()
                     }, this.config.fields),
                     metadata: doc.metadata
                 };
@@ -207,9 +211,11 @@ export class IndexManager {
             // Create searchable document
             const searchableDoc: SearchableDocument = {
                 id,
+                version: this.config.version.toString(),
                 content: createSearchableFields({
                     content: contentRecord,
-                    id
+                    id,
+                    version: this.config.version.toString()
                 }, this.config.fields),
                 metadata: document.metadata
             };
