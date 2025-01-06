@@ -6,6 +6,7 @@ import {
     SerializedState,
     DocumentValue,
     DocumentContent,
+    DocumentBase,
 
 } from "@/types";
 import { DataMapper } from "./DataMapper";
@@ -49,7 +50,14 @@ export class IndexMapper {
                 metadata: document.metadata || {},
                 versions: [],
                 relations: [],
-                document: function() { return this; }
+                document: function () { return this; },
+                base: function (): DocumentBase {
+                    throw new Error("Function not implemented.");
+                },
+                title: "",
+                author: "",
+                tags: [],
+                version: ""
             };
 
             // Store document
@@ -84,27 +92,49 @@ export class IndexMapper {
 
             this.documentScores.clear();
 
-            searchTerms.forEach(term => {
-                if (!term) return;
+          
+searchTerms.forEach(term => {
 
-                const matchedIds = fuzzy 
-                    ? this.trieSearch.fuzzySearch(term, 2) // Provide a default maxDistance value
-                    : this.trieSearch.search(term);
+    if (!term) return;
 
-                matchedIds.forEach(docId => {
-                  
-                    const current: DocumentScore = this.documentScores.get(docId as unknown as string) || {
 
-                        score: 0,
 
-                        matches: new Set<string>()
+    const matchedIds = fuzzy 
 
-                    };
-                    current.score += this.calculateScore(docId, term);
-                    current.matches.add(term);
-                    this.documentScores.set(docId, current);
-                });
-            });
+        ? this.trieSearch.fuzzySearch(term, 2) // Provide a default maxDistance value
+
+        : this.trieSearch.search(term);
+
+
+
+    matchedIds.forEach((docId: string | SearchResult<unknown>) => {
+        if (typeof docId !== 'string') return;
+
+      
+
+        const current: DocumentScore = this.documentScores.get(docId) || {
+
+
+
+            score: 0,
+
+
+
+            matches: new Set<string>()
+
+
+
+        };
+
+        current.score += this.calculateScore(docId, term);
+
+        current.matches.add(term);
+
+        this.documentScores.set(docId, current);
+
+    });
+
+})
 
             return Array.from(this.documentScores.entries())
                 .map(([docId, { score, matches }]): SearchResult<string> => ({
