@@ -1,6 +1,6 @@
 
 
-import { IndexedDocument, DocumentLink, SearchOptions, SearchResult, DocumentContent} from "@/types";
+import { IndexedDocument, DocumentLink, SearchOptions, SearchResult, DocumentContent, DocumentBase} from "@/types";
 import { TrieNode } from "./TrieNode";
 
 
@@ -177,7 +177,7 @@ public deserializeState(state: unknown): void {
         maxWordLength: number;
     };
 
-    this.root = this.deserializeTrie(typedState.trie);
+    this.root = this.deserializeTrie(typedState.trie as { prefixCount: number; isEndOfWord: boolean; documentRefs: string[]; children: Record<string, unknown> });
     this.documents = new Map(typedState.documents);
     this.documentLinks = new Map(typedState.documentLinks);
     this.totalDocuments = typedState.totalDocuments || 0;
@@ -201,35 +201,51 @@ private serializeTrie(node: TrieNode): unknown {
     return serializedNode;
 }
 
+public addData(documentId: string, content: string, document: IndexedDocument): void {
+    if (!documentId || typeof content !== 'string') return;
+    
+    interface NormalizedDocument extends IndexedDocument {
+        clone: () => NormalizedDocument;
+        update: (updates: Partial<NormalizedDocument>) => NormalizedDocument;
+        toObject: () => NormalizedDocument;
+    }
 
-public addData(documentId: string, content: DocumentContent, document: IndexedDocument): void {
-    if (!documentId || !content) return;
-    this.addDocument({
+    const normalizedDocument: NormalizedDocument = {
         id: documentId,
         fields: {
-            content,
+            content: { text: content },
             title: document.fields.title || '',
             author: document.fields.author || '',
-            tags: document.fields.tags || [],
-            version: document.fields.version || ''
+            tags: Array.isArray(document.fields.tags) ? [...document.fields.tags] : [],
+            version: document.fields.version || '1.0'
         },
-        metadata: document.metadata,
-        versions: document.versions || [],
-        links: document.links || [],
-        ranks: [],
+        metadata: document.metadata ? { ...document.metadata } : undefined,
+        versions: Array.isArray(document.versions) ? [...document.versions] : [],
+        relations: Array.isArray(document.relations) ? [...document.relations] : [],
         document: () => document,
-        relations: []
-    }) as void;
+        clone: () => ({ ...normalizedDocument }),
+        update: (updates: Partial<NormalizedDocument>) => ({ ...normalizedDocument, ...updates }),
+        toObject: () => ({ ...normalizedDocument }),
+        base: function (): DocumentBase {
+            throw new Error("Function not implemented.");
+        },
+        title: "",
+        author: "",
+        tags: [],
+        version: ""
+    };
+
+    this.addDocument(normalizedDocument);
 }
 
-private deserializeTrie(data: unknown): TrieNode {
+private deserializeTrie(data: { prefixCount: number; isEndOfWord: boolean; documentRefs: string[]; children: Record<string, unknown> }): TrieNode {
     const node = new TrieNode();
     node.prefixCount = data.prefixCount;
-    node.isEndOfWord = (data as any).isEndOfWord;
-    node.documentRefs = new Set((data as any).documentRefs);
+    node.isEndOfWord = data.isEndOfWord;
+    node.documentRefs = new Set(data.documentRefs);
 
     for (const char in data.children) {
-        node.children.set(char, this.deserializeTrie(data.children[char]));
+        node.children.set(char, this.deserializeTrie(data.children[char] as { prefixCount: number; isEndOfWord: boolean; documentRefs: string[]; children: Record<string, unknown> }));
     }
 
     return node;
@@ -366,7 +382,7 @@ private deserializeTrie(data: unknown): TrieNode {
     private tokenize(text: string, caseSensitive: boolean = false): string[] {
         const normalized = caseSensitive ? text : text.toLowerCase();
         return normalized
-            .split(/[\s,.!?;:'"()\[\]{}\/\\]+/)
+            .split(/[\s,.!?;:'"()[\]{}/\\]+/)
             .filter(word => word.length > 0);
     }
 
