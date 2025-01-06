@@ -139,6 +139,16 @@ export class TrieSearch {
         return results;
     }
 
+    public exportState(): unknown {
+        return {
+            trie: this.serializeTrie(this.root),
+            documents: Array.from(this.documents.entries()),
+            documentLinks: Array.from(this.documentLinks.entries()),
+            totalDocuments: this.totalDocuments,
+            maxWordLength: this.maxWordLength
+        };
+    }
+
     private prefixSearch(prefix: string): SearchResult[] {
         const results: SearchResult[] = [];
         let current = this.root;

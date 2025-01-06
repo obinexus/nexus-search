@@ -5,8 +5,7 @@ import {
     SearchResult, 
     SerializedState,
     DocumentValue,
-    DocumentMetadata,
-    DocumentContent
+
 } from "@/types";
 import { DataMapper } from "./DataMapper";
 
@@ -15,10 +14,6 @@ interface DocumentScore {
     matches: Set<string>;
 }
 
-/**
- * IndexMapper class
- * Manages document indexing and search operations using trie data structure
- */
 export class IndexMapper {
     private dataMapper: DataMapper;
     private trieSearch: TrieSearch;
@@ -35,19 +30,29 @@ export class IndexMapper {
         this.documentScores = new Map();
     }
 
-    /**
-     * Index a document for search operations
-     */
     indexDocument(document: SearchableDocument, id: string, fields: string[]): void {
         try {
-            // Store the document
-            if (document.content) {
-                this.documents.set(id, {
-                    id,
-                    fields: document.content as Record<string, string>,
-                    metadata: document.metadata
-                } as IndexedDocument);
-            }
+            if (!document.content) return;
+
+            // Create normalized IndexedDocument
+            const indexedDoc: IndexedDocument = {
+                id,
+                fields: {
+                    title: String(document.content.title || ''),
+                    content: String(document.content.content || ''),
+                    author: String(document.content.author || ''),
+                    tags: Array.isArray(document.content.tags) ? document.content.tags : [],
+                    version: String(document.content.version || '1.0'),
+                    ...document.content
+                },
+                metadata: document.metadata || {},
+                versions: [],
+                relations: [],
+                document: function() { return this; }
+            };
+
+            // Store document
+            this.documents.set(id, indexedDoc);
 
             // Index each field
             fields.forEach(field => {
@@ -58,27 +63,8 @@ export class IndexMapper {
                     
                     words.forEach(word => {
                         if (word) {
-                            this.trieSearch.addDocument({
-                                id,
-                                fields: {
-                                    [field]: word,
-                                    title: "",
-                                    content: {} as DocumentContent,
-                                    author: "",
-                                    tags: [],
-                                    version: ""
-                                },
-                                versions: [],
-                                relations: [],
-                                metadata: {} as DocumentMetadata,
-                                document: () => {
-                                    const doc = this.documents.get(id);
-                                    if (!doc) {
-                                        throw new Error(`Document with id ${id} not found`);
-                                    }
-                                    return doc;
-                                }
-                            });
+                            // Add word to trie with reference to document
+                            this.trieSearch.insert(word, id);
                             this.dataMapper.mapData(word.toLowerCase(), id);
                         }
                     });
@@ -90,9 +76,6 @@ export class IndexMapper {
         }
     }
 
-    /**
-     * Search for documents matching the query
-     */
     search(query: string, options: { fuzzy?: boolean; maxResults?: number } = {}): SearchResult<string>[] {
         try {
             const { fuzzy = false, maxResults = 10 } = options;
@@ -103,15 +86,18 @@ export class IndexMapper {
             searchTerms.forEach(term => {
                 if (!term) return;
 
-                const searchResults = fuzzy
-                    ? this.trieSearch.fuzzySearch(term, 2)
-                    : this.trieSearch.searchWord(term);
+                const matchedIds = fuzzy 
+                    ? this.trieSearch.fuzzySearch(term, 2) // Provide a default maxDistance value
+                    : this.trieSearch.search(term);
 
-                searchResults.forEach(result => {
-                    const docId = result.docId;
-                    const current = this.documentScores.get(docId) || {
+                matchedIds.forEach(docId => {
+                  
+                    const current: DocumentScore = this.documentScores.get(docId) || {
+
                         score: 0,
+
                         matches: new Set<string>()
+
                     };
                     current.score += this.calculateScore(docId, term);
                     current.matches.add(term);
@@ -122,13 +108,13 @@ export class IndexMapper {
             return Array.from(this.documentScores.entries())
                 .map(([docId, { score, matches }]): SearchResult<string> => ({
                     id: docId,
-                    docId: docId,
                     document: this.documents.get(docId) as IndexedDocument,
                     item: docId,
-                    term: query,
                     score: score / searchTerms.length,
                     matches: Array.from(matches),
-                    metadata: this.documents.get(docId)?.metadata
+                    metadata: this.documents.get(docId)?.metadata,
+                    docId: docId,
+                    term: searchTerms.join(' ')
                 }))
                 .sort((a, b) => b.score - a.score)
                 .slice(0, maxResults);
@@ -138,17 +124,17 @@ export class IndexMapper {
         }
     }
 
-    // ... rest of the methods remain the same ...
-    
     private normalizeValue(value: DocumentValue): string {
         if (typeof value === 'string') {
             return value;
         }
         if (Array.isArray(value)) {
-            return value.map(v => this.normalizeValue(v)).join(' ');
+            return value.map(v => this.normalizeValue(v as DocumentValue)).join(' ');
         }
         if (typeof value === 'object' && value !== null) {
-            return Object.values(value).map(v => this.normalizeValue(v)).join(' ');
+            return Object.values(value)
+                .map(v => this.normalizeValue(v as DocumentValue))
+                .join(' ');
         }
         return String(value);
     }
@@ -178,7 +164,7 @@ export class IndexMapper {
     }
 
     removeDocument(id: string): void {
-        this.trieSearch.removeDocument(id);
+        this.trieSearch.removeData(id);
         this.dataMapper.removeDocument(id);
         this.documents.delete(id);
         this.documentScores.delete(id);
@@ -203,7 +189,7 @@ export class IndexMapper {
 
     exportState(): unknown {
         return {
-            trie: this.trieSearch.serializeState(),
+            trie: this.trieSearch.exportState(),
             dataMap: this.dataMapper.exportState(),
             documents: Array.from(this.documents.entries())
         };
@@ -232,8 +218,7 @@ export class IndexMapper {
 
     clear(): void {
         this.trieSearch = new TrieSearch();
-        const newDataMapper = new DataMapper();
-        this.dataMapper = newDataMapper;
+        this.dataMapper = new DataMapper();
         this.documents.clear();
         this.documentScores.clear();
     }
