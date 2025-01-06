@@ -6,7 +6,9 @@ import {
     BaseFields,
     IndexedDocument as IIndexedDocument,
     IndexedDocumentData,
-    DocumentBase
+    DocumentBase,
+    DocumentLink,
+    DocumentRank
 } from "@/types/document";
 
 
@@ -21,9 +23,12 @@ export class IndexedDocument implements IIndexedDocument {
     versions: Array<DocumentVersion>;
     relations: Array<DocumentRelation>;
     content: DocumentContent;
-    links?: string[];
-    ranks?: number[];
-    
+    links?: DocumentLink[];
+    ranks?: DocumentRank[];
+    title: string = '';
+    author: string = '';
+    tags: string[] = [];
+    version: string = '1.0';
     constructor(
         id: string,
         fields: BaseFields,
@@ -38,6 +43,7 @@ export class IndexedDocument implements IIndexedDocument {
         this.relations = relations;
         this.content = this.normalizeContent(this.fields.content); // Add this line
     }
+   
     /**
      * Implement required document() method from interface
      */
@@ -54,7 +60,9 @@ export class IndexedDocument implements IIndexedDocument {
             title: this.fields.title,
             author: this.fields.author,
             tags: this.fields.tags,
-            version: this.fields.version
+            version: this.fields.version,
+            versions: this.versions,
+            relations: this.relations
         };
     }
 
@@ -118,7 +126,7 @@ export class IndexedDocument implements IIndexedDocument {
         if (updates.fields) {
             Object.entries(updates.fields).forEach(([key, value]) => {
                 if (value !== undefined) {
-                    (updatedFields as any)[key] = value;
+                    (updatedFields as BaseFields)[key] = value;
                 }
             });
         }
@@ -193,7 +201,11 @@ export class IndexedDocument implements IIndexedDocument {
             fields: { ...this.fields },
             metadata: this.metadata ? { ...this.metadata } : undefined,
             versions: this.versions.map(v => ({ ...v })),
-            relations: this.relations.map(r => ({ ...r }))
+            relations: this.relations.map(r => ({ ...r })),
+            title: this.fields.title,
+            author: this.fields.author,
+            tags: this.fields.tags,
+            version: this.fields.version
         };
     }
 
@@ -236,7 +248,11 @@ export class IndexedDocument implements IIndexedDocument {
             fields: obj.fields,
             metadata: obj.metadata,
             versions: obj.versions || [],
-            relations: obj.relations || []
+            relations: obj.relations || [],
+            title: "",
+            author: "",
+            tags: [],
+            version: ""
         });
     }
 
