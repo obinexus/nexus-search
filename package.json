@@ -37,7 +37,9 @@
     "src/",
     "README.md",
     "fixtures/",
-    "docs/"
+    "docs/",
+    "LICENSE",
+    "examples/"
   ],
   "dependencies": {
     "idb": "^8.0.1",

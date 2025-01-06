@@ -1,7 +1,8 @@
-# TODO
-
 ## Features
 - [ ] Add support for extension markdown and HTML loading
+- [ ] Add support for nexus-search.config.json 
+- [ ] Add support for NexusDocument BFS/DFS Graph Algorithm
+- [ ] Add support for string indexing and searching for quick search up document for NexusDocument
 - [ ] Add support for advanced search operators (regular expressions)
 - [x] Simplify the API
 - [ ] Use BFS/DFS Trie traversal algorithms to support character-based fuzzy searching in directory HTML, markdown, etc.
