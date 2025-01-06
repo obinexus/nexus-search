@@ -165,8 +165,7 @@ export class SearchEngine {
             // Convert links from string[] to DocumentLink[]
             const convertedDoc: IndexedDocument = {
                 ...normalizedDoc,
-                links: normalizedDoc.links || [],
-                document: () => convertedDoc
+                links: (normalizedDoc.links || []).map(link => ({ url: link, source: '', target: '', fromId: '', toId: '' }))
             };
             this.indexManager.addDocument(convertedDoc);
             
@@ -484,16 +483,7 @@ private isComplexRegex(regex: RegExp): boolean {
                     ...doc.metadata,
                     lastAccessed: Date.now()
                 },
-                document: {
-                    ...doc,
-                    links: doc.links?.map(link => ({
-                        url: link.url,
-                        source: link.source,
-                        target: link.target,
-                        fromId: link.fromId,
-                        toId: link.toId
-                    })) || []
-                },
+                document: doc,
                 term: 'matched' in result ? String(result.matched) : '',
             };
     
