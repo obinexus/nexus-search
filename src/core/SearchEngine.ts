@@ -1,10 +1,9 @@
 
 import { CacheManager, IndexedDocument, SearchStorage } from "@/storage";
 
-import {
+import SearchEngineConfig, {
     SearchOptions,
     SearchResult,
-    SearchEngineConfig,
     SearchEventListener,
     SearchEvent,
     IndexNode,
@@ -46,7 +45,13 @@ export class SearchEngine {
        }
 
        // Initialize configuration
-       this.config = config;
+       this.config = {
+           ...config,
+           search: {
+               ...config.search,
+               defaultOptions: config.search?.defaultOptions || {}
+           }
+       };
        this.documentSupport = config.documentSupport?.enabled ?? false;
 
        // Initialize core components
@@ -165,7 +170,7 @@ export class SearchEngine {
             // Convert links from string[] to DocumentLink[]
             const convertedDoc: IndexedDocument = {
                 ...normalizedDoc,
-                links: (normalizedDoc.links || []).map(link => ({ url: link, source: '', target: '', fromId: '', toId: '' }))
+                links: (normalizedDoc.links || []).map(link => ({ url: link, source: '', target: '', fromId: () => '', toId: '' }))
             };
             this.indexManager.addDocument(convertedDoc);
             
@@ -439,8 +444,8 @@ public createRegexFromOption(regexOption: string | RegExp | object): RegExp {
         return new RegExp(regexOption);
     }
     if (typeof regexOption === 'object' && regexOption !== null) {
-        const pattern = (regexOption as any).pattern;
-        const flags = (regexOption as any).flags;
+        const pattern = typeof regexOption === 'object' && regexOption !== null && 'pattern' in regexOption ? (regexOption as { pattern: string }).pattern : '';
+        const flags = typeof regexOption === 'object' && regexOption !== null && 'flags' in regexOption ? (regexOption as { flags: string }).flags : '';
         return new RegExp(pattern || '', flags || '');
     }
     return new RegExp('');

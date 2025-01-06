@@ -116,7 +116,7 @@ export interface SearchPagination {
 
 
 // Search engine configuration
-export interface SearchEngineConfig {
+export default interface SearchEngineConfig {
     search: unknown;
     name: string;
     version: number;

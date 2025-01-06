@@ -1,11 +1,9 @@
 // SearchEngine.test.ts
 import { SearchEngine, IndexManager } from "@/index";
 import { SearchStorage, CacheManager, IndexedDocument } from "@/storage";
-import type { 
+import type SearchEngineConfig, { 
   SearchOptions, 
-  SearchResult,
-  SearchEngineConfig
-} from "@/types";
+  SearchResult} from "@/types";
 
 // Mock dependencies
 jest.mock('../../core/IndexManager');
