@@ -116,7 +116,7 @@ export interface IndexedDocumentData extends DocumentBase {
 // ----------------
 
 export interface DocumentLink {
-    url: any;
+    url: string;
     source: string;
     target: string;
     fromId(fromId: string): string;
