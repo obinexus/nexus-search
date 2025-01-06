@@ -162,7 +162,9 @@ export class BaseDocument implements IndexedDocument {
             id: rank.id || this.id,
             rank: rank.rank || 0,
             incomingLinks: rank.incomingLinks || 0,
-            outgoingLinks: rank.outgoingLinks || 0
+            outgoingLinks: rank.outgoingLinks || 0,
+            content: rank.content || {},
+            metadata: rank.metadata
         }));
     }
 
@@ -202,8 +204,6 @@ export class BaseDocument implements IndexedDocument {
             links: this.links ? [...this.links] : undefined,
             ranks: this.ranks ? [...this.ranks] : undefined,
             document: () => this,
-            clone: () => this.clone(),
-            update: (updates: Partial<IndexedDocument>) => this.update(updates),
             base: () => this.base()
         };
     }
@@ -235,7 +235,7 @@ export class BaseDocument implements IndexedDocument {
                 ...this.metadata,
                 lastModified: now
             },
-            content: updates.content !== undefined ? updates.content : this.content,
+            content: (updates as Partial<BaseDocument>).content !== undefined ? (updates as Partial<BaseDocument>).content : this.content,
             links: updates.links,
             ranks: updates.ranks
         });
