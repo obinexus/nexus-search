@@ -122,11 +122,11 @@ export class BaseDocument implements IndexedDocument {
         return result;
     }
 
-    private normalizePrimitiveArray(arr: any[]): PrimitiveValue[] {
+    private normalizePrimitiveArray(arr: unknown[]): PrimitiveValue[] {
         return arr.map(v => this.normalizePrimitive(v));
     }
 
-    private normalizePrimitive(value: any): PrimitiveValue {
+    private normalizePrimitive(value: unknown): PrimitiveValue {
         if (value === null) return null;
         if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
             return value;
@@ -149,7 +149,10 @@ export class BaseDocument implements IndexedDocument {
         return links.map(link => ({
             fromId: link.fromId || this.id,
             toId: link.toId,
-            weight: link.weight || 1
+            weight: link.weight || 1,
+            url: link.url || '',
+            source: link.source || '',
+            target: link.target || ''
         }));
     }
 
