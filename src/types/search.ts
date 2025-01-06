@@ -117,7 +117,7 @@ export interface SearchPagination {
 
 // Search engine configuration
 export interface SearchEngineConfig {
-    search: any;
+    search: unknown;
     name: string;
     version: number;
     fields: string[];
@@ -130,7 +130,7 @@ export interface SearchEngineConfig {
         };
         validation?: {
             required?: string[];
-            customValidators?: Record<string, (value: any) => boolean>;
+            customValidators?: Record<string, (value: unknown) => boolean>;
         };
     };
 }

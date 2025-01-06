@@ -1,3 +1,4 @@
+
 import { SearchOptions } from "./search";
 
 // ----------------
@@ -83,18 +84,11 @@ export interface DocumentBase {
 export interface IndexedDocument extends DocumentBase {
     fields: IndexableFields;
     metadata?: DocumentMetadata;
-    links?: string[];
-    ranks?: number[];
+    links?: DocumentLink[];
+    ranks?: DocumentRank[];
     document(): IndexedDocument;
 }
 
-export interface NexusDocument extends Omit<IndexedDocument, 'fields' | 'metadata'> {
-    fields: NexusFields;
-    metadata: NexusDocumentMetadata;
-    clone(): NexusDocument;
-    update(updates: Partial<NexusDocument>): NexusDocument;
-    toObject(): NexusDocument;
-}
 
 export interface SearchableDocument extends DocumentBase {
     content: Record<string, DocumentValue>;
@@ -223,6 +217,19 @@ interface SearchFilters {
 interface SortConfig {
     field: keyof NexusFields;
     order: 'asc' | 'desc';
+}
+
+export interface NexusDocument extends IndexedDocument {
+    fields: NexusFields;
+    metadata?: NexusDocumentMetadata;
+    links?: DocumentLink[];
+    ranks?: DocumentRank[];
+    document(): NexusDocument;
+}
+
+export interface NexusDocumentInput extends Partial<NexusDocument> {
+    id?: string;
+    content?: DocumentContent;
 }
 
 /**
