@@ -1,16 +1,17 @@
 
 
-import { IndexedDocument, DocumentLink, SearchOptions, SearchResult, DocumentContent, DocumentBase} from "@/types";
+import { IndexedDocument, DocumentLink, SearchOptions, SearchResult, DocumentBase} from "@/types";
 import { TrieNode } from "./TrieNode";
 
 
 
 export class TrieSearch {
-    insert(word: string, id: string) {
-        throw new Error("Method not implemented.");
+    public insert(word: string, id: string): void {
+        this.insertWord(word, id);
     }
-    removeData(id: string) {
-        throw new Error("Method not implemented.");
+
+    public removeData(id: string): void {
+        this.removeDocument(id);
     }
     private root: TrieNode;
     private documents: Map<string, IndexedDocument>;
