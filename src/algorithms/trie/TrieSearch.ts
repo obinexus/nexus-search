@@ -6,6 +6,12 @@ import { TrieNode } from "./TrieNode";
 
 
 export class TrieSearch {
+    insert(word: string, id: string) {
+        throw new Error("Method not implemented.");
+    }
+    removeData(id: string) {
+        throw new Error("Method not implemented.");
+    }
     private root: TrieNode;
     private documents: Map<string, IndexedDocument>;
     private documentLinks: Map<string, DocumentLink[]>;
@@ -210,6 +216,7 @@ private serializeTrie(node: TrieNode): unknown {
 
     return serializedNode;
 }
+
 
 public addData(documentId: string, content: string, document: IndexedDocument): void {
     if (!documentId || typeof content !== 'string') return;

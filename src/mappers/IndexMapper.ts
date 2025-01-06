@@ -5,6 +5,7 @@ import {
     SearchResult, 
     SerializedState,
     DocumentValue,
+    DocumentContent,
 
 } from "@/types";
 import { DataMapper } from "./DataMapper";
@@ -39,9 +40,9 @@ export class IndexMapper {
                 id,
                 fields: {
                     title: String(document.content.title || ''),
-                    content: String(document.content.content || ''),
+                    content: document.content.content as DocumentContent,
                     author: String(document.content.author || ''),
-                    tags: Array.isArray(document.content.tags) ? document.content.tags : [],
+                    tags: Array.isArray(document.content.tags) ? document.content.tags.filter(tag => typeof tag === 'string') : [],
                     version: String(document.content.version || '1.0'),
                     ...document.content
                 },
@@ -92,7 +93,7 @@ export class IndexMapper {
 
                 matchedIds.forEach(docId => {
                   
-                    const current: DocumentScore = this.documentScores.get(docId) || {
+                    const current: DocumentScore = this.documentScores.get(docId as unknown as string) || {
 
                         score: 0,
 
