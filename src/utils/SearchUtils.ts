@@ -148,7 +148,7 @@ function createRegexPattern(
         return new RegExp(pattern.source, flags);
     }
 
-    let source = pattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    let source = pattern.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     if (wholeWord) {
         source = `\\b${source}\\b`;
     }
@@ -287,7 +287,7 @@ export function createSearchableFields(
         if (value !== undefined) {
             // Store both original and normalized values for better matching
             result[`${field}_original`] = String(value);
-            result[field] = normalizeFieldValue(value);
+            result[field] = normalizeFieldValue(value as DocumentValue);
         }
     }
 
@@ -305,14 +305,14 @@ export function normalizeFieldValue(value: DocumentValue): string {
 
         if (Array.isArray(value)) {
             return value
-                .map(v => normalizeFieldValue(v))
+                .map(v => normalizeFieldValue(v as DocumentValue))
                 .filter(Boolean)
                 .join(' ');
         }
 
         if (typeof value === 'object') {
             return Object.values(value)
-                .map(v => normalizeFieldValue(v))
+                .map(v => normalizeFieldValue(v as DocumentValue))
                 .filter(Boolean)
                 .join(' ');
         }
@@ -324,11 +324,11 @@ export function normalizeFieldValue(value: DocumentValue): string {
     }
 }
 
-export function getNestedValue(obj: unknown, path: string): any {
+export function getNestedValue(obj: unknown, path: string): unknown {
     if (!obj || !path) return undefined;
 
     try {
-        return path.split('.').reduce((current, key) => {
+        return path.split('.').reduce<unknown>((current, key) => {
             return (current as Record<string, unknown>)?.[key];
         }, obj as Record<string, unknown>);
     } catch (error) {
