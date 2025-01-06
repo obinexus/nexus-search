@@ -7,7 +7,10 @@ import {
     RelationType,
     IndexableFields,
     PrimitiveValue,
-    DocumentValue
+    DocumentValue,
+    DocumentLink,
+    DocumentRank,
+    DocumentBase
 } from "@/types";
 
 export class BaseDocument implements IndexedDocument {
@@ -17,18 +20,42 @@ export class BaseDocument implements IndexedDocument {
     versions: DocumentVersion[];
     relations: DocumentRelation[];
     content?: Record<string, DocumentValue>;
-    links?: string[];
-    ranks?: number[];
+    links?: DocumentLink[];
+    ranks?: DocumentRank[];
+
+    // Required interface properties
+    title: string;
+    author: string;
+    tags: string[];
+    version: string;
 
     constructor(doc: Partial<BaseDocument>) {
         this.id = doc.id || this.generateId();
+        this.title = doc.fields?.title || '';
+        this.author = doc.fields?.author || '';
+        this.tags = Array.isArray(doc.fields?.tags) ? [...doc.fields.tags] : [];
+        this.version = doc.fields?.version || '1.0';
+        
         this.fields = this.normalizeFields(doc.fields);
         this.metadata = this.normalizeMetadata(doc.metadata);
         this.versions = doc.versions || [];
         this.relations = this.normalizeRelations(doc.relations || []);
         this.content = doc.content;
-        this.links = doc.links || [];
-        this.ranks = doc.ranks || [];
+        this.links = this.normalizeLinks(doc.links);
+        this.ranks = this.normalizeRanks(doc.ranks);
+    }
+
+    base(): DocumentBase {
+        return {
+            id: this.id,
+            title: this.title,
+            author: this.author,
+            version: this.version,
+            metadata: this.metadata || {},
+            versions: this.versions,
+            relations: this.relations,
+            tags: this.tags
+        };
     }
 
     private generateId(): string {
@@ -37,11 +64,11 @@ export class BaseDocument implements IndexedDocument {
 
     private normalizeFields(fields?: Partial<IndexableFields>): IndexableFields {
         return {
-            title: fields?.title || '',
+            title: this.title,
             content: this.normalizeContent(fields?.content),
-            author: fields?.author || '',
-            tags: Array.isArray(fields?.tags) ? [...fields.tags] : [],
-            version: fields?.version || '1.0',
+            author: this.author,
+            tags: this.tags,
+            version: this.version,
             modified: fields?.modified || new Date().toISOString(),
             ...fields
         };
@@ -56,7 +83,7 @@ export class BaseDocument implements IndexedDocument {
         };
     }
 
-    private normalizeContent(content: any): DocumentContent {
+    private normalizeContent(content: unknown): DocumentContent {
         if (!content) {
             return { text: '' };
         }
@@ -66,13 +93,13 @@ export class BaseDocument implements IndexedDocument {
         }
 
         if (typeof content === 'object' && content !== null) {
-            return this.normalizeContentObject(content);
+            return this.normalizeContentObject(content as Record<string, unknown>);
         }
 
         return { text: String(content) };
     }
 
-    private normalizeContentObject(obj: Record<string, any>): DocumentContent {
+    private normalizeContentObject(obj: Record<string, unknown>): DocumentContent {
         const result: DocumentContent = {};
         
         for (const [key, value] of Object.entries(obj)) {
@@ -83,36 +110,35 @@ export class BaseDocument implements IndexedDocument {
 
             if (typeof value === 'object') {
                 if (Array.isArray(value)) {
-                    result[key] = value.map(v => this.normalizeValue(v));
+                    result[key] = this.normalizePrimitiveArray(value);
                 } else {
                     result[key] = this.normalizeContentObject(value);
                 }
             } else {
-                result[key] = this.normalizeValue(value);
+                result[key] = this.normalizePrimitive(value);
             }
         }
 
         return result;
     }
 
-    private normalizeValue(value: any): DocumentValue {
-        if (value === null || value === undefined) {
-            return null;
-        }
+    private normalizePrimitiveArray(arr: any[]): PrimitiveValue[] {
+        return arr.map(v => this.normalizePrimitive(v));
+    }
 
-        if (Array.isArray(value)) {
-            return value.map(v => this.normalizeValue(v)) as DocumentValue[];
-        }
-
-        if (typeof value === 'object') {
-            return this.normalizeContentObject(value);
-        }
-
+    private normalizePrimitive(value: any): PrimitiveValue {
+        if (value === null) return null;
         if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-            return value as PrimitiveValue;
+            return value;
         }
-
         return String(value);
+    }
+
+    private normalizeValue(value: unknown): DocumentValue {
+        if (value === null || value === undefined) return null;
+        if (Array.isArray(value)) return this.normalizePrimitiveArray(value);
+        if (typeof value === 'object') return this.normalizeContentObject(value);
+        return this.normalizePrimitive(value);
     }
 
     private normalizeRelations(relations: Array<Partial<DocumentRelation>>): DocumentRelation[] {
@@ -124,18 +150,36 @@ export class BaseDocument implements IndexedDocument {
         }));
     }
 
+    private normalizeLinks(links?: DocumentLink[]): DocumentLink[] | undefined {
+        if (!links) return undefined;
+        return links.map(link => ({
+            fromId: link.fromId || this.id,
+            toId: link.toId,
+            weight: link.weight || 1
+        }));
+    }
+
+    private normalizeRanks(ranks?: DocumentRank[]): DocumentRank[] | undefined {
+        if (!ranks) return undefined;
+        return ranks.map(rank => ({
+            id: rank.id || this.id,
+            rank: rank.rank || 0,
+            incomingLinks: rank.incomingLinks || 0,
+            outgoingLinks: rank.outgoingLinks || 0
+        }));
+    }
+
     private normalizeRelationType(type: string): RelationType {
         const normalizedType = type.toLowerCase();
         switch (normalizedType) {
             case 'parent':
-                return 'parent' as RelationType;
+                return 'parent';
             case 'child':
-                return 'child' as RelationType;
+                return 'child';
             case 'related':
-                return 'related' as RelationType;
-            case 'reference':
+                return 'related';
             default:
-                return 'reference' as RelationType;
+                return 'reference';
         }
     }
 
@@ -144,55 +188,48 @@ export class BaseDocument implements IndexedDocument {
     }
 
     clone(): IndexedDocument {
-        return new BaseDocument({
-            id: this.id,
-            fields: { ...this.fields },
-            versions: [...this.versions],
-            relations: [...this.relations],
-            metadata: { ...this.metadata },
-            content: this.content ? { ...this.content } : undefined,
-            links: this.links ? [...this.links] : undefined,
-            ranks: this.ranks ? [...this.ranks] : undefined
-        });
+        return new BaseDocument(this.toObject());
     }
 
     toObject(): IndexedDocument {
         return {
             id: this.id,
-            fields: this.fields,
-            metadata: this.metadata,
-            versions: this.versions,
-            relations: this.relations,
-            links: this.links,
-            ranks: this.ranks,
-            document: () => this.document(),
+            title: this.title,
+            author: this.author,
+            tags: [...this.tags],
+            version: this.version,
+            fields: { ...this.fields },
+            metadata: { ...this.metadata },
+            versions: [...this.versions],
+            relations: [...this.relations],
+            links: this.links ? [...this.links] : undefined,
+            ranks: this.ranks ? [...this.ranks] : undefined,
+            document: () => this,
+            clone: () => this.clone(),
+            update: (updates: Partial<IndexedDocument>) => this.update(updates),
+            base: () => this.base()
         };
     }
 
     update(updates: Partial<IndexedDocument>): IndexedDocument {
         const now = Date.now();
-        const currentVersion = this.fields.version;
         const updatedFields: Partial<IndexableFields> = updates.fields || {};
 
-        // Handle versioning
         if (updatedFields.content && !this.isContentEqual(updatedFields.content, this.fields.content)) {
             this.versions.push({
-                version: Number(currentVersion),
+                version: Number(this.version),
                 content: this.fields.content,
                 modified: new Date(this.metadata?.lastModified || now),
-                author: this.fields.author
+                author: this.author
             });
         }
 
-        // Create updated document
         return new BaseDocument({
             id: this.id,
             fields: {
                 ...this.fields,
                 ...updatedFields,
-                version: updatedFields.content ? 
-                    (Number(currentVersion) + 1).toString() : 
-                    currentVersion,
+                version: updatedFields.content ? String(Number(this.version) + 1) : this.version,
                 modified: new Date().toISOString()
             },
             versions: this.versions,
@@ -201,9 +238,9 @@ export class BaseDocument implements IndexedDocument {
                 ...this.metadata,
                 lastModified: now
             },
-            content: updates.fields?.content || this.content,
-            links: updates.links || this.links,
-            ranks: updates.ranks || this.ranks
+            content: updates.content !== undefined ? updates.content : this.content,
+            links: updates.links,
+            ranks: updates.ranks
         });
     }
 
