@@ -180,8 +180,8 @@ export class SearchEngine {
                     target: '',
                     fromId: () => '',
                     toId: () => '',
-                    incomingLinks: [],
-                    outgoingLinks: [],
+                    incomingLinks: 0,
+                    outgoingLinks: 0,
                     content: ''
                 })),
                 content: this.normalizeContent(normalizedDoc.content),

@@ -17,18 +17,8 @@ import {
  * and versioning support
  */
 export class IndexedDocument implements IIndexedDocument {
-    status(status: any) {
-        throw new Error("Method not implemented.");
-    }
-    modified(modified: any) {
-        throw new Error("Method not implemented.");
-    }
-    published(published: any) {
-        throw new Error("Method not implemented.");
-    }
-    expires(expires: any) {
-        throw new Error("Method not implemented.");
-    }
+    // Removed unused methods
+  
     readonly id: string;
     fields: BaseFields;
     metadata?: DocumentMetadata;
