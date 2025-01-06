@@ -484,7 +484,16 @@ private isComplexRegex(regex: RegExp): boolean {
                     ...doc.metadata,
                     lastAccessed: Date.now()
                 },
-                document: doc,
+                document: {
+                    ...doc,
+                    links: doc.links?.map(link => ({
+                        url: link.url,
+                        source: link.source,
+                        target: link.target,
+                        fromId: link.fromId,
+                        toId: link.toId
+                    })) || []
+                },
                 term: 'matched' in result ? String(result.matched) : '',
             };
     
@@ -873,7 +882,7 @@ private isComplexRegex(regex: RegExp): boolean {
             throw new Error(`Document ${id} not found`);
         }
 
-        const targetVersion = await this.getDocumentVersion(id, version);
+        const targetVersion = await this.getDocumentVersion(id, version) as { content: string };
         if (!targetVersion) {
             throw new Error(`Version ${version} not found for document ${id}`);
         }
@@ -882,7 +891,7 @@ private isComplexRegex(regex: RegExp): boolean {
             doc.id,
             {
                 ...doc.fields,
-                content: targetVersion.content,
+                content: this.normalizeContent(targetVersion.content),
                 modified: new Date().toISOString(),
                 version: String(Number(doc.fields.version) + 1)
             },
