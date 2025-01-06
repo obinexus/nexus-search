@@ -75,7 +75,7 @@ export class NexusDocumentAdapter {
 
     async search(query: string, options?: Partial<SearchOptions>): Promise<NexusDocument[]> {
         const results = await this.searchEngine.search(query, options);
-        return results.map((result: SearchResult<NexusDocument>) => result.document as unknown as NexusDocument);
+        return results.map((result: SearchResult<unknown>) => result.document as unknown as NexusDocument);
     }
 
     getDocuments(): NexusDocument[] {
