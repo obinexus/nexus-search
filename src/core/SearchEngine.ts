@@ -13,13 +13,7 @@ import {
     ExtendedSearchOptions,
     RegexSearchConfig,
     RegexSearchResult,
-    BaseFields,
-    DocumentBase,
-    DocumentMetadata,
-    DocumentRelation,
-    DocumentVersion,
-    IndexedDocument,
-    IndexedDocumentData,
+
     
 } from "@/types";
 import { bfsRegexTraversal, dfsRegexTraversal, calculateScore, extractMatches } from "@/utils";
@@ -191,8 +185,8 @@ export class SearchEngine {
                     content: ''
                 })),
                 content: this.normalizeContent(normalizedDoc.content),
-                status: this.normalizeStatus(normalizedDoc.status),
-                modified: this.normalizeDate(normalizedDoc.modified),
+                status: this.normalizeStatus(normalizedDoc.status) || (() => {}),
+                modified: () => this.normalizeDate(normalizedDoc.modified) || (() => {}),
                 published: this.normalizeDate(normalizedDoc.published),
                 expires: this.normalizeDate(normalizedDoc.expires),
 

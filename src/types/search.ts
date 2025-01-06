@@ -1,5 +1,4 @@
-import { DocumentMetadata, DocumentValue, IndexedDocument } from './document';
-import { StorageOptions } from './storage';
+import { DocumentMetadata, DocumentValue, IndexConfig, IndexedDocument } from './document';
 
 // Core search result interface with proper generic typing
 export interface SearchResult<T = unknown> {
@@ -116,22 +115,20 @@ export interface SearchPagination {
 
 
 // Search engine configuration
-export interface SearchEngineConfig {
-    name: string;
-    search?: {
-        fuzzy?: boolean;
-        caseSensitive?: boolean;
-        exact?: boolean;
-        boost?: Record<string, number>;
-        defaultOptions?: Record<string, unknown>;
-    };
-    storage: StorageOptions;
+export interface SearchEngineConfig extends IndexConfig {
     documentSupport?: {
-        enabled?: boolean;
+        enabled: boolean;
         versioning?: {
             enabled?: boolean;
             maxVersions?: number;
         };
+    };
+    storage: {
+        type: string;
+        options?: object;
+    };
+    search?: {
+        defaultOptions?: SearchOptions;
     };
     fields: string[];
 }
