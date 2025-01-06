@@ -6,7 +6,7 @@ import { SearchOptions } from "./search";
 
 export type PrimitiveValue = string | number | boolean | null;
 export type ArrayValue = PrimitiveValue[];
-export type DocumentValue = PrimitiveValue | ArrayValue | Record<string, any>;
+export type DocumentValue = PrimitiveValue | ArrayValue | Record<string, unknown>;
 
 export type DocumentContent = {
     [key: string]: DocumentValue | DocumentContent;
@@ -18,7 +18,7 @@ export type DocumentContent = {
 export interface DocumentMetadata {
     indexed?: number;
     lastModified?: number;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export interface NexusDocumentMetadata extends DocumentMetadata {
@@ -121,7 +121,7 @@ export interface DocumentRelation {
     sourceId: string;
     targetId: string;
     type: RelationType;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 export interface DocumentVersion {
@@ -141,7 +141,7 @@ export interface DocumentRank {
     rank: number;
     incomingLinks: number;
     outgoingLinks: number;
-    content: Record<string, any>;
+    content: Record<string, unknown>;
     metadata?: DocumentMetadata;
 }
 
@@ -164,7 +164,7 @@ export interface DocumentConfig {
 
 export interface StorageConfig {
     type: 'memory' | 'indexeddb';
-    options?: Record<string, any>;
+    options?: Record<string, unknown>;
 }
 
 export interface VersioningConfig {
@@ -174,7 +174,7 @@ export interface VersioningConfig {
 
 export interface ValidationConfig {
     required?: string[];
-    customValidators?: Record<string, (value: any) => boolean>;
+    customValidators?: Record<string, (value: unknown) => boolean>;
 }
 
 // ----------------
@@ -234,7 +234,7 @@ export interface NexusDocumentPluginConfig {
     fields?: string[];
     storage?: {
         type: 'memory' | 'indexeddb';
-        options?: Record<string, any>;
+        options?: Record<string, unknown>;
     };
     versioning?: {
         enabled?: boolean;
@@ -242,6 +242,6 @@ export interface NexusDocumentPluginConfig {
     };
     validation?: {
         required?: string[];
-        customValidators?: Record<string, (value: any) => boolean>;
+        customValidators?: Record<string, (value: unknown) => boolean>;
     };
 }
