@@ -1,97 +1,143 @@
-import { SearchOptions, SearchResult } from "@/types";
+import { SearchEngine } from "@/core";
+import { SearchOptions, SearchResult, DocumentContent, DocumentBase } from "@/types";
+import { IndexedDocument } from "@/storage";
 
-// NexusDocumentPlugin: Interface to define plugin structure
-interface NexusDocumentPlugin {
-    loadDocument(content: string, type: string): Promise<NexusDocument>;
-    saveDocument(document: NexusDocument): Promise<void>;
-    search(query: string, options?: SearchOptions): SearchResult[];
-    transformDocument(document: NexusDocument): NexusDocument;
-  }
-  
-  // NexusDocumentAdapter: Handles document-specific transformations and utilities
-  export class NexusDocumentAdapter {
-    private readonly plugins: Record<string, NexusDocumentPlugin> = {};
-  
-    registerPlugin(type: string, plugin: NexusDocumentPlugin): void {
-      this.plugins[type] = plugin;
-    }
-  
-    async load(content: string, type: string): Promise<NexusDocument> {
-      if (!this.plugins[type]) {
-        throw new Error(`No plugin registered for type: ${type}`);
-      }
-      return await this.plugins[type].loadDocument(content, type);
-    }
-  
-    async save(document: NexusDocument): Promise<void> {
-      const type = document.type;
-      if (!this.plugins[type]) {
-        throw new Error(`No plugin registered for type: ${type}`);
-      }
-      await this.plugins[type].saveDocument(document);
-    }
-  
-    search(document: NexusDocument, query: string, options?: SearchOptions): SearchResult[] {
-      const type = document.type;
-      if (!this.plugins[type]) {
-        throw new Error(`No plugin registered for type: ${type}`);
-      }
-      return this.plugins[type].search(query, options);
-    }
-  
-    transform(document: NexusDocument): NexusDocument {
-      const type = document.type;
-      if (!this.plugins[type]) {
-        throw new Error(`No plugin registered for type: ${type}`);
-      }
-      return this.plugins[type].transformDocument(document);
-    }
-  }
-  
-  // Full NexusDocument class implementation
-  class NexusDocument {
+interface NexusDocument {
     id: string;
     title: string;
     content: string;
+    path: string;
     type: string;
-    indexed: boolean;
-  
-    constructor(id: string, title: string, content: string, type: string) {
-      this.id = id;
-      this.title = title;
-      this.content = content;
-      this.type = type;
-      this.indexed = false;
+}
+
+export class NexusDocumentAdapter {
+    private documents: NexusDocument[] = [];
+    private searchEngine: SearchEngine;
+
+    constructor() {
+        this.searchEngine = new SearchEngine({
+            name: 'nexus-document-adapter',
+            version: 1,
+            fields: ['title', 'content', 'path', 'type'],
+            storage: { type: 'memory' },
+            indexing: {
+                enabled: true,
+                fields: ['title', 'content'],
+                options: {
+                    tokenization: true,
+                    caseSensitive: false,
+                    stemming: true
+                }
+            },
+            searchFields: ['title', 'content'],
+            metadataFields: ['path', 'type'],
+            searchOptions: {
+                fuzzy: true,
+                maxDistance: 2,
+                includeMatches: true
+            }
+        });
     }
-  
-    index(): void {
-      this.indexed = true;
+
+    async addDocument(document: NexusDocument): Promise<void> {
+        this.documents.push(document);
+        const indexedDocument: IndexedDocument = {
+            id: document.id,
+            fields: {
+                title: document.title,
+                content: document.content as unknown as DocumentContent,
+                path: document.path,
+                type: document.type,
+                author: '',
+                tags: [],
+                version: "1"
+            },
+            versions: [],
+            relations: [],
+            author: '',
+            
+            metadata: {},
+            tags: [],
+            version: "1",
+            document: () => indexedDocument,
+            base: () => ({} as DocumentBase),
+            links: [],
+            ranks: [],
+            content: document.content as unknown as DocumentContent
+        };
+        await this.searchEngine.addDocument(indexedDocument);
     }
-  
-    unindex(): void {
-      this.indexed = false;
+
+    async removeDocumentById(id: string): Promise<void> {
+        this.documents = this.documents.filter(doc => doc.id !== id);
+        await this.searchEngine.removeDocument(id);
     }
-  
-    bfsSearch(term: string): boolean {
-      const queue: string[] = [this.content];
-      while (queue.length) {
-        const node = queue.shift()!;
-        if (node.includes(term)) {
-          return true;
+
+    async search(query: string, options?: Partial<SearchOptions>): Promise<NexusDocument[]> {
+        const results = await this.searchEngine.search(query, options);
+        return results.map((result: SearchResult<NexusDocument>) => result.document as unknown as NexusDocument);
+    }
+
+    getDocuments(): NexusDocument[] {
+        return this.documents;
+    }
+}
+
+export class NexusDocumentPlugin {
+    private adapter: NexusDocumentAdapter;
+
+    constructor(adapter: NexusDocumentAdapter) {
+        this.adapter = adapter;
+    }
+
+    async indexDocuments(): Promise<number> {
+        // Placeholder: simulate indexing documents from a directory
+        const mockDocuments: NexusDocument[] = [
+            { id: '1', title: 'Doc1', content: 'Content of Doc1', path: '/docs/doc1.md', type: 'md' },
+            { id: '2', title: 'Doc2', content: 'Content of Doc2', path: '/docs/doc2.html', type: 'html' }
+        ];
+
+        for (const doc of mockDocuments) {
+            await this.adapter.addDocument(doc);
         }
-      }
-      return false;
+        return mockDocuments.length;
     }
-  
-    dfsSearch(term: string): boolean {
-      const stack: string[] = [this.content];
-      while (stack.length) {
-        const node = stack.pop()!;
-        if (node.includes(term)) {
-          return true;
+
+    async bfsSearch(startDocId: string, query: string): Promise<NexusDocument | null> {
+        // BFS Search logic for documents
+        const visited = new Set<string>();
+        const queue: NexusDocument[] = [this.adapter.getDocuments().find(doc => doc.id === startDocId)!];
+
+        while (queue.length) {
+            const current = queue.shift();
+            if (!current || visited.has(current.id)) continue;
+
+            visited.add(current.id);
+            if (current.content.includes(query)) return current;
+
+            // Simulate adjacent nodes by adding other documents to the queue
+            queue.push(...this.adapter.getDocuments().filter(doc => !visited.has(doc.id)));
         }
-      }
-      return false;
+
+        return null;
     }
-  }
-  
+
+    async dfsSearch(startDocId: string, query: string): Promise<NexusDocument | null> {
+        // DFS Search logic for documents
+        const visited = new Set<string>();
+        const stack: NexusDocument[] = [this.adapter.getDocuments().find(doc => doc.id === startDocId)!];
+
+        while (stack.length) {
+            const current = stack.pop();
+            if (!current || visited.has(current.id)) continue;
+
+            visited.add(current.id);
+            if (current.content.includes(query)) return current;
+
+            // Simulate adjacent nodes by adding other documents to the stack
+            stack.push(...this.adapter.getDocuments().filter(doc => !visited.has(doc.id)));
+        }
+
+        return null;
+    }
+}

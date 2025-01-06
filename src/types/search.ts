@@ -135,6 +135,15 @@ export interface SearchEngineConfig extends IndexConfig {
         defaultOptions?: SearchOptions;
     };
     fields: string[];
+    indexing: {
+        enabled: boolean;
+        fields: string[];
+        options: {
+            tokenization: boolean;
+            caseSensitive: boolean;
+            stemming: boolean;
+        };
+    };
 }
 
 
