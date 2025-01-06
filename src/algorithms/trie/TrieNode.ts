@@ -62,4 +62,8 @@ export class TrieNode {
         const recency = Math.exp(-(Date.now() - this.lastAccessed) / (24 * 60 * 60 * 1000)); // Decay over 24 hours
         return (this.weight * this.frequency * recency) / (this.depth + 1);
     }
+
+    getWeight(): number {
+        return this.weight;
+    }
 }

@@ -155,7 +155,7 @@ export class TrieSearch {
         this.collectWords(current, prefix, results);
         return results;
     }
-public serializeState(): any {
+public serializeState(): unknown {
     return {
         trie: this.serializeTrie(this.root),
         documents: Array.from(this.documents.entries()),
@@ -164,21 +164,34 @@ public serializeState(): any {
         maxWordLength: this.maxWordLength
     };
 }
+public deserializeState(state: unknown): void {
+    if (!state || typeof state !== 'object') {
+        throw new Error('Invalid state data');
+    }
 
-public deserializeState(state: any): void {
-    this.root = this.deserializeTrie(state.trie);
-    this.documents = new Map(state.documents);
-    this.documentLinks = new Map(state.documentLinks);
-    this.totalDocuments = state.totalDocuments;
-    this.maxWordLength = state.maxWordLength;
+    const typedState = state as {
+        trie: unknown;
+        documents: [string, IndexedDocument][];
+        documentLinks: [string, DocumentLink[]][];
+        totalDocuments: number;
+        maxWordLength: number;
+    };
+
+    this.root = this.deserializeTrie(typedState.trie);
+    this.documents = new Map(typedState.documents);
+    this.documentLinks = new Map(typedState.documentLinks);
+    this.totalDocuments = typedState.totalDocuments || 0;
+    this.maxWordLength = typedState.maxWordLength || 50;
 }
 
-private serializeTrie(node: TrieNode): any {
-    const serializedNode: any = {
+
+private serializeTrie(node: TrieNode): unknown {
+    const serializedNode = {
         prefixCount: node.prefixCount,
         isEndOfWord: node.isEndOfWord,
         documentRefs: Array.from(node.documentRefs),
-        children: {}
+        weight: node.getWeight(),
+        children: {} as Record<string, unknown>
     };
 
     node.children.forEach((child, char) => {
@@ -187,6 +200,7 @@ private serializeTrie(node: TrieNode): any {
 
     return serializedNode;
 }
+
 
 public addData(documentId: string, content: DocumentContent, document: IndexedDocument): void {
     if (!documentId || !content) return;
@@ -203,18 +217,16 @@ public addData(documentId: string, content: DocumentContent, document: IndexedDo
         versions: document.versions || [],
         links: document.links || [],
         ranks: [],
-        document: function (): IndexedDocument {
-            throw new Error("Function not implemented.");
-        },
+        document: () => document,
         relations: []
-    });
+    }) as void;
 }
 
-private deserializeTrie(data: any): TrieNode {
+private deserializeTrie(data: unknown): TrieNode {
     const node = new TrieNode();
     node.prefixCount = data.prefixCount;
-    node.isEndOfWord = data.isEndOfWord;
-    node.documentRefs = new Set(data.documentRefs);
+    node.isEndOfWord = (data as any).isEndOfWord;
+    node.documentRefs = new Set((data as any).documentRefs);
 
     for (const char in data.children) {
         node.children.set(char, this.deserializeTrie(data.children[char]));
