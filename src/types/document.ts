@@ -94,6 +94,8 @@ export interface IndexedDocument extends DocumentBase {
     metadata?: DocumentMetadata;
     links?: DocumentLink[];
     ranks?: DocumentRank[];
+    versions: DocumentVersion[];
+    relations: DocumentRelation[];
     document(): IndexedDocument;
     base (): DocumentBase;
 }
@@ -114,6 +116,7 @@ export interface IndexedDocumentData extends DocumentBase {
 // ----------------
 
 export interface DocumentLink {
+    url: any;
     source: string;
     target: string;
     fromId(fromId: string): string;

@@ -13,6 +13,7 @@ import {
     ExtendedSearchOptions,
     RegexSearchConfig,
     RegexSearchResult,
+    DocumentValue,
 
     
 } from "@/types";
@@ -170,9 +171,11 @@ export class SearchEngine {
             
             // Index the document
             // Convert links from string[] to DocumentLink[]
-            const convertedDoc: IndexedDocument = {
-                ...normalizedDoc,
-                links: (normalizedDoc.links || []).map(link => ({ url: link, source: '', target: '', fromId: () => '', toId: () => '' })),
+        const convertedDoc: IndexedDocument = new IndexedDocument(
+            normalizedDoc.id,
+            {
+                ...normalizedDoc.fields,
+                links: (normalizedDoc.links || []).map(link => link.url),
                 ranks: (normalizedDoc.ranks || []).map(rank => ({
                     id: '',
                     rank: rank.rank,
@@ -182,15 +185,12 @@ export class SearchEngine {
                     toId: () => '',
                     incomingLinks: 0,
                     outgoingLinks: 0,
-                    content: ''
-                })),
+                    content: {} as Record<string, unknown>
+                })) as unknown as DocumentValue,
                 content: this.normalizeContent(normalizedDoc.content),
-                status: this.normalizeStatus(normalizedDoc.status) || (() => {}),
-                modified: () => this.normalizeDate(normalizedDoc.modified) || (() => {}),
-                published: this.normalizeDate(normalizedDoc.published),
-                expires: this.normalizeDate(normalizedDoc.expires),
-
-            };
+            },
+            normalizedDoc.metadata
+        );
             this.indexManager.addDocument(convertedDoc);
             
         } catch (error) {
