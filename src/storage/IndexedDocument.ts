@@ -5,7 +5,8 @@ import {
     DocumentRelation,
     BaseFields,
     IndexedDocument as IIndexedDocument,
-    IndexedDocumentData
+    IndexedDocumentData,
+    DocumentBase
 } from "@/types/document";
 
 
@@ -42,6 +43,19 @@ export class IndexedDocument implements IIndexedDocument {
      */
     document(): IIndexedDocument {
         return this;
+    }
+
+    /**
+     * Implement required base() method from interface
+     */
+    base(): DocumentBase {
+        return {
+            id: this.id,
+            title: this.fields.title,
+            author: this.fields.author,
+            tags: this.fields.tags,
+            version: this.fields.version
+        };
     }
 
     /**
@@ -246,4 +260,3 @@ export class IndexedDocument implements IIndexedDocument {
     }
 }
 
-export { BaseFields };

@@ -79,6 +79,14 @@ export interface DocumentBase {
     metadata?: DocumentMetadata;
     versions: DocumentVersion[];
     relations: DocumentRelation[];
+
+    title: string;
+
+    author: string;
+
+    tags: string[];
+
+    version: string;
 }
 
 export interface IndexedDocument extends DocumentBase {
