@@ -87,6 +87,7 @@ export interface IndexedDocument extends DocumentBase {
     links?: DocumentLink[];
     ranks?: DocumentRank[];
     document(): IndexedDocument;
+    base (): DocumentBase;
 }
 
 
