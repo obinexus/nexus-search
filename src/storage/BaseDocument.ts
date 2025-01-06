@@ -112,7 +112,7 @@ export class BaseDocument implements IndexedDocument {
                 if (Array.isArray(value)) {
                     result[key] = this.normalizePrimitiveArray(value);
                 } else {
-                    result[key] = this.normalizeContentObject(value);
+                    result[key] = this.normalizeContentObject(value as Record<string, unknown>);
                 }
             } else {
                 result[key] = this.normalizePrimitive(value);
@@ -134,12 +134,6 @@ export class BaseDocument implements IndexedDocument {
         return String(value);
     }
 
-    private normalizeValue(value: unknown): DocumentValue {
-        if (value === null || value === undefined) return null;
-        if (Array.isArray(value)) return this.normalizePrimitiveArray(value);
-        if (typeof value === 'object') return this.normalizeContentObject(value);
-        return this.normalizePrimitive(value);
-    }
 
     private normalizeRelations(relations: Array<Partial<DocumentRelation>>): DocumentRelation[] {
         return relations.map(relation => ({
