@@ -1,1 +1,1 @@
-export {NexusDocumentAdapter} from './NexusDocumentAdapter';
+export {NexusDocumentAdapter} from '../plugins/NexusDocument';
