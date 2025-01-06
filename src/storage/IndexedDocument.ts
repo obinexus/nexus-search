@@ -245,3 +245,5 @@ export class IndexedDocument implements IIndexedDocument {
         return new IndexedDocument(id, fields, metadata);
     }
 }
+
+export { BaseFields };

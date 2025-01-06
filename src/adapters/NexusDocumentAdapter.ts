@@ -12,7 +12,13 @@ import {
     BaseFields,
     
 } from "@/types";
-import { IndexedDocument } from "@/storage/IndexedDocument";
+import { IndexedDocument, BaseFields as IndexedBaseFields } from "@/storage/IndexedDocument";
+
+interface BaseFields extends IndexedBaseFields {
+    type: string;
+    created: string;
+    status: string;
+}
 
 interface NexusDocumentInput extends Partial<NexusDocument> {
     id?: string;
