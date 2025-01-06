@@ -116,23 +116,24 @@ export interface SearchPagination {
 
 
 // Search engine configuration
-export default interface SearchEngineConfig {
-    search: unknown;
+export interface SearchEngineConfig {
     name: string;
-    version: number;
-    fields: string[];
-    storage?: StorageOptions;
+    search?: {
+        fuzzy?: boolean;
+        caseSensitive?: boolean;
+        exact?: boolean;
+        boost?: Record<string, number>;
+        defaultOptions?: Record<string, unknown>;
+    };
+    storage: StorageOptions;
     documentSupport?: {
-        enabled: boolean;
+        enabled?: boolean;
         versioning?: {
-            enabled: boolean;
+            enabled?: boolean;
             maxVersions?: number;
         };
-        validation?: {
-            required?: string[];
-            customValidators?: Record<string, (value: unknown) => boolean>;
-        };
     };
+    fields: string[];
 }
 
 

@@ -1,9 +1,10 @@
 
 import { CacheManager, IndexedDocument, SearchStorage } from "@/storage";
 
-import SearchEngineConfig, {
+import {
     SearchOptions,
     SearchResult,
+    SearchEngineConfig,
     SearchEventListener,
     SearchEvent,
     IndexNode,
@@ -12,6 +13,13 @@ import SearchEngineConfig, {
     ExtendedSearchOptions,
     RegexSearchConfig,
     RegexSearchResult,
+    BaseFields,
+    DocumentBase,
+    DocumentMetadata,
+    DocumentRelation,
+    DocumentVersion,
+    IndexedDocument,
+    IndexedDocumentData,
     
 } from "@/types";
 import { bfsRegexTraversal, dfsRegexTraversal, calculateScore, extractMatches } from "@/utils";
@@ -170,7 +178,24 @@ export class SearchEngine {
             // Convert links from string[] to DocumentLink[]
             const convertedDoc: IndexedDocument = {
                 ...normalizedDoc,
-                links: (normalizedDoc.links || []).map(link => ({ url: link, source: '', target: '', fromId: () => '', toId: '' }))
+                links: (normalizedDoc.links || []).map(link => ({ url: link, source: '', target: '', fromId: () => '', toId: () => '' })),
+                ranks: (normalizedDoc.ranks || []).map(rank => ({
+                    id: '',
+                    rank: rank.rank,
+                    source: '',
+                    target: '',
+                    fromId: () => '',
+                    toId: () => '',
+                    incomingLinks: [],
+                    outgoingLinks: [],
+                    content: ''
+                })),
+                content: this.normalizeContent(normalizedDoc.content),
+                status: this.normalizeStatus(normalizedDoc.status),
+                modified: this.normalizeDate(normalizedDoc.modified),
+                published: this.normalizeDate(normalizedDoc.published),
+                expires: this.normalizeDate(normalizedDoc.expires),
+
             };
             this.indexManager.addDocument(convertedDoc);
             
@@ -214,7 +239,6 @@ export class SearchEngine {
                     const score = calculateScore(document, processedQuery, field, {
                         fuzzy: searchOptions.fuzzy,
                         caseSensitive: searchOptions.caseSensitive,
-                        exactMatch: searchOptions.exact,
                         fieldWeight: searchOptions.boost?.[field] || 1
                     });
 
