@@ -111,8 +111,8 @@ export class SearchEngine {
        try {
            const storedIndex = await this.storage.getIndex(this.config.name);
            if (storedIndex) {
-               await this.indexManager.importIndex(storedIndex);
-               const documents = await this.indexManager.getAllDocuments();
+               this.indexManager.importIndex(storedIndex);
+               const documents = this.indexManager.getAllDocuments();
                
                for (const [id, doc] of documents) {
                 this.documents.set(id, doc as import("../storage/IndexedDocument").IndexedDocument);
@@ -162,7 +162,13 @@ export class SearchEngine {
             this.documents.set(normalizedDoc.id, normalizedDoc);
             
             // Index the document
-            await this.indexManager.addDocument(normalizedDoc);
+            // Convert links from string[] to DocumentLink[]
+            const convertedDoc: IndexedDocument = {
+                ...normalizedDoc,
+                links: normalizedDoc.links || [],
+                document: () => convertedDoc
+            };
+            this.indexManager.addDocument(convertedDoc);
             
         } catch (error) {
             throw new Error(`Failed to add document: ${error}`);
@@ -360,13 +366,13 @@ public async performRegexSearch(
 
     // Determine search strategy based on regex complexity
     const regexResults = this.isComplexRegex(regex) ?
-        await dfsRegexTraversal(
+        dfsRegexTraversal(
             this.trieRoot,
             regex,
             options.maxResults || 10,
             regexConfig
         ) :
-        await bfsRegexTraversal(
+        bfsRegexTraversal(
             this.trieRoot,
             regex,
             options.maxResults || 10,
@@ -831,7 +837,7 @@ private isComplexRegex(regex: RegExp): boolean {
     }
 
     public  async handleVersioning(doc: IndexedDocument): Promise<void> {
-        const existingDoc = await this.getDocument(doc.id);
+        const existingDoc = this.getDocument(doc.id);
         if (!existingDoc) return;
 
         const maxVersions = this.config.documentSupport?.versioning?.maxVersions ?? 10;
@@ -862,7 +868,7 @@ private isComplexRegex(regex: RegExp): boolean {
             throw new Error('Document support is not enabled');
         }
 
-        const doc = await this.getDocument(id);
+        const doc = this.getDocument(id);
         if (!doc) {
             throw new Error(`Document ${id} not found`);
         }
@@ -890,12 +896,12 @@ private isComplexRegex(regex: RegExp): boolean {
     }
 
     // Additional NexusDocument specific methods that are only available when document support is enabled
-    public async getDocumentVersion(id: string, version: number): Promise<any | undefined> {
+    public async getDocumentVersion(id: string, version: number): Promise<unknown | undefined> {
         if (!this.documentSupport) {
             throw new Error('Document support is not enabled');
         }
 
-        const doc = await this.getDocument(id);
+        const doc = this.getDocument(id);
         return doc?.versions?.find(v => v.version === version);
     }
 
