@@ -91,8 +91,8 @@ export class ScoringUtils {
      */
     static calculateTfIdf(
         term: string,
-        document: any,
-        documents: Map<string, any>
+        document: unknown,
+        documents: Map<string, unknown>
     ): number {
         const tf = this.calculateTermFrequency(term, document);
         const idf = this.calculateInverseDocumentFrequency(term, documents);
@@ -102,7 +102,7 @@ export class ScoringUtils {
     /**
      * Calculates term frequency in a document
      */
-    private static calculateTermFrequency(term: string, document: any): number {
+    private static calculateTermFrequency(term: string, document: unknown): number {
         const text = JSON.stringify(document).toLowerCase();
         const termCount = (text.match(new RegExp(term.toLowerCase(), 'g')) || []).length;
         const totalWords = text.split(/\s+/).length;
@@ -114,7 +114,7 @@ export class ScoringUtils {
      */
     private static calculateInverseDocumentFrequency(
         term: string,
-        documents: Map<string, any>
+        documents: Map<string, unknown>
     ): number {
         let documentCount = 0;
         const termLower = term.toLowerCase();

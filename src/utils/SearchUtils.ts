@@ -249,7 +249,8 @@ export function sortObjectKeys<T extends object>(obj: T): T {
     return Object.keys(obj)
         .sort()
         .reduce((sorted, key) => {
-            (sorted as any)[key] = sortObjectKeys((obj as any)[key]);
+            const value = (obj as Record<string, unknown>)[key];
+            (sorted as Record<string, unknown>)[key] = typeof value === 'object' && value !== null ? sortObjectKeys(value) : value;
             return sorted;
         }, {} as T);
 }
@@ -323,13 +324,13 @@ export function normalizeFieldValue(value: DocumentValue): string {
     }
 }
 
-export function getNestedValue(obj: any, path: string): any {
+export function getNestedValue(obj: unknown, path: string): any {
     if (!obj || !path) return undefined;
 
     try {
         return path.split('.').reduce((current, key) => {
-            return current?.[key];
-        }, obj);
+            return (current as Record<string, unknown>)?.[key];
+        }, obj as Record<string, unknown>);
     } catch (error) {
         console.warn(`Error getting nested value for path ${path}:`, error);
         return undefined;
