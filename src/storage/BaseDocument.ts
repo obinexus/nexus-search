@@ -152,7 +152,8 @@ export class BaseDocument implements IndexedDocument {
             weight: link.weight || 1,
             url: link.url || '',
             source: link.source || '',
-            target: link.target || ''
+            target: link.target || '',
+            type: link.type || 'default'
         }));
     }
 

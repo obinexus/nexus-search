@@ -122,6 +122,9 @@ export interface DocumentLink {
     target: string;
     fromId(fromId: string): string;
     toId(toId: string): string;
+    
+
+    type: string;
 }
 
 export interface DocumentRelation {
