@@ -1,6 +1,6 @@
-import { AlgoUtils } from '@/utils/AlgoUtils';
-import { IndexNode, IndexableDocument } from '@/types';
-import { DocumentLink } from '@/types/document';
+import { IndexNode, DocumentLink } from "@/types";
+import { AlgoUtils } from "@/utils";
+
 
 describe('AlgoUtils', () => {
   let mockRoot: IndexNode;
